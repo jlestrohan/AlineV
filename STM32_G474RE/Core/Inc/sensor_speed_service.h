@@ -18,7 +18,6 @@
 
 osEventFlagsId_t evt_speed_sensor; /* this event flag is raised everytime one of the four speed sensors gets triggered */
 
-void sensor_speed_IRQ_cb();
 bool sensor_speed_initialize();
 
 #endif /* INC_SENSOR_SPEED_SERVICE_H_ */
