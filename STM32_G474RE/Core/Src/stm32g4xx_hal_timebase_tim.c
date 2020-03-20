@@ -26,12 +26,12 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef        htim6; 
+TIM_HandleTypeDef        htim20; 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  This function configures the TIM6 as a time base source. 
+  * @brief  This function configures the TIM20 as a time base source. 
   *         The time source is configured  to have 1ms time base with a dedicated 
   *         Tick interrupt priority. 
   * @note   This function is called  automatically at the beginning of program after
@@ -46,41 +46,41 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   uint32_t              uwPrescalerValue = 0;
   uint32_t              pFLatency;
   
-  /*Configure the TIM6 IRQ priority */
-  HAL_NVIC_SetPriority(TIM6_DAC_IRQn, TickPriority ,0); 
+  /*Configure the TIM20 IRQ priority */
+  HAL_NVIC_SetPriority(TIM20_UP_IRQn, TickPriority ,0); 
   
-  /* Enable the TIM6 global Interrupt */
-  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn); 
+  /* Enable the TIM20 global Interrupt */
+  HAL_NVIC_EnableIRQ(TIM20_UP_IRQn); 
   
-  /* Enable TIM6 clock */
-  __HAL_RCC_TIM6_CLK_ENABLE();
+  /* Enable TIM20 clock */
+  __HAL_RCC_TIM20_CLK_ENABLE();
   
   /* Get clock configuration */
   HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
   
-  /* Compute TIM6 clock */
-  uwTimclock = HAL_RCC_GetPCLK1Freq();
+  /* Compute TIM20 clock */
+  uwTimclock = HAL_RCC_GetPCLK2Freq();
    
-  /* Compute the prescaler value to have TIM6 counter clock equal to 1MHz */
+  /* Compute the prescaler value to have TIM20 counter clock equal to 1MHz */
   uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000) - 1);
   
-  /* Initialize TIM6 */
-  htim6.Instance = TIM6;
+  /* Initialize TIM20 */
+  htim20.Instance = TIM20;
   
   /* Initialize TIMx peripheral as follow:
-  + Period = [(TIM6CLK/1000) - 1]. to have a (1/1000) s time base.
+  + Period = [(TIM20CLK/1000) - 1]. to have a (1/1000) s time base.
   + Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
   + ClockDivision = 0
   + Counter direction = Up
   */
-  htim6.Init.Period = (1000000 / 1000) - 1;
-  htim6.Init.Prescaler = uwPrescalerValue;
-  htim6.Init.ClockDivision = 0;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  if(HAL_TIM_Base_Init(&htim6) == HAL_OK)
+  htim20.Init.Period = (1000000 / 1000) - 1;
+  htim20.Init.Prescaler = uwPrescalerValue;
+  htim20.Init.ClockDivision = 0;
+  htim20.Init.CounterMode = TIM_COUNTERMODE_UP;
+  if(HAL_TIM_Base_Init(&htim20) == HAL_OK)
   {
     /* Start the TIM time Base generation in interrupt mode */
-    return HAL_TIM_Base_Start_IT(&htim6);
+    return HAL_TIM_Base_Start_IT(&htim20);
   }
   
   /* Return function status */
@@ -89,26 +89,26 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 
 /**
   * @brief  Suspend Tick increment.
-  * @note   Disable the tick increment by disabling TIM6 update interrupt.
+  * @note   Disable the tick increment by disabling TIM20 update interrupt.
   * @param  None
   * @retval None
   */
 void HAL_SuspendTick(void)
 {
-  /* Disable TIM6 update Interrupt */
-  __HAL_TIM_DISABLE_IT(&htim6, TIM_IT_UPDATE);                                                  
+  /* Disable TIM20 update Interrupt */
+  __HAL_TIM_DISABLE_IT(&htim20, TIM_IT_UPDATE);                                                  
 }
 
 /**
   * @brief  Resume Tick increment.
-  * @note   Enable the tick increment by Enabling TIM6 update interrupt.
+  * @note   Enable the tick increment by Enabling TIM20 update interrupt.
   * @param  None
   * @retval None
   */
 void HAL_ResumeTick(void)
 {
-  /* Enable TIM6 Update interrupt */
-  __HAL_TIM_ENABLE_IT(&htim6, TIM_IT_UPDATE);
+  /* Enable TIM20 Update interrupt */
+  __HAL_TIM_ENABLE_IT(&htim20, TIM_IT_UPDATE);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -27,6 +27,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
 #include "freertos_logger_service.h"
+#include "sensor_speed_service.h"
+#include "IRQ_Handler.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,6 +75,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 	log_initialize(&hlpuart1);
+	sensor_speed_initialize();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
