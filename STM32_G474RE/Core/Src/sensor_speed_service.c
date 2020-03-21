@@ -14,7 +14,13 @@
 #include <string.h>
 #include <stdio.h>
 
-#define SPEED_SENSOR_DEBOUNCE_MS		80
+typedef enum {
+	SP_SENS_1,
+	SP_SENS_2,
+	SP_SENS_3,
+	SP_SENS_4,
+} speedSensorNum_t;
+speedSensorNum_t speedSensorNum;
 
 typedef enum {
 	sensorSpeedServiceNotInit,
@@ -24,19 +30,12 @@ typedef enum {
 sensorSpeedServiceStatus sensorSpeedStatus = sensorSpeedServiceInitError;
 
 /**
- * Definitions for SpeedSensorServiceTask
+ * Definitions for SpeedSensorServiceTask, dynamic allocation
  */
-typedef StaticTask_t osStaticThreadDef_t;
 osThreadId_t SpeedSensorServiceTaHandle;
-uint32_t SpeedSensorServiceTaBuffer[ 256 ];
-osStaticThreadDef_t SpeedSensorServiceTaControlBlock;
 const osThreadAttr_t SpeedSensorServiceTa_attributes = {
 		.name = "SpeedSensorServiceTask",
-		.stack_mem = &SpeedSensorServiceTaBuffer[0],
-		.stack_size = sizeof(SpeedSensorServiceTaBuffer),
-		.cb_mem = &SpeedSensorServiceTaControlBlock,
-		.cb_size = sizeof(SpeedSensorServiceTaControlBlock),
-		.priority = (osPriority_t) osPriorityLow,
+		.priority = (osPriority_t) osPriorityLow
 };
 
 /**
@@ -50,14 +49,6 @@ typedef struct {
 wheelProps_t wheelProps[3];
 
 void speedSensorService_task(void *argument);
-
-/**
- * returns true if not a bounce
- */
-uint8_t speedSensorDebounce (uint32_t tick)
-{
-	return (HAL_GetTick() - tick > SPEED_SENSOR_DEBOUNCE_MS  ? true : false);
-}
 
 /**
  * Initialize all speed sensors for the rover
@@ -83,6 +74,8 @@ bool sensor_speed_initialize()
 void speedSensorService_task(void *argument)
 {
 	evt_speed_sensor = osEventFlagsNew(NULL);
+	uint32_t flagStatus;
+	char msg[20];
 
 	for(;;)
 	{
@@ -90,21 +83,39 @@ void speedSensorService_task(void *argument)
 		UNUSED(argument);
 
 		//todo: have to set this for all 3 other sensors
-		//todo replace the fucking HAL_GetTick by a real freeros timer function
-		osEventFlagsWait(evt_speed_sensor, EVENT_SPEED_SENSOR_1, osFlagsWaitAny , osWaitForever);
+		//todo use freertos timer to deduce rpm
+		flagStatus = osEventFlagsWait(evt_speed_sensor,
+				EVENT_SPEED_SENSOR_1 | EVENT_SPEED_SENSOR_2 | EVENT_SPEED_SENSOR_3 | EVENT_SPEED_SENSOR_4,
+				osFlagsWaitAny | osFlagsNoClear, osWaitForever);
 
-		if (speedSensorDebounce(wheelProps[0].lastWheelTick) ||
-				wheelProps[0].lastWheelTick == 0) {
-
-			wheelProps[0].lastWheelTick = HAL_GetTick();
-			wheelProps[0].wheelTicksCounter++;
-			char msg[20];
-			snprintf(msg, sizeof(msg), "tick counts: %d",
-					wheelProps[0].wheelTicksCounter); //(wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
-			loggerI(msg);
+		switch (flagStatus) {
+		case EVENT_SPEED_SENSOR_1:
+			osEventFlagsClear(evt_speed_sensor, EVENT_SPEED_SENSOR_1);
+			speedSensorNum = SP_SENS_1;
+			break;
+		case EVENT_SPEED_SENSOR_2:
+			osEventFlagsClear(evt_speed_sensor, EVENT_SPEED_SENSOR_2);
+			speedSensorNum = SP_SENS_2;
+			break;
+		case EVENT_SPEED_SENSOR_3:
+			osEventFlagsClear(evt_speed_sensor, EVENT_SPEED_SENSOR_3);
+			speedSensorNum = SP_SENS_3;
+			break;
+		case EVENT_SPEED_SENSOR_4:
+			osEventFlagsClear(evt_speed_sensor, EVENT_SPEED_SENSOR_4);
+			speedSensorNum = SP_SENS_4;
+			break;
+		default:
+			break;
 		}
 
-		osDelay(1); /* serves as debouncing as well */
+		wheelProps[speedSensorNum].lastWheelTick = HAL_GetTick();
+		wheelProps[speedSensorNum].wheelTicksCounter++;
+		sprintf(msg, "tick counts: %d",
+				wheelProps[speedSensorNum].wheelTicksCounter); //(wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
+		loggerI(msg);
+
+		osDelay(1);
 	}
 }
 
