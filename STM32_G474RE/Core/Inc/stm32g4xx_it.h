@@ -54,6 +54,7 @@ void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void DMA1_Channel1_IRQHandler(void);
+void EXTI9_5_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 void TIM20_UP_IRQHandler(void);
 void LPUART1_IRQHandler(void);

@@ -21,10 +21,21 @@
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	switch (GPIO_Pin) {
+	/**
+	 * Speed sensors
+	 */
 	case SPDSens1_Pin:
 		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_1);
 		break;
-
+	case SPDSens2_Pin:
+		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_2);
+		break;
+	case SPDSens3_Pin:
+		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_3);
+		break;
+	case SPDSens4_Pin:
+		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_4);
+		break;
 	default:
 		buttonIRQ_cb();
 		break;

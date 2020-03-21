@@ -5,6 +5,12 @@
  *      Author: Jack Lestrohan
  *
  *      CONNECT TO A0 SENSOR SIDE, DO NOT USE D0!!
+ *
+ *      SENSOR 1 (TOP RIGHT looking up) to PC10
+ *      SENSOR 2 (BTM RIGHT looking up) to PC12
+ *      SENSOR 3 (BTM LEFT  looking up) to PC8
+ *      SENSOR 4 (TOP LEFT  looking up) to PC9
+ *
  */
 
 #ifndef INC_SENSOR_SPEED_SERVICE_H_

@@ -42,11 +42,12 @@ const osThreadAttr_t SpeedSensorServiceTa_attributes = {
  * wheel structs
  */
 typedef struct {
-	uint32_t 	lastWheelTick;
+	uint32_t 	currentWheelTick;
+	uint32_t	previousWheelTick;
 	uint8_t		wheelCurrentRPM;
 	uint16_t	wheelTicksCounter;
 } wheelProps_t;
-wheelProps_t wheelProps[3];
+static wheelProps_t wheelProps[4];
 
 void speedSensorService_task(void *argument);
 
@@ -75,7 +76,7 @@ void speedSensorService_task(void *argument)
 {
 	evt_speed_sensor = osEventFlagsNew(NULL);
 	uint32_t flagStatus;
-	char msg[20];
+	char msg[40];
 
 	for(;;)
 	{
@@ -109,9 +110,11 @@ void speedSensorService_task(void *argument)
 			break;
 		}
 
-		wheelProps[speedSensorNum].lastWheelTick = HAL_GetTick();
+		/* saves the current SysTick to fdurther measure */
+		wheelProps[speedSensorNum].currentWheelTick = HAL_GetTick();
 		wheelProps[speedSensorNum].wheelTicksCounter++;
-		sprintf(msg, "tick counts: %d",
+		sprintf(msg, "Sensor number: %d - tick counts: %d",
+				speedSensorNum,
 				wheelProps[speedSensorNum].wheelTicksCounter); //(wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
 		loggerI(msg);
 
