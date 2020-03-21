@@ -64,6 +64,11 @@ void Error_Handler(void);
 #define B1_EXTI_IRQn EXTI15_10_IRQn
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define HR04_1_TRIG_Pin GPIO_PIN_5
+#define HR04_1_TRIG_GPIO_Port GPIOC
+#define HR04_1_ECHO_Pin GPIO_PIN_6
+#define HR04_1_ECHO_GPIO_Port GPIOC
+#define HR04_1_ECHO_EXTI_IRQn EXTI9_5_IRQn
 #define SPDSens1_Pin GPIO_PIN_9
 #define SPDSens1_GPIO_Port GPIOC
 #define SPDSens1_EXTI_IRQn EXTI9_5_IRQn

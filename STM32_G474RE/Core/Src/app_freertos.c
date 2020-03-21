@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */     
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
+#include "sensor_hr04_service.h"
 #include "IRQ_Handler.h"
 /* USER CODE END Includes */
 
@@ -55,7 +56,7 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128
+  .stack_size = 256
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,6 +77,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
+	sensor_HR04_initialize();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */

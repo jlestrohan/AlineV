@@ -19,15 +19,17 @@ typedef enum {
 	SP_SENS_2,
 	SP_SENS_3,
 	SP_SENS_4,
+	SP_SENS_RESERVED = 0x7FFFFFFF
 } speedSensorNum_t;
 speedSensorNum_t speedSensorNum;
 
 typedef enum {
 	sensorSpeedServiceNotInit,
 	sensorSpeedServiceInitOK,
-	sensorSpeedServiceInitError
+	sensorSpeedServiceInitError,
+	sensorSpeedSeviceReserved = 0x7FFFFFFF
 } sensorSpeedServiceStatus;
-sensorSpeedServiceStatus sensorSpeedStatus = sensorSpeedServiceInitError;
+sensorSpeedServiceStatus sensorSpeedStatus = sensorSpeedServiceNotInit;
 
 /**
  * Definitions for SpeedSensorServiceTask, dynamic allocation
@@ -54,9 +56,9 @@ void speedSensorService_task(void *argument);
 /**
  * Initialize all speed sensors for the rover
  */
-bool sensor_speed_initialize()
+uint8_t sensor_speed_initialize()
 {
-	/* creation of LoggerServiceTask */
+	/* creation of SpeedSensorServiceTask */
 	SpeedSensorServiceTaHandle = osThreadNew(speedSensorService_task, NULL, &SpeedSensorServiceTa_attributes);
 	if (!SpeedSensorServiceTaHandle) {
 		sensorSpeedStatus = sensorSpeedServiceInitError;
