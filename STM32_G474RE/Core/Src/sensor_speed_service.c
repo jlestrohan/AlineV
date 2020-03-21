@@ -12,6 +12,7 @@
 #include "sensor_speed_service.h"
 #include "freertos_logger_service.h"
 #include <string.h>
+#include <stdio.h>
 
 #define SPEED_SENSOR_DEBOUNCE_MS		80
 
@@ -39,9 +40,14 @@ const osThreadAttr_t SpeedSensorServiceTa_attributes = {
 };
 
 /**
- * Debouncing each wheel
+ * wheel structs
  */
-uint32_t 	lastWheelTick[4] = {0};
+typedef struct {
+	uint32_t 	lastWheelTick;
+	uint8_t		wheelCurrentRPM;
+	uint16_t	wheelTicksCounter;
+} wheelProps_t;
+wheelProps_t wheelProps[3];
 
 void speedSensorService_task(void *argument);
 
@@ -60,10 +66,14 @@ bool sensor_speed_initialize()
 {
 	/* creation of LoggerServiceTask */
 	SpeedSensorServiceTaHandle = osThreadNew(speedSensorService_task, NULL, &SpeedSensorServiceTa_attributes);
-	sensorSpeedStatus = (SpeedSensorServiceTaHandle) ? sensorSpeedServiceInitOK : sensorSpeedServiceInitError;
-	loggerI(sensorSpeedStatus == sensorSpeedServiceInitOK ? "Speed Sensor Initialization complete" : "Speed Sensor Initialization Failed");
+	if (!SpeedSensorServiceTaHandle) {
+		sensorSpeedStatus = sensorSpeedServiceInitError;
+		loggerE("Speed Sensor Service - Initialization Failure");
+		return (EXIT_FAILURE);
+	}
 
-	return (true);
+	loggerI("Speed Sensor Service - Initialization complete");
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -80,10 +90,16 @@ void speedSensorService_task(void *argument)
 		UNUSED(argument);
 
 		//todo: have to set this for all 3 other sensors
+		//todo replace the fucking HAL_GetTick by a real freeros timer function
 		osEventFlagsWait(evt_speed_sensor, EVENT_SPEED_SENSOR_1, osFlagsWaitAny , osWaitForever);
-		if (speedSensorDebounce(lastWheelTick[0]) || lastWheelTick[0] == 0) {
-			lastWheelTick[0] = HAL_GetTick();
-			loggerI("received speed sensor event");
+
+		if (speedSensorDebounce(wheelProps[0].lastWheelTick) || wheelProps[0].lastWheelTick == 0) {
+
+			wheelProps[0].lastWheelTick = HAL_GetTick();
+			wheelProps[0].wheelTicksCounter++;
+			char msg[20];
+			snprintf(msg, sizeof(msg), "rpm: %d", (wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
+			loggerI(msg);
 		}
 
 		osDelay(1); /* serves as debouncing as well */
