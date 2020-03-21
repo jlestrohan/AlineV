@@ -3,6 +3,8 @@
  *
  *  Created on: Mar 20, 2020
  *      Author: Jack Lestrohan
+ *
+ *      CONNECT TO A0 SENSOR SIDE, DO NOT USE D0!!
  */
 
 #ifndef INC_SENSOR_SPEED_SERVICE_H_
