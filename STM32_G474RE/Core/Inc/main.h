@@ -64,13 +64,22 @@ void Error_Handler(void);
 #define B1_EXTI_IRQn EXTI15_10_IRQn
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define SPDSens1_Pin GPIO_PIN_9
+#define SPDSens1_GPIO_Port GPIOC
+#define SPDSens1_EXTI_IRQn EXTI9_5_IRQn
 #define T_SWDIO_Pin GPIO_PIN_13
 #define T_SWDIO_GPIO_Port GPIOA
 #define T_SWCLK_Pin GPIO_PIN_14
 #define T_SWCLK_GPIO_Port GPIOA
-#define SPDSens1_Pin GPIO_PIN_10
-#define SPDSens1_GPIO_Port GPIOC
-#define SPDSens1_EXTI_IRQn EXTI15_10_IRQn
+#define SPDSens2_Pin GPIO_PIN_10
+#define SPDSens2_GPIO_Port GPIOC
+#define SPDSens2_EXTI_IRQn EXTI15_10_IRQn
+#define SPDSens3_Pin GPIO_PIN_11
+#define SPDSens3_GPIO_Port GPIOC
+#define SPDSens3_EXTI_IRQn EXTI15_10_IRQn
+#define SPDSens4_Pin GPIO_PIN_12
+#define SPDSens4_GPIO_Port GPIOC
+#define SPDSens4_EXTI_IRQn EXTI15_10_IRQn
 #define T_SWO_Pin GPIO_PIN_3
 #define T_SWO_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */

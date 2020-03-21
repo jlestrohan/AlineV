@@ -3,15 +3,23 @@
  *
  *  Created on: Mar 20, 2020
  *      Author: Jack Lestrohan
+ *
+ *      CONNECT TO A0 SENSOR SIDE, DO NOT USE D0!!
+ *
+ *      SENSOR 1 (TOP RIGHT looking up) to PC9
+ *      SENSOR 2 (BTM RIGHT looking up) to PC10
+ *      SENSOR 3 (BTM LEFT  looking up) to PC11
+ *      SENSOR 4 (TOP LEFT  looking up) to PC12
+ *
  */
 
 #ifndef INC_SENSOR_SPEED_SERVICE_H_
 #define INC_SENSOR_SPEED_SERVICE_H_
 
-#define EVENT_SPEED_SENSOR_1	0x01U	/* top right wheel */
-#define EVENT_SPEED_SENSOR_2	0x02U	/* bottom right wheel */
-#define EVENT_SPEED_SENSOR_3	0x04U	/* bottom left wheel */
-#define EVENT_SPEED_SENSOR_4	0x08U	/* top left wheel */
+#define EVENT_SPEED_SENSOR_1	0x0AU	/* top right wheel */
+#define EVENT_SPEED_SENSOR_2	0x0BU	/* bottom right wheel */
+#define EVENT_SPEED_SENSOR_3	0x0CU	/* bottom left wheel */
+#define EVENT_SPEED_SENSOR_4	0x0DU	/* top left wheel */
 
 #include "cmsis_os2.h"
 #include <stdbool.h>
