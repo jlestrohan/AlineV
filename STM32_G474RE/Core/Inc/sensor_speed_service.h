@@ -8,10 +8,10 @@
 #ifndef INC_SENSOR_SPEED_SERVICE_H_
 #define INC_SENSOR_SPEED_SERVICE_H_
 
-#define EVENT_SPEED_SENSOR_1	0x01U	/* top right wheel */
-#define EVENT_SPEED_SENSOR_2	0x02U	/* bottom right wheel */
-#define EVENT_SPEED_SENSOR_3	0x04U	/* bottom left wheel */
-#define EVENT_SPEED_SENSOR_4	0x08U	/* top left wheel */
+#define EVENT_SPEED_SENSOR_1	0x0AU	/* top right wheel */
+#define EVENT_SPEED_SENSOR_2	0x0BU	/* bottom right wheel */
+#define EVENT_SPEED_SENSOR_3	0x0CU	/* bottom left wheel */
+#define EVENT_SPEED_SENSOR_4	0x0DU	/* top left wheel */
 
 #include "cmsis_os2.h"
 #include <stdbool.h>

@@ -6,9 +6,12 @@
  */
 
 #include "main.h"
+#include "usart.h"
+#include "freertos_logger_service.h"
 #include "button_handler.h"
 #include "cmsis_os2.h"
 #include <string.h>
+#include <stdio.h>
 #include "sensor_speed_service.h"
 
 /**

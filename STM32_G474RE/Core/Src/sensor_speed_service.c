@@ -93,12 +93,14 @@ void speedSensorService_task(void *argument)
 		//todo replace the fucking HAL_GetTick by a real freeros timer function
 		osEventFlagsWait(evt_speed_sensor, EVENT_SPEED_SENSOR_1, osFlagsWaitAny , osWaitForever);
 
-		if (speedSensorDebounce(wheelProps[0].lastWheelTick) || wheelProps[0].lastWheelTick == 0) {
+		if (speedSensorDebounce(wheelProps[0].lastWheelTick) ||
+				wheelProps[0].lastWheelTick == 0) {
 
 			wheelProps[0].lastWheelTick = HAL_GetTick();
 			wheelProps[0].wheelTicksCounter++;
 			char msg[20];
-			snprintf(msg, sizeof(msg), "rpm: %d", (wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
+			snprintf(msg, sizeof(msg), "tick counts: %d",
+					wheelProps[0].wheelTicksCounter); //(wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
 			loggerI(msg);
 		}
 
