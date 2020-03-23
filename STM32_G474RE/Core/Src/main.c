@@ -24,11 +24,12 @@
 #include "dma.h"
 #include "i2c.h"
 #include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "freertos_logger_service.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,6 +96,7 @@ int main(void)
   MX_DMA_Init();
   MX_LPUART1_UART_Init();
   MX_I2C1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -191,6 +193,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM20) {
     HAL_IncTick();
+  }
+  if (htim->Instance == TIM1) {
+	  loggerI("timer elapsed");
   }
   /* USER CODE BEGIN Callback 1 */
 

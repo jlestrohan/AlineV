@@ -25,7 +25,7 @@ UART_HandleTypeDef *_huartHandler;
 typedef StaticQueue_t osStaticMessageQDef_t;
 typedef StaticTask_t osStaticThreadDef_t;
 
-typedef struct {                                // object data type
+typedef struct {                                /*  object data type */
 	char 		msgBuf[MESSAGE_BUFFER];
 	uint16_t	msgIncId;
 	uint8_t		priority;
@@ -72,6 +72,8 @@ void StartLoggerServiceTask(void *argument);
  */
 void log_initialize(UART_HandleTypeDef *huart)
 {
+	assert_param(huart);
+
 	_huartHandler = huart;
 	queue_loggerHandle = osMessageQueueNew (10, sizeof(MSGQUEUE_OBJ_t), NULL);
 	mutex_loggerService_Hnd = osMutexNew(NULL);
@@ -89,10 +91,12 @@ void log_initialize(UART_HandleTypeDef *huart)
  */
 void log_service(char *log_msg, LogPriority priority)
 {
-	//if (logStatus != logServiceinitOK) log_initialize();
+	assert_param(log_msg);
+
+	/* if (logStatus != logServiceinitOK) log_initialize(); */
 
 	incMsgIdCounter++;
-	// fill up the queue with the logger message given as argument
+	/*  fill up the queue with the logger message given as argument */
 
 	memcpy(msg.msgBuf, log_msg, MESSAGE_BUFFER);
 	msg.msgIncId = incMsgIdCounter;
@@ -107,13 +111,15 @@ void log_service(char *log_msg, LogPriority priority)
  */
 char *decodeLogPriority(LogPriority priority)
 {
+	assert_param(priority);
+
 	switch (priority) {
-	case LOG_VERBOSE: return "[VERBOSE]"; break;
-	case LOG_INFO: return "[INFO]"; break;
-	case LOG_WARNING: return "[WARNING]"; break;
-	case LOG_ERROR: return "[ERROR]"; break;
-	case LOG_ALERT: return "[ALERT]"; break;
-	default: return ""; break;
+	case LOG_VERBOSE: return ("[VERBOSE]"); break;
+	case LOG_INFO: return ("[INFO]"); break;
+	case LOG_WARNING: return ("[WARNING]"); break;
+	case LOG_ERROR: return ("[ERROR]"); break;
+	case LOG_ALERT: return ("[ALERT]"); break;
+	default: return (""); break;
 	}
 }
 
@@ -124,7 +130,7 @@ char *decodeLogPriority(LogPriority priority)
 void log_processUart_task()
 {
 
-	osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever);   // wait for message
+	osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever);   /* wait for message */
 	if (status == osOK) {
 		char finalmsg[MESSAGE_BUFFER+50];
 
@@ -134,7 +140,7 @@ void log_processUart_task()
 				decodeLogPriority(msg.priority),
 				msg.msgBuf);
 
-		status = osMutexAcquire(mutex_loggerService_Hnd, 0U); // will wait until mutex is ok
+		status = osMutexAcquire(mutex_loggerService_Hnd, 0U); /* will wait until mutex is ok */
 		HAL_UART_Transmit(_huartHandler, (uint8_t *)finalmsg, strlen(finalmsg), 0xFFFF);
 		osMutexRelease(mutex_loggerService_Hnd);
 	}
