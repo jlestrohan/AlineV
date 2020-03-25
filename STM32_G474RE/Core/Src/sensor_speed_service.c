@@ -26,8 +26,8 @@ typedef enum {
 	sensorSpeedServiceNotInit,
 	sensorSpeedServiceInitOK,
 	sensorSpeedServiceInitError
-} sensorSpeedServiceStatus;
-sensorSpeedServiceStatus sensorSpeedStatus = sensorSpeedServiceInitError;
+} sensorSpeedServiceStatus_t;
+sensorSpeedServiceStatus_t sensorSpeedStatus = sensorSpeedServiceInitError;
 
 /**
  * Definitions for SpeedSensorServiceTask, dynamic allocation
