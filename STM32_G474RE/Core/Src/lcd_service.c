@@ -8,14 +8,13 @@
 #include <stdlib.h>
 #include <FreeRTOS.h>
 #include "lcd_service.h"
-#include "i2c.h"
 #include "freertos_logger_service.h"
 #include <string.h>
 #include <stdio.h>
 
 #define SLAVE_ADDRESS_LCD 0x27 << 1 /* have to shift 7bits arduino address to the left for 8 bits compat */
 
-extern I2C_HandleTypeDef hi2c1;  /** change your handler here accordingly */
+I2C_HandleTypeDef *_hi2cHandler;
 typedef StaticTask_t osStaticThreadDef_t;
 
 typedef enum {
@@ -45,8 +44,9 @@ void lcdService_task(void *argument);
 /**
  * Initialize lcd
  */
-uint8_t lcd_service_init (void)
+uint8_t lcd_service_init (I2C_HandleTypeDef *hi2c)
 {
+	_hi2cHandler = hi2c;
 	/* creation of LoggerServiceTask */
 	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
 	if (!lcdServiceTaHandle) {
@@ -108,7 +108,7 @@ void lcd_send_cmd (char cmd)
 	data_t[1] = data_u|0x08;  /* en=0, rs=0 */
 	data_t[2] = data_l|0x0C;  /* en=1, rs=0 */
 	data_t[3] = data_l|0x08;  /* en=0, rs=0 */
-	HAL_I2C_Master_Transmit (&hi2c1, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
+	HAL_I2C_Master_Transmit (_hi2cHandler, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
 }
 
 /**
@@ -125,7 +125,7 @@ void lcd_send_data (char data)
 	data_t[1] = data_u|0x09;  /* en=0, rs=0 */
 	data_t[2] = data_l|0x0D;  /* en=1, rs=0 */
 	data_t[3] = data_l|0x09;  /* en=0, rs=0 */
-	HAL_I2C_Master_Transmit (&hi2c1, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
+	HAL_I2C_Master_Transmit (_hi2cHandler, SLAVE_ADDRESS_LCD,(uint8_t *) data_t, 4, 100);
 }
 
 /**

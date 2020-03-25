@@ -13,13 +13,14 @@
 #define INC_LCD_SERVICE_H_
 
 #include "cmsis_os2.h"
+#include "i2c.h"
 #include <stdbool.h>
 
 /**
  * Initialize lcd
  * @return
  */
-uint8_t lcd_service_init (void);
+uint8_t lcd_service_init (I2C_HandleTypeDef *hi2c);
 
 /**
  * Send command to the LCD

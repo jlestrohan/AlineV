@@ -30,6 +30,7 @@
 #include "sensor_speed_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
+#include "i2c.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -77,7 +78,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
-	lcd_service_init();
+	lcd_service_init(&hi2c1);
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
