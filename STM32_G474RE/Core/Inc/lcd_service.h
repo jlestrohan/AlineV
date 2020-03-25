@@ -3,6 +3,10 @@
  *
  *  Created on: Mar 25, 2020
  *      Author: Jack Lestrohan
+ *
+ *      PINOUT => 	SCL to PB8
+ *      			SDA TO PB9
+ *      			GND + VCC5 at your discretion
  */
 
 #ifndef INC_LCD_SERVICE_H_

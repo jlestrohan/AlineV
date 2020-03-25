@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define SLAVE_ADDRESS_LCD 0x27
+#define SLAVE_ADDRESS_LCD 0x27 << 1 /* have to shift 7bits arduino address to the left for 8 bits compat */
 
 extern I2C_HandleTypeDef hi2c1;  /** change your handler here accordingly */
 typedef StaticTask_t osStaticThreadDef_t;
@@ -84,10 +84,13 @@ void lcdService_task(void* argument)
 	osDelay(1);
 	lcd_send_cmd (0x0C); /* Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits) */
 
+	lcd_send_cmd(0x80);
+	lcd_send_string("This is a LCD");
+
 	for (;;)
 	{
 
-		osDelay(1);
+		osDelay(100);
 	}
 }
 
