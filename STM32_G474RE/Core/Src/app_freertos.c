@@ -29,6 +29,7 @@
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
 #include "IRQ_Handler.h"
+#include "lcd_service.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -76,6 +77,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
+	lcd_service_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
