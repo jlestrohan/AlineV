@@ -16,6 +16,7 @@
 #define SLAVE_ADDRESS_LCD 0x27
 
 extern I2C_HandleTypeDef hi2c1;  /** change your handler here accordingly */
+typedef StaticTask_t osStaticThreadDef_t;
 
 typedef enum {
 	lcdServiceNotInit,
@@ -25,12 +26,18 @@ typedef enum {
 lcdServiceStatus_t lcdServiceStatus = lcdServiceInitError;
 
 /**
- * Definitions for lcdServiceTask, dynamic allocation
+ * Definitions for lcdServiceTask
  */
 osThreadId_t lcdServiceTaHandle;
+uint32_t lcdServiceTaBuffer[ 256 ];
+osStaticThreadDef_t lcdServiceTaControlBlock;
 const osThreadAttr_t lcdServiceTa_attributes = {
-		.name = "lcdServiceTask",
-		.priority = (osPriority_t) osPriorityLow
+  .name = "lcdServiceTask",
+  .stack_mem = &lcdServiceTaBuffer[0],
+  .stack_size = sizeof(lcdServiceTaBuffer),
+  .cb_mem = &lcdServiceTaControlBlock,
+  .cb_size = sizeof(lcdServiceTaControlBlock),
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 void lcdService_task(void *argument);
