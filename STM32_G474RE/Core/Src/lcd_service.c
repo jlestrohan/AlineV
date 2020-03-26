@@ -32,12 +32,12 @@ osThreadId_t lcdServiceTaHandle;
 uint32_t lcdServiceTaBuffer[ 256 ];
 osStaticThreadDef_t lcdServiceTaControlBlock;
 const osThreadAttr_t lcdServiceTa_attributes = {
-  .name = "lcdServiceTask",
-  .stack_mem = &lcdServiceTaBuffer[0],
-  .stack_size = sizeof(lcdServiceTaBuffer),
-  .cb_mem = &lcdServiceTaControlBlock,
-  .cb_size = sizeof(lcdServiceTaControlBlock),
-  .priority = (osPriority_t) osPriorityLow,
+		.name = "lcdServiceTask",
+		.stack_mem = &lcdServiceTaBuffer[0],
+		.stack_size = sizeof(lcdServiceTaBuffer),
+		.cb_mem = &lcdServiceTaControlBlock,
+		.cb_size = sizeof(lcdServiceTaControlBlock),
+		.priority = (osPriority_t) osPriorityLow,
 };
 
 void lcdService_task(void *argument);
@@ -59,7 +59,7 @@ uint8_t lcd_service_init (void)
 	return (EXIT_SUCCESS);
 }
 
-void lcdService_task(void* argument)
+void lcd_prepare()
 {
 	/* LCD INITIALIZATION */
 	/* 4 bit initialisation */
@@ -83,6 +83,15 @@ void lcdService_task(void* argument)
 	lcd_send_cmd (0x06); /* Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift) */
 	osDelay(1);
 	lcd_send_cmd (0x0C); /* Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits) */
+}
+
+/**
+ * LCD main task
+ * @param argument
+ */
+void lcdService_task(void* argument)
+{
+	lcd_prepare();
 
 	lcd_send_cmd(0x80);
 	lcd_send_string("This is a LCD");
