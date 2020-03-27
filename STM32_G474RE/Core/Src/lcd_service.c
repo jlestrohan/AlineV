@@ -42,66 +42,67 @@ const osThreadAttr_t lcdServiceTa_attributes = {
 
 void lcdService_task(void *argument);
 
+void lcd_prepare()
+{
+	/* LCD INITIALIZATION */
+	/* 4 bit initialisation */
+	HAL_Delay(50);;  /* wait for >40ms */
+	lcd_send_cmd (0x30);
+	HAL_Delay(5);;  /* wait for >4.1ms */
+	lcd_send_cmd (0x30);
+	HAL_Delay(1);  /* wait for >100us */
+	lcd_send_cmd (0x30);
+	HAL_Delay(10);
+	lcd_send_cmd (0x20);  /* 4bit mode */
+	HAL_Delay(10);
+
+	/* dislay initialization */
+	lcd_send_cmd (0x28); /* Function set --> DL=0 (4 bit mode), N = 1 (2 line display) F = 0 (5x8 characters) */
+	HAL_Delay(1);
+	lcd_send_cmd (0x08); /* Display on/off control --> D=0,C=0, B=0  ---> display off */
+	HAL_Delay(1);
+	lcd_send_cmd (0x01);  /* clear display */
+	HAL_Delay(2);
+	lcd_send_cmd (0x06); /* Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift) */
+	HAL_Delay(1);
+	lcd_send_cmd (0x0C); /* Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits) */
+	HAL_Delay(5);
+	lcd_send_cmd(0x80);
+}
+
 /**
  * Initialize lcd
  */
 uint8_t lcd_service_init (void)
 {
 	/* creation of LoggerServiceTask */
-	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
-	if (!lcdServiceTaHandle) {
-		lcdServiceStatus = lcdServiceInitError;
-		loggerE("LCD Service - Initialization Failure");
-		return (EXIT_FAILURE);
-	}
+	//lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
+	//if (!lcdServiceTaHandle) {
+	//	lcdServiceStatus = lcdServiceInitError;
+	//	loggerE("LCD Service - Initialization Failure");
+	//	return (EXIT_FAILURE);
+	//}
+
+	lcd_prepare();
 
 	loggerI("LCD Service - Initialization complete");
 	return (EXIT_SUCCESS);
 }
 
-void lcd_prepare()
-{
-	/* LCD INITIALIZATION */
-	/* 4 bit initialisation */
-	osDelay(50);;  /* wait for >40ms */
-	lcd_send_cmd (0x30);
-	osDelay(5);;  /* wait for >4.1ms */
-	lcd_send_cmd (0x30);
-	osDelay(1);  /* wait for >100us */
-	lcd_send_cmd (0x30);
-	osDelay(10);
-	lcd_send_cmd (0x20);  /* 4bit mode */
-	osDelay(10);
-
-	/* dislay initialization */
-	lcd_send_cmd (0x28); /* Function set --> DL=0 (4 bit mode), N = 1 (2 line display) F = 0 (5x8 characters) */
-	osDelay(1);
-	lcd_send_cmd (0x08); /* Display on/off control --> D=0,C=0, B=0  ---> display off */
-	osDelay(1);
-	lcd_send_cmd (0x01);  /* clear display */
-	osDelay(2);
-	lcd_send_cmd (0x06); /* Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift) */
-	osDelay(1);
-	lcd_send_cmd (0x0C); /* Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits) */
-}
 
 /**
  * LCD main task
  * @param argument
  */
-void lcdService_task(void* argument)
+/*void lcdService_task(void* argument)
 {
-	lcd_prepare();
-
-	lcd_send_cmd(0x80);
-	lcd_send_string("This is a LCD");
 
 	for (;;)
 	{
 
 		osDelay(100);
 	}
-}
+}*/
 
 /**
  * Send command to the LCD
