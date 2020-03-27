@@ -16,7 +16,6 @@
 #define INC_MPU6050_SERVICE_H_
 
 #include "stdint.h"
-#include "i2c.h"
 
 /* Default I2C clock */
 #ifndef MPU6050_I2C_CLOCK
