@@ -29,6 +29,7 @@
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
 #include "mpu6050_service.h"
+#include "sdcard_service.h"
 #include "IRQ_Handler.h"
 #include "i2c.h"
 /* USER CODE END Includes */
