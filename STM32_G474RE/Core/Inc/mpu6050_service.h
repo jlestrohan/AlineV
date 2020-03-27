@@ -7,8 +7,9 @@
  * @attention
  *				Connect MPU6050 as follow (for this present project)
  *
- *					PC4_SCL -> MPU6050_SCL
- *					PA8_SDA -> MPU6050_SDA
+ *					PC4_SCL -> 	MPU6050_SCL
+ *					PA8_SDA -> 	MPU6050_SDA
+ *					GND		->	MPU6050_AD0
  *
  ******************************************************************************
  */
