@@ -78,6 +78,7 @@ void MX_FREERTOS_Init(void) {
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
 	lcd_service_init();
+	lcd_send_string("This is a LCD");
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
