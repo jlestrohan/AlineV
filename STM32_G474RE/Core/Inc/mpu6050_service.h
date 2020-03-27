@@ -124,6 +124,12 @@ typedef union
  */
 
 /**
+ * Initialize the whole service, tasks and stuff
+ * @return
+ */
+MPU6050_Result MPU6050_Service_Initialize();
+
+/**
  * @brief  Initializes MPU6050 and I2C peripheral
  * @param  *DataStruct: Pointer to empty @ref MPU6050_t structure
  * @param  DeviceNumber: MPU6050 has one pin, AD0 which can be used to set address of device.

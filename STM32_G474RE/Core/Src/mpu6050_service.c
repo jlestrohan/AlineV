@@ -14,6 +14,8 @@
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
 #include "i2c.h"
+#include <stdio.h>
+#include "freertos_logger_service.h"
 
 /* Default I2C address */
 #define MPU6050_I2C_ADDR			0xD0
@@ -85,12 +87,54 @@ const osThreadAttr_t mpu6050ServiceTa_attributes = { .name =
                 (osPriority_t) osPriorityLow, };
 
 /**
+ * Service Main task
+ * @param argument
+ */
+void StartMPU6050ServiceTask(void *argument)
+{
+	MPU6050 mpu1;
+	MPU6050_Result result;
+	char res[100];
+
+	for (;;) {
+
+		result = MPU6050_Init(&mpu1, MPU6050_Device_0, MPU6050_Accelerometer_2G,
+		        MPU6050_Gyroscope_250s);
+
+		if (result != MPU6050_Result_Ok) {
+			loggerI("result NOK");
+		} else {
+			osDelay(20);
+			MPU6050_ReadTemperature(&mpu1);
+			float temper = mpu1.Temperature;
+			MPU6050_ReadGyroscope(&mpu1);
+			int16_t g_x = mpu1.Gyroscope_X;
+			int16_t g_y = mpu1.Gyroscope_Y;
+			int16_t g_z = mpu1.Gyroscope_Z;
+
+			MPU6050_ReadAccelerometer(&mpu1);
+			int16_t a_x = mpu1.Accelerometer_X;
+			int16_t a_y = mpu1.Accelerometer_Y;
+			int16_t a_z = mpu1.Accelerometer_Z;
+
+			sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
+			loggerI(res);
+		}
+		osDelay(20);
+	}
+}
+
+/**
  * Initialize the whole service, tasks and stuff
  * @return
  */
 MPU6050_Result MPU6050_Service_Initialize()
 {
 	/* creation of LoggerServiceTask */
+	mpu6050ServiceTaHandle = osThreadNew(StartMPU6050ServiceTask, NULL,
+	        &mpu6050ServiceTa_attributes);
+	if (!mpu6050ServiceTaHandle)
+		return (MPU6050_Result_ErrorHandlerNotInitialized);
 
 	return (MPU6050_Result_Ok);
 }
