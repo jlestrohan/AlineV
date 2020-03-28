@@ -18,4 +18,6 @@
 #ifndef INC_SDCARD_SERVICE_H_
 #define INC_SDCARD_SERVICE_H_
 
+void sdcardService_initialize();
+
 #endif /* INC_SDCARD_SERVICE_H_ */
