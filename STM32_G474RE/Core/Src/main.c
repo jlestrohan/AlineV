@@ -21,7 +21,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "dma.h"
 #include "app_fatfs.h"
 #include "i2c.h"
 #include "usart.h"

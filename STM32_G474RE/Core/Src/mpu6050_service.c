@@ -127,19 +127,19 @@ static void StartMPU6050ServiceTask(void *argument)
 			MPU6050_ReadTemperature(&mpu1);
 			float temper = mpu1.Temperature;
 			MPU6050_ReadGyroscope(&mpu1);
-			//int16_t g_x = mpu1.Gyroscope_X;
-			//int16_t g_y = mpu1.Gyroscope_Y;
-			//int16_t g_z = mpu1.Gyroscope_Z;
+			int16_t g_x = mpu1.Gyroscope_X;
+			int16_t g_y = mpu1.Gyroscope_Y;
+			int16_t g_z = mpu1.Gyroscope_Z;
 
 			MPU6050_ReadAccelerometer(&mpu1);
-			//int16_t a_x = mpu1.Accelerometer_X;
-			//int16_t a_y = mpu1.Accelerometer_Y;
-			//int16_t a_z = mpu1.Accelerometer_Z;
+			int16_t a_x = mpu1.Accelerometer_X;
+			int16_t a_y = mpu1.Accelerometer_Y;
+			int16_t a_z = mpu1.Accelerometer_Z;
 
 			//sprintf(res, "gyroX: %d; gyroY: %d, gyroZ: %d", g_x, g_y, g_z);
-			//sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
+			sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
 			//sprintf(res, "temperature: %g", mpu1.Temperature);
-			//loggerI(res);
+			loggerI(res);
 		}
 		osDelay(20);
 	}
