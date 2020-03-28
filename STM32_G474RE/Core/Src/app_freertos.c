@@ -32,6 +32,7 @@
 #include "mpu6050_service.h"
 #include "buzzer_service.h"
 #include "sdcard_service.h"
+#include "sensor_hr04_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
 /* USER CODE END Includes */
@@ -86,6 +87,7 @@ void MX_FREERTOS_Init(void) {
 	lcdService_initialize(&hi2c1);
 	lcd_send_string("This is a LCD");
 	//sdcardService_initialize();
+	sensor_HR04_initialize();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */

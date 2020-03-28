@@ -70,6 +70,8 @@ void StartLoggerServiceTask(void *argument);
  */
 void log_initialize(UART_HandleTypeDef *huart)
 {
+	assert_param(huart);
+
 	_huartHandler = huart;
 	queue_loggerHandle = osMessageQueueNew(10, sizeof(MSGQUEUE_OBJ_t), NULL);
 	mutex_loggerService_Hnd = osMutexNew(NULL);
@@ -88,10 +90,12 @@ void log_initialize(UART_HandleTypeDef *huart)
  */
 void log_service(char *log_msg, LogPriority priority)
 {
-	//if (logStatus != logServiceinitOK) log_initialize();
+	assert_param(log_msg);
+
+	/* if (logStatus != logServiceinitOK) log_initialize(); */
 
 	incMsgIdCounter++;
-	// fill up the queue with the logger message given as argument
+	/*  fill up the queue with the logger message given as argument */
 
 	memcpy(msg.msgBuf, log_msg, MESSAGE_BUFFER);
 	msg.msgIncId = incMsgIdCounter;

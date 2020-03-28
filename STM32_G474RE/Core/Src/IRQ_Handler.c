@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "sensor_speed_service.h"
+#include "sensor_hr04_service.h"
 
 /**
  *
@@ -37,6 +38,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_4);
 		break;
 
+	/**
+	 * HR04 Sensors
+	 */
+	case HR04_1_ECHO_Pin:
+		osEventFlagsSet(evt_hr04_echo_sensor, EVENT_HR04_ECHO_SENSOR_1);
+		break;
+
 	case LD2_Pin:
 		buttonIRQ_cb();
 		break;
@@ -45,7 +53,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 
 }
-
 
 /**
  *
