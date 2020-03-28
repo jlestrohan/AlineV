@@ -75,15 +75,15 @@ typedef StaticTask_t osStaticThreadDef_t;
 /**
  * set both below accordingly
  */
-I2C_HandleTypeDef *_i2cxHandler;
+static I2C_HandleTypeDef *_i2cxHandler;
 
 /**
  * Definitions for mpu6050ServiceTask
  */
-osThreadId_t mpu6050ServiceTaHandle;
-uint32_t mpu6050ServiceTaBuffer[256];
-osStaticThreadDef_t mpu6050ServiceTaControlBlock;
-const osThreadAttr_t mpu6050ServiceTa_attributes = { .name =
+static osThreadId_t mpu6050ServiceTaHandle;
+static uint32_t mpu6050ServiceTaBuffer[256];
+static osStaticThreadDef_t mpu6050ServiceTaControlBlock;
+static const osThreadAttr_t mpu6050ServiceTa_attributes = { .name =
         "mpu6050ServiceTask", .stack_mem = &mpu6050ServiceTaBuffer[0],
         .stack_size = sizeof(mpu6050ServiceTaBuffer), .cb_mem =
                 &mpu6050ServiceTaControlBlock, .cb_size =
@@ -94,25 +94,23 @@ const osThreadAttr_t mpu6050ServiceTa_attributes = { .name =
  * Let's redefine malloc here to avoid FreeRTOS sprintf stack corruption
  * @param xBytes
  */
-void* malloc(size_t xBytes)
-{
-	return (pvPortMalloc(xBytes));
-}
-
+//static void* malloc(size_t xBytes)
+//{
+//	return (pvPortMalloc(xBytes));
+//}
 /**
  * Let's redefine malloc here to avoid FreeRTOS sprintf stack corruption
  * @param pvBuffer
  */
-void free(void *pvBuffer)
-{
-	vPortFree(pvBuffer);
-}
-
+//static void free(void *pvBuffer)
+//{
+//	vPortFree(pvBuffer);
+//}
 /**
  * Service Main task
  * @param argument
  */
-void StartMPU6050ServiceTask(void *argument)
+static void StartMPU6050ServiceTask(void *argument)
 {
 	MPU6050_Result result;
 	char res[100];
@@ -127,11 +125,11 @@ void StartMPU6050ServiceTask(void *argument)
 		} else {
 			osDelay(20);
 			MPU6050_ReadTemperature(&mpu1);
-			float temper = mpu1.Temperature;
+			//float temper = mpu1.Temperature;
 			MPU6050_ReadGyroscope(&mpu1);
-			int16_t g_x = mpu1.Gyroscope_X;
-			int16_t g_y = mpu1.Gyroscope_Y;
-			int16_t g_z = mpu1.Gyroscope_Z;
+			//int16_t g_x = mpu1.Gyroscope_X;
+			//int16_t g_y = mpu1.Gyroscope_Y;
+			//int16_t g_z = mpu1.Gyroscope_Z;
 
 			MPU6050_ReadAccelerometer(&mpu1);
 			int16_t a_x = mpu1.Accelerometer_X;
