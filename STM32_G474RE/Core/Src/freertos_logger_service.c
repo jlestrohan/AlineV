@@ -5,7 +5,6 @@
  *      Author: jack lestrohan
  */
 
-
 #include <freertos_logger_service.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -17,7 +16,7 @@
 
 #define		MESSAGE_BUFFER		200
 
-UART_HandleTypeDef *_huartHandler;
+static UART_HandleTypeDef *_huartHandler;
 
 /**
  * message queue definition
@@ -25,45 +24,39 @@ UART_HandleTypeDef *_huartHandler;
 typedef StaticQueue_t osStaticMessageQDef_t;
 typedef StaticTask_t osStaticThreadDef_t;
 
-typedef struct {                                // object data type
-	char 		msgBuf[MESSAGE_BUFFER];
-	uint16_t	msgIncId;
-	uint8_t		priority;
+typedef struct
+{                                // object data type
+	char msgBuf[MESSAGE_BUFFER];
+	uint16_t msgIncId;
+	uint8_t priority;
 } MSGQUEUE_OBJ_t;
-MSGQUEUE_OBJ_t msg;
+static MSGQUEUE_OBJ_t msg;
 
-uint8_t queue_loggerBuffer[ 10 * sizeof( MSGQUEUE_OBJ_t ) ];
-osStaticMessageQDef_t queue_loggerControlBlock;
-MSGQUEUE_OBJ_t msg;
-
-uint16_t	incMsgIdCounter = 0;
-osMessageQueueId_t queue_loggerHandle;
+static uint16_t incMsgIdCounter = 0;
+static osMessageQueueId_t queue_loggerHandle;
 osMutexId_t mutex_loggerService_Hnd;
 
-uint8_t status;
+static uint8_t status;
 
-typedef enum {
-	logServiceNotInit,
-	logServiceinitOK,
+typedef enum
+{
+	logServiceNotInit, logServiceinitOK,
 } logServiceStatus;
-logServiceStatus logStatus = logServiceNotInit;
+static logServiceStatus logStatus = logServiceNotInit;
 
 /**
  * Definitions for LoggerServiceTask
  */
-osThreadId_t LoggerServiceTaHandle;
-uint32_t LoggerServiceTaBuffer[ 256 ];
-osStaticThreadDef_t LoggerServiceTaControlBlock;
-const osThreadAttr_t LoggerServiceTa_attributes = {
-  .name = "LoggerServiceTask",
-  .stack_mem = &LoggerServiceTaBuffer[0],
-  .stack_size = sizeof(LoggerServiceTaBuffer),
-  .cb_mem = &LoggerServiceTaControlBlock,
-  .cb_size = sizeof(LoggerServiceTaControlBlock),
-  .priority = (osPriority_t) osPriorityLow,
-};
+static osThreadId_t LoggerServiceTaHandle;
+static uint32_t LoggerServiceTaBuffer[256];
+static osStaticThreadDef_t LoggerServiceTaControlBlock;
+static const osThreadAttr_t LoggerServiceTa_attributes = { .name =
+        "LoggerServiceTask", .stack_mem = &LoggerServiceTaBuffer[0],
+        .stack_size = sizeof(LoggerServiceTaBuffer), .cb_mem =
+                &LoggerServiceTaControlBlock, .cb_size =
+                sizeof(LoggerServiceTaControlBlock), .priority =
+                (osPriority_t) osPriorityLow, };
 
-uint8_t _serviceStatus = false;
 void StartLoggerServiceTask(void *argument);
 
 /**
@@ -73,12 +66,13 @@ void StartLoggerServiceTask(void *argument);
 void log_initialize(UART_HandleTypeDef *huart)
 {
 	_huartHandler = huart;
-	queue_loggerHandle = osMessageQueueNew (10, sizeof(MSGQUEUE_OBJ_t), NULL);
+	queue_loggerHandle = osMessageQueueNew(10, sizeof(MSGQUEUE_OBJ_t), NULL);
 	mutex_loggerService_Hnd = osMutexNew(NULL);
 	logStatus = logServiceinitOK;
 
 	/* creation of LoggerServiceTask */
-	LoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL, &LoggerServiceTa_attributes);
+	LoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL,
+	        &LoggerServiceTa_attributes);
 }
 
 /**
@@ -105,15 +99,28 @@ void log_service(char *log_msg, LogPriority priority)
  * @param priority
  * @return
  */
-char *decodeLogPriority(LogPriority priority)
+char* decodeLogPriority(LogPriority priority)
 {
-	switch (priority) {
-	case LOG_VERBOSE: return "[VERBOSE]"; break;
-	case LOG_INFO: return "[INFO]"; break;
-	case LOG_WARNING: return "[WARNING]"; break;
-	case LOG_ERROR: return "[ERROR]"; break;
-	case LOG_ALERT: return "[ALERT]"; break;
-	default: return ""; break;
+	switch (priority)
+	{
+		case LOG_VERBOSE:
+			return "[VERBOSE]";
+			break;
+		case LOG_INFO:
+			return "[INFO]";
+			break;
+		case LOG_WARNING:
+			return "[WARNING]";
+			break;
+		case LOG_ERROR:
+			return "[ERROR]";
+			break;
+		case LOG_ALERT:
+			return "[ALERT]";
+			break;
+		default:
+			return "";
+			break;
 	}
 }
 
@@ -124,18 +131,17 @@ char *decodeLogPriority(LogPriority priority)
 void log_processUart_task()
 {
 
-	osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever);   // wait for message
+	osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever); // wait for message
 	if (status == osOK) {
-		char finalmsg[MESSAGE_BUFFER+50];
+		char finalmsg[MESSAGE_BUFFER + 50];
 
 		sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n",
-				msg.msgIncId,
-				osKernelGetTickCount(),
-				decodeLogPriority(msg.priority),
-				msg.msgBuf);
+		        msg.msgIncId, osKernelGetTickCount(),
+		        decodeLogPriority(msg.priority), msg.msgBuf);
 
 		status = osMutexAcquire(mutex_loggerService_Hnd, 0U); // will wait until mutex is ok
-		HAL_UART_Transmit(_huartHandler, (uint8_t *)finalmsg, strlen(finalmsg), 0xFFFF);
+		HAL_UART_Transmit(_huartHandler, (uint8_t*) finalmsg, strlen(finalmsg),
+		        0xFFFF);
 		osMutexRelease(mutex_loggerService_Hnd);
 	}
 
@@ -151,15 +157,14 @@ void log_processUart_task()
  */
 __weak void StartLoggerServiceTask(void *argument)
 {
-  for(;;)
-  {
-	  /* prevent compilation warning */
-	  UNUSED(argument);
+	for (;;) {
+		/* prevent compilation warning */
+		UNUSED(argument);
 
-	  log_processUart_task();
-	  /* BEGIN Add code here if needed */
+		log_processUart_task();
+		/* BEGIN Add code here if needed */
 
-	  /* END Add code here if needed */
-	  osDelay(1);
-  }
+		/* END Add code here if needed */
+		osDelay(1);
+	}
 }
