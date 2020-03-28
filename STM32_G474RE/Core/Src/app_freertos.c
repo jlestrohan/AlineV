@@ -28,9 +28,10 @@
 /* USER CODE BEGIN Includes */
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
+#include "i2c.h"
 #include "mpu6050_service.h"
 #include "IRQ_Handler.h"
-#include "i2c.h"
+#include "lcd_service.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -77,6 +78,8 @@ void MX_FREERTOS_Init(void)
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
 	MPU6050_Service_Initialize(&hi2c2);
+	lcdService_initialize(&hi2c1);
+	lcd_send_string("This is a LCD");
 	/* USER CODE END Init */
 
 	/* USER CODE BEGIN RTOS_MUTEX */
