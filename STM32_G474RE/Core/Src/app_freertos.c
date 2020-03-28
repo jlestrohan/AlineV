@@ -30,6 +30,7 @@
 #include "sensor_speed_service.h"
 #include "i2c.h"
 #include "mpu6050_service.h"
+#include "buzzer_service.h"
 #include "sdcard_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
@@ -81,6 +82,7 @@ void MX_FREERTOS_Init(void) {
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
 	MPU6050_Service_Initialize(&hi2c2);
+	buzzerService_initialize();
 	lcdService_initialize(&hi2c1);
 	lcd_send_string("This is a LCD");
 	//sdcardService_initialize();
