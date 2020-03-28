@@ -56,27 +56,12 @@
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-/**
- * SPI2 timer functions
- */
-volatile uint8_t FatFsCnt = 0;
-volatile uint8_t Timer1, Timer2;
-
-void SDTimerHandler(void)
-{
-	if (Timer1 > 0) {
-		Timer1--;
-	}
-	if (Timer2 > 0) {
-		Timer2--;
-	}
-}
-
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_lpuart1_rx;
 extern UART_HandleTypeDef hlpuart1;
+extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim20;
 
 /* USER CODE BEGIN EV */
@@ -84,92 +69,88 @@ extern TIM_HandleTypeDef htim20;
 /* USER CODE END EV */
 
 /******************************************************************************/
-/*           Cortex-M4 Processor Interruption and Exception Handlers          */ 
+/*           Cortex-M4 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
-  * @brief This function handles Non maskable interrupt.
-  */
+ * @brief This function handles Non maskable interrupt.
+ */
 void NMI_Handler(void)
 {
-  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+	/* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
-  /* USER CODE END NonMaskableInt_IRQn 0 */
-  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+	/* USER CODE END NonMaskableInt_IRQn 0 */
+	/* USER CODE BEGIN NonMaskableInt_IRQn 1 */
 
-  /* USER CODE END NonMaskableInt_IRQn 1 */
+	/* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
-  * @brief This function handles Hard fault interrupt.
-  */
+ * @brief This function handles Hard fault interrupt.
+ */
 void HardFault_Handler(void)
 {
-  /* USER CODE BEGIN HardFault_IRQn 0 */
+	/* USER CODE BEGIN HardFault_IRQn 0 */
 
-  /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
+	/* USER CODE END HardFault_IRQn 0 */
+	while (1) {
+		/* USER CODE BEGIN W1_HardFault_IRQn 0 */
+		/* USER CODE END W1_HardFault_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Memory management fault.
-  */
+ * @brief This function handles Memory management fault.
+ */
 void MemManage_Handler(void)
 {
-  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+	/* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
-  /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
+	/* USER CODE END MemoryManagement_IRQn 0 */
+	while (1) {
+		/* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+		/* USER CODE END W1_MemoryManagement_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Prefetch fault, memory access fault.
-  */
+ * @brief This function handles Prefetch fault, memory access fault.
+ */
 void BusFault_Handler(void)
 {
-  /* USER CODE BEGIN BusFault_IRQn 0 */
+	/* USER CODE BEGIN BusFault_IRQn 0 */
 
-  /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
+	/* USER CODE END BusFault_IRQn 0 */
+	while (1) {
+		/* USER CODE BEGIN W1_BusFault_IRQn 0 */
+		/* USER CODE END W1_BusFault_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Undefined instruction or illegal state.
-  */
+ * @brief This function handles Undefined instruction or illegal state.
+ */
 void UsageFault_Handler(void)
 {
-  /* USER CODE BEGIN UsageFault_IRQn 0 */
+	/* USER CODE BEGIN UsageFault_IRQn 0 */
 
-  /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
-  }
+	/* USER CODE END UsageFault_IRQn 0 */
+	while (1) {
+		/* USER CODE BEGIN W1_UsageFault_IRQn 0 */
+		/* USER CODE END W1_UsageFault_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Debug monitor.
-  */
+ * @brief This function handles Debug monitor.
+ */
 void DebugMon_Handler(void)
 {
-  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
+	/* USER CODE BEGIN DebugMonitor_IRQn 0 */
 
-  /* USER CODE END DebugMonitor_IRQn 0 */
-  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
+	/* USER CODE END DebugMonitor_IRQn 0 */
+	/* USER CODE BEGIN DebugMonitor_IRQn 1 */
 
-  /* USER CODE END DebugMonitor_IRQn 1 */
+	/* USER CODE END DebugMonitor_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -180,84 +161,90 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles DMA1 channel1 global interrupt.
-  */
+ * @brief This function handles DMA1 channel1 global interrupt.
+ */
 void DMA1_Channel1_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+	/* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
 
-  /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_lpuart1_rx);
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+	/* USER CODE END DMA1_Channel1_IRQn 0 */
+	HAL_DMA_IRQHandler(&hdma_lpuart1_rx);
+	/* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
 
-  /* USER CODE END DMA1_Channel1_IRQn 1 */
+	/* USER CODE END DMA1_Channel1_IRQn 1 */
 }
 
 /**
-  * @brief This function handles EXTI line[9:5] interrupts.
-  */
+ * @brief This function handles EXTI line[9:5] interrupts.
+ */
 void EXTI9_5_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+	/* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
-  /* USER CODE END EXTI9_5_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
-  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+	/* USER CODE END EXTI9_5_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
+	/* USER CODE BEGIN EXTI9_5_IRQn 1 */
 
-  /* USER CODE END EXTI9_5_IRQn 1 */
+	/* USER CODE END EXTI9_5_IRQn 1 */
 }
 
 /**
-  * @brief This function handles EXTI line[15:10] interrupts.
-  */
+ * @brief This function handles TIM3 global interrupt.
+ */
+void TIM3_IRQHandler(void)
+{
+	/* USER CODE BEGIN TIM3_IRQn 0 */
+
+	/* USER CODE END TIM3_IRQn 0 */
+	HAL_TIM_IRQHandler(&htim3);
+	/* USER CODE BEGIN TIM3_IRQn 1 */
+
+	/* USER CODE END TIM3_IRQn 1 */
+}
+
+/**
+ * @brief This function handles EXTI line[15:10] interrupts.
+ */
 void EXTI15_10_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI15_10_IRQn 0 */
+	/* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
-  /* USER CODE END EXTI15_10_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
-  /* USER CODE BEGIN EXTI15_10_IRQn 1 */
+	/* USER CODE END EXTI15_10_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+	/* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
-  /* USER CODE END EXTI15_10_IRQn 1 */
+	/* USER CODE END EXTI15_10_IRQn 1 */
 }
 
 /**
-  * @brief This function handles TIM20 update interrupt.
-  */
+ * @brief This function handles TIM20 update interrupt.
+ */
 void TIM20_UP_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM20_UP_IRQn 0 */
-	/**
-	 * SD Card systick handler routines
-	 */
-	FatFsCnt++;
-	if (FatFsCnt >= 10) {
-		FatFsCnt = 0;
-		SDTimerHandler();
-	}
+	/* USER CODE BEGIN TIM20_UP_IRQn 0 */
 
-  /* USER CODE END TIM20_UP_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim20);
-  /* USER CODE BEGIN TIM20_UP_IRQn 1 */
+	/* USER CODE END TIM20_UP_IRQn 0 */
+	HAL_TIM_IRQHandler(&htim20);
+	/* USER CODE BEGIN TIM20_UP_IRQn 1 */
 
-  /* USER CODE END TIM20_UP_IRQn 1 */
+	/* USER CODE END TIM20_UP_IRQn 1 */
 }
 
 /**
-  * @brief This function handles LPUART1 global interrupt.
-  */
+ * @brief This function handles LPUART1 global interrupt.
+ */
 void LPUART1_IRQHandler(void)
 {
-  /* USER CODE BEGIN LPUART1_IRQn 0 */
+	/* USER CODE BEGIN LPUART1_IRQn 0 */
 
-  /* USER CODE END LPUART1_IRQn 0 */
-  HAL_UART_IRQHandler(&hlpuart1);
-  /* USER CODE BEGIN LPUART1_IRQn 1 */
+	/* USER CODE END LPUART1_IRQn 0 */
+	HAL_UART_IRQHandler(&hlpuart1);
+	/* USER CODE BEGIN LPUART1_IRQn 1 */
 
-  /* USER CODE END LPUART1_IRQn 1 */
+	/* USER CODE END LPUART1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

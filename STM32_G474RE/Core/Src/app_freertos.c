@@ -78,7 +78,7 @@ void MX_FREERTOS_Init(void)
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
 	MPU6050_Service_Initialize(&hi2c2);
-	sdcardService_initialize();
+	//sdcardService_initialize();
 	/* USER CODE END Init */
 
 	/* USER CODE BEGIN RTOS_MUTEX */
