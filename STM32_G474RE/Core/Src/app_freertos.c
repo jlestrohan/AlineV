@@ -30,6 +30,7 @@
 #include "sensor_speed_service.h"
 #include "i2c.h"
 #include "mpu6050_service.h"
+#include "sdcard_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
 /* USER CODE END Includes */
@@ -80,6 +81,7 @@ void MX_FREERTOS_Init(void)
 	MPU6050_Service_Initialize(&hi2c2);
 	lcdService_initialize(&hi2c1);
 	lcd_send_string("This is a LCD");
+	//sdcardService_initialize();
 	/* USER CODE END Init */
 
 	/* USER CODE BEGIN RTOS_MUTEX */
