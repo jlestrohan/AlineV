@@ -14,11 +14,14 @@ Protype built around:
 
 #### Sensors:
 
-*  LM393 x2      Independant wheel speed sensors
-*  SHR-04 x2     Ultrasonic Distance Sensors
-*  IR-08h        Obstacle Avoidance Sensor
-*  Buzzer    
-*  SD Card Reader
+*  LM393 x2     Independant caterpillar speed sensors
+*  SHR-04 x3    Ultrasonic Distance Sensors
+*  IR-08h       Obstacle Avoidance Sensor
+*  Buzzer       Start up music (gadget)
+*  SD Card      local data save
+*  MPU6050      Inertial gyro/accel/temp sensor
+*  GY271        Magnetometer
+
 
 #### Displays:
 *  16x2 LCD I2C Display module
