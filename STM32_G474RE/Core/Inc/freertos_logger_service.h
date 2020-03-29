@@ -1,10 +1,10 @@
-/*
- * logger_service.h
- *
- *  Created on: Feb 28, 2020
- *      Author: jack
+/**
+ ******************************************************************************
+ * @file    logger_service.h
+ * @author  Jack Lestrohan
+ * @brief   Logger service file header
+ ******************************************************************************
  */
-
 #ifndef INC_FREERTOS_LOGGER_SERVICE_H
 #define INC_FREERTOS_LOGGER_SERVICE_H
 
@@ -20,14 +20,14 @@
 #define loggerE(fmt, ...)		log_service(fmt, ##__VA_ARGS__, LOG_ERROR)
 #define loggerA(fmt, ...)  		log_service(fmt, ##__VA_ARGS__, LOG_ALERT)
 
-typedef enum {
-	LOG_VERBOSE,//!< LOG_VERBOSE
+typedef enum
+{
+	LOG_VERBOSE, //!< LOG_VERBOSE
 	LOG_INFO,   //!< LOG_INFO
-	LOG_WARNING,//!< LOG_WARNING
+	LOG_WARNING,   //!< LOG_WARNING
 	LOG_ERROR,  //!< LOG_ERROR
 	LOG_ALERT   //!< LOG_ALERT
 } LogPriority;
-
 
 osMutexId_t mutex_loggerService_Hnd;
 
@@ -43,7 +43,7 @@ void log_service(char *log_msg, LogPriority priority);
  * @param priority
  * @return
  */
-char *decodeLogPriority(LogPriority priority);
+char* decodeLogPriority(LogPriority priority);
 
 /**
  * processes the dequeuing and sends to the UART

@@ -72,6 +72,8 @@ void Error_Handler(void);
 #define mpu6050_SCL_GPIO_Port GPIOC
 #define HR04_1_TRIG_Pin GPIO_PIN_5
 #define HR04_1_TRIG_GPIO_Port GPIOC
+#define DS1302RTC_CLK_Pin GPIO_PIN_10
+#define DS1302RTC_CLK_GPIO_Port GPIOB
 #define SPI2_SD_SCK_Pin GPIO_PIN_13
 #define SPI2_SD_SCK_GPIO_Port GPIOB
 #define SPI2_SD_MISO_Pin GPIO_PIN_14
@@ -100,6 +102,10 @@ void Error_Handler(void);
 #define SPDSens4_EXTI_IRQn EXTI15_10_IRQn
 #define T_SWO_Pin GPIO_PIN_3
 #define T_SWO_GPIO_Port GPIOB
+#define DS1302RTC_SDA_Pin GPIO_PIN_4
+#define DS1302RTC_SDA_GPIO_Port GPIOB
+#define DS1302RTC_RST_Pin GPIO_PIN_5
+#define DS1302RTC_RST_GPIO_Port GPIOB
 #define LCD_I2C1_SDA_Pin GPIO_PIN_7
 #define LCD_I2C1_SDA_GPIO_Port GPIOB
 #define LCD_I2C1_SCL_Pin GPIO_PIN_8

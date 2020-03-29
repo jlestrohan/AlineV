@@ -1,10 +1,10 @@
-/*
- * logger_service.c
- *
- *  Created on: Feb 28, 2020
- *      Author: jack lestrohan
+/**
+ ******************************************************************************
+ * @file    logger_service.c
+ * @author  Jack Lestrohan
+ * @brief   Logger service file
+ ******************************************************************************
  */
-
 #include <freertos_logger_service.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -55,11 +55,11 @@ osThreadId_t LoggerServiceTaHandle;
 uint32_t LoggerServiceTaBuffer[256];
 osStaticThreadDef_t LoggerServiceTaControlBlock;
 const osThreadAttr_t LoggerServiceTa_attributes = { .name = "LoggerServiceTask",
-        .stack_mem = &LoggerServiceTaBuffer[0], .stack_size =
-                sizeof(LoggerServiceTaBuffer), .cb_mem =
-                &LoggerServiceTaControlBlock, .cb_size =
-                sizeof(LoggerServiceTaControlBlock), .priority =
-                (osPriority_t) osPriorityLow, };
+        .stack_mem = &LoggerServiceTaBuffer[0],
+        .stack_size = sizeof(LoggerServiceTaBuffer),
+        .cb_mem = &LoggerServiceTaControlBlock,
+        .cb_size = sizeof(LoggerServiceTaControlBlock),
+        .priority = (osPriority_t) osPriorityLow, };
 
 uint8_t _serviceStatus = false;
 void StartLoggerServiceTask(void *argument);

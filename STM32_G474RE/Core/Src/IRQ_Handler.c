@@ -21,35 +21,36 @@
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	switch (GPIO_Pin) {
-	/**
-	 * Speed sensors
-	 */
-	case SPDSens1_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_1);
-		break;
-	case SPDSens2_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_2);
-		break;
-	case SPDSens3_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_3);
-		break;
-	case SPDSens4_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_4);
-		break;
+	switch (GPIO_Pin)
+	{
+		/**
+		 * Speed sensors
+		 */
+		case SPDSens1_Pin:
+			osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_1);
+			break;
+		case SPDSens2_Pin:
+			osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_2);
+			break;
+		case SPDSens3_Pin:
+			osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_3);
+			break;
+		case SPDSens4_Pin:
+			osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_4);
+			break;
 
-	/**
-	 * HR04 Sensors
-	 */
-	case HR04_1_ECHO_Pin:
-		osEventFlagsSet(evt_hr04_echo_sensor, EVENT_HR04_ECHO_SENSOR_1);
-		break;
+			/**
+			 * HR04 Sensors
+			 */
+		case HR04_1_ECHO_Pin:
+			osEventFlagsSet(evt_hr04_echo_sensor, EVENT_HR04_ECHO_SENSOR_1);
+			break;
 
-	case LD2_Pin:
-		buttonIRQ_cb();
-		break;
-	default:
-		break;
+		case B1_Pin:
+			osEventFlagsSet(evt_usrbtn_id, BTN_PRESSED_FLAG);
+			break;
+		default:
+			break;
 	}
 
 }

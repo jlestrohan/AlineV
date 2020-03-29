@@ -80,6 +80,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+	buttonService_initialize();
 	log_initialize(&hlpuart1);
 	sensor_speed_initialize();
 	MPU6050_Service_Initialize(&hi2c2);
