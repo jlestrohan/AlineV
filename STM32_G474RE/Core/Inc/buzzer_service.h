@@ -16,4 +16,3 @@
 
 #endif /* INC_BUZZER_SERVICE_H_ */
 
-void buzzerService_initialize();
