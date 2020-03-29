@@ -62,8 +62,6 @@ void Error_Handler(void);
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
 #define B1_EXTI_IRQn EXTI15_10_IRQn
-#define BUZ_OUT_Pin GPIO_PIN_0
-#define BUZ_OUT_GPIO_Port GPIOA
 #define SDCS_Pin GPIO_PIN_4
 #define SDCS_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
@@ -100,6 +98,8 @@ void Error_Handler(void);
 #define SPDSens4_Pin GPIO_PIN_12
 #define SPDSens4_GPIO_Port GPIOC
 #define SPDSens4_EXTI_IRQn EXTI15_10_IRQn
+#define BUZZER_Pin GPIO_PIN_2
+#define BUZZER_GPIO_Port GPIOD
 #define T_SWO_Pin GPIO_PIN_3
 #define T_SWO_GPIO_Port GPIOB
 #define DS1302RTC_SDA_Pin GPIO_PIN_4

@@ -84,13 +84,13 @@ static void DS1302_SendCmd(uint8_t cmd)
 {
 	uint8_t i;
 	for (i = 0; i < 8; i++) {
-		//		DS1302_SDA = (bit)(addr & 1);
+		/*		DS1302_SDA = (bit)(addr & 1); */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA,
 		        (cmd & 1) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-		//		DS1302_SCK = 1;
+		/*		DS1302_SCK = 1; */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_SET);
 		delayUS_DWT(1);
-		//		DS1302_SCK = 0;
+		/*		DS1302_SCK = 0; */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_RESET);
 		delayUS_DWT(1);
 		cmd >>= 1;
@@ -106,28 +106,28 @@ static void DS1302_WriteByte(uint8_t addr, uint8_t d)
 {
 	uint8_t i;
 
-	//	DS1302_RST = 1;
+	/*	DS1302_RST = 1; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_SET);
 
-	//addr = addr & 0xFE;
+	/* addr = addr & 0xFE; */
 	DS1302_SendCmd(addr);	// Sends address
 
 	for (i = 0; i < 8; i++) {
-		//		DS1302_SDA = (bit)(d & 1);
+		/*		DS1302_SDA = (bit)(d & 1); */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA,
 		        (d & 1) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-		//		DS1302_SCK = 1;
+		/*		DS1302_SCK = 1; */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_SET);
 		delayUS_DWT(1);
-		//		DS1302_SCK = 0;
+		/*		DS1302_SCK = 0; */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_RESET);
 		delayUS_DWT(1);
 		d >>= 1;
 	}
 
-	//	DS1302_RST = 0;
+	/*	DS1302_RST = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_RESET);
-	//	DS1302_SDA = 0;
+	/*	DS1302_SDA = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA, GPIO_PIN_RESET);
 }
 
@@ -136,34 +136,34 @@ static void DS1302_WriteBurst(uint8_t cmd, uint8_t len, uint8_t *temp)
 {
 	uint8_t i, j;
 
-	DS1302_WriteByte(DS1302_CONTROL, 0x00);			// Disable write protection
+	DS1302_WriteByte(DS1302_CONTROL, 0x00); /* Disable write protection */
 
 	//	DS1302_RST = 1;
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_SET);
 
-	DS1302_SendCmd(cmd);	// Sends burst write command
+	DS1302_SendCmd(cmd); /* Sends burst write command */
 
 	for (j = 0; j < len; j++) {
 		for (i = 0; i < 8; i++) {
-			//			DS1302_SDA = (bit)(d & 1);
+			/*			DS1302_SDA = (bit)(d & 1); */
 			HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA,
 			        (temp[j] & 1) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-			//			DS1302_SCK = 1;
+			/*			DS1302_SCK = 1; */
 			HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_SET);
 			delayUS_DWT(1);
-			//			DS1302_SCK = 0;
+			/*			DS1302_SCK = 0; */
 			HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_RESET);
 			delayUS_DWT(1);
-			temp[j] >>= 1;
+			*(temp + j) >>= 1;
 		}
 	}
 
-	//	DS1302_RST = 0;
+	/*	DS1302_RST = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_RESET);
-	//	DS1302_SDA = 0;
+	/*	DS1302_SDA = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA, GPIO_PIN_RESET);
 
-	DS1302_WriteByte(DS1302_CONTROL, 0x80);			// Enable write protection
+	DS1302_WriteByte(DS1302_CONTROL, 0x80); /* Enable write protection */
 }
 
 /* Reads a byte from addr */
@@ -172,29 +172,29 @@ static uint8_t DS1302_ReadByte(uint8_t addr)
 	uint8_t i;
 	uint8_t temp = 0;
 
-	//	DS1302_RST = 1;
+	/*	DS1302_RST = 1; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_SET);
-	addr = addr | 0x01; // Generate Read Address
+	addr = addr | 0x01; /* Generate Read Address */
 
-	DS1302_SendCmd(addr);	// Sends address
+	DS1302_SendCmd(addr); /* Sends address */
 
 	readSDA();
 	for (i = 0; i < 8; i++) {
 		temp >>= 1;
-		//		if(DS1302_SDA)
+		/*		if(DS1302_SDA) */
 		if (HAL_GPIO_ReadPin(DS1302_GPIO, DS1302_SDA)) temp |= 0x80;
-		//		DS1302_SCK = 1;
+		/*		DS1302_SCK = 1; */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_SET);
 		delayUS_DWT(1);
-		//		DS1302_SCK = 0;
+		/*		DS1302_SCK = 0; */
 		HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_RESET);
 		delayUS_DWT(1);
 	}
 	writeSDA();
 
-	//	DS1302_RST = 0;
+	/*	DS1302_RST = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_RESET);
-	//	DS1302_SDA = 0;
+	/*	DS1302_SDA = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA, GPIO_PIN_RESET);
 	return temp;
 }
@@ -204,7 +204,7 @@ static void DS1302_ReadBurst(uint8_t cmd, uint8_t len, uint8_t *temp)
 {
 	uint8_t i, j;
 
-	//	DS1302_RST = 1;
+	/*	DS1302_RST = 1; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_SET);
 	cmd = cmd | 0x01; /* Generate read command */
 
@@ -212,11 +212,11 @@ static void DS1302_ReadBurst(uint8_t cmd, uint8_t len, uint8_t *temp)
 
 	readSDA();
 	for (j = 0; j < len; j++) {
-		temp[j] = 0;
+		*(temp + j) = 0;
 		for (i = 0; i < 8; i++) {
-			temp[j] >>= 1;
+			*(temp + j) >>= 1;
 			/*			if(DS1302_SDA) */
-			if (HAL_GPIO_ReadPin(DS1302_GPIO, DS1302_SDA)) temp[j] |= 0x80;
+			if (HAL_GPIO_ReadPin(DS1302_GPIO, DS1302_SDA)) *(temp + j) |= 0x80;
 
 			/*			DS1302_SCK = 1; */
 			HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SCLK, GPIO_PIN_SET);
@@ -230,7 +230,7 @@ static void DS1302_ReadBurst(uint8_t cmd, uint8_t len, uint8_t *temp)
 	}
 	writeSDA();
 
-	//	DS1302_RST = 0;
+	/*	DS1302_RST = 0; */
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_RST, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(DS1302_GPIO, DS1302_SDA, GPIO_PIN_RESET);
 }
@@ -238,17 +238,17 @@ static void DS1302_ReadBurst(uint8_t cmd, uint8_t len, uint8_t *temp)
 /* Writes time byte by byte from 'buf' */
 void DS1302_WriteTime(uint8_t *buf)
 {
-	DS1302_WriteByte(DS1302_CONTROL, 0x00);			// Disable write protection
+	DS1302_WriteByte(DS1302_CONTROL, 0x00); /* Disable write protection */
 	delayUS_DWT(1);
 	DS1302_WriteByte(DS1302_SEC, 0x80);
-	DS1302_WriteByte(DS1302_YEAR, HEX2BCD(buf[1]));
-	DS1302_WriteByte(DS1302_MONTH, HEX2BCD(buf[2]));
-	DS1302_WriteByte(DS1302_DATE, HEX2BCD(buf[3]));
-	DS1302_WriteByte(DS1302_HOUR, HEX2BCD(buf[4]));
-	DS1302_WriteByte(DS1302_MIN, HEX2BCD(buf[5]));
-	DS1302_WriteByte(DS1302_SEC, HEX2BCD(buf[6]));
-	DS1302_WriteByte(DS1302_DAY, HEX2BCD(buf[7]));
-	DS1302_WriteByte(DS1302_CONTROL, 0x80);			// Enable write protection
+	DS1302_WriteByte(DS1302_YEAR, HEX2BCD(*(buf + 1)));
+	DS1302_WriteByte(DS1302_MONTH, HEX2BCD(*(buf + 2)));
+	DS1302_WriteByte(DS1302_DATE, HEX2BCD(*(buf + 3)));
+	DS1302_WriteByte(DS1302_HOUR, HEX2BCD(*(buf + 4)));
+	DS1302_WriteByte(DS1302_MIN, HEX2BCD(*(buf + 5)));
+	DS1302_WriteByte(DS1302_SEC, HEX2BCD(*(buf + 6)));
+	DS1302_WriteByte(DS1302_DAY, HEX2BCD(*(buf + 7)));
+	DS1302_WriteByte(DS1302_CONTROL, 0x80); /* Enable write protection */
 	delayUS_DWT(1);
 }
 
@@ -258,19 +258,19 @@ void DS1302_ReadTime(uint8_t *buf)
 	uint8_t tmp;
 
 	tmp = DS1302_ReadByte(DS1302_YEAR);
-	buf[1] = BCD2HEX(tmp);
+	*(buf + 1) = BCD2HEX(tmp);
 	tmp = DS1302_ReadByte(DS1302_MONTH);
-	buf[2] = BCD2HEX(tmp);
+	*(buf + 2) = BCD2HEX(tmp);
 	tmp = DS1302_ReadByte(DS1302_DATE);
-	buf[3] = BCD2HEX(tmp);
+	*(buf + 3) = BCD2HEX(tmp);
 	tmp = DS1302_ReadByte(DS1302_HOUR);
-	buf[4] = BCD2HEX(tmp);
+	*(buf + 4) = BCD2HEX(tmp);
 	tmp = DS1302_ReadByte(DS1302_MIN);
-	buf[5] = BCD2HEX(tmp);
+	*(buf + 5) = BCD2HEX(tmp);
 	tmp = DS1302_ReadByte((DS1302_SEC)) & 0x7F;
-	buf[6] = BCD2HEX(tmp);
+	*(buf + 6) = BCD2HEX(tmp);
 	tmp = DS1302_ReadByte(DS1302_DAY);
-	buf[7] = BCD2HEX(tmp);
+	*(buf + 7) = BCD2HEX(tmp);
 }
 
 /* Initialization */
@@ -344,18 +344,18 @@ void DS1302_ClearRam(void)
  */
 void DS1302_ReadTimeBurst(uint8_t *buf)
 {
-	uint8_t temp[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	uint8_t temp[8] = { 0 };
 
 	DS1302_ReadBurst(DS1302_CLKBURST, 8, temp);
 
-	buf[1] = BCD2HEX(temp[6]);	// Year
-	buf[2] = BCD2HEX(temp[4]);	// Month
-	buf[3] = BCD2HEX(temp[3]);	// Date
-	buf[4] = BCD2HEX(temp[2]);	// Hour
-	buf[5] = BCD2HEX(temp[1]);	// Min
-	buf[6] = BCD2HEX(temp[0]);	// Sec
-	buf[7] = BCD2HEX(temp[5]);	// Day
-	buf[0] = temp[7]; 					// Control
+	*(buf + 1) = BCD2HEX(*(temp + 6)); /* Year */
+	*(buf + 2) = BCD2HEX(*(temp + 4)); /* Month */
+	*(buf + 3) = BCD2HEX(*(temp + 3)); /* Date */
+	*(buf + 4) = BCD2HEX(*(temp + 2)); /* Hour */
+	*(buf + 5) = BCD2HEX(*(temp + 1)); /* Min */
+	*(buf + 6) = BCD2HEX(*temp); /* Sec */
+	*(buf + 7) = BCD2HEX(*(temp + 5)); /* Day */
+	*buf = *(temp + 7); /* Control */
 }
 
 /**
@@ -366,14 +366,14 @@ void DS1302_WriteTimeBurst(uint8_t *buf)
 {
 	uint8_t temp[8];
 
-	temp[0] = HEX2BCD(buf[6]);	// Sec
-	temp[1] = HEX2BCD(buf[5]);	// Min
-	temp[2] = HEX2BCD(buf[4]);	// Hour
-	temp[3] = HEX2BCD(buf[3]);	// Date
-	temp[4] = HEX2BCD(buf[2]);	// Month
-	temp[5] = HEX2BCD(buf[7]);	// Day
-	temp[6] = HEX2BCD(buf[1]);	// Year
-	temp[7] = buf[0];						// Control
+	*temp = HEX2BCD(*(buf + 6)); /* Sec */
+	*(temp + 1) = HEX2BCD(*(buf + 5)); /* Min */
+	*(temp + 2) = HEX2BCD(*(buf + 4)); /* Hour */
+	*(temp + 3) = HEX2BCD(*(buf + 3)); /* Date */
+	*(temp + 4) = HEX2BCD(*(buf + 2)); /* Month */
+	*(temp + 5) = HEX2BCD(*(buf + 7)); /* Day */
+	*(temp + 6) = HEX2BCD(*(buf + 1)); /* Year */
+	*(temp + 7) = *buf; /* Control */
 
 	DS1302_WriteBurst(DS1302_CLKBURST, 8, temp);
 }
@@ -393,7 +393,7 @@ void DS1302_ReadRamBurst(uint8_t len, uint8_t *buf)
 		len = RAMSIZE;
 	}
 	for (i = 0; i < len; i++) {
-		buf[i] = 0;
+		*(buf + i) = 0;
 	}
 	DS1302_ReadBurst(DS1302_RAMBURST, len, buf);
 }
