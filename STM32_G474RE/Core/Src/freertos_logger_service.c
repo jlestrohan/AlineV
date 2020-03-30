@@ -30,17 +30,16 @@ typedef struct
 	uint16_t msgIncId;
 	uint8_t priority;
 } MSGQUEUE_OBJ_t;
-MSGQUEUE_OBJ_t msg;
+static MSGQUEUE_OBJ_t msg;
 
-uint8_t queue_loggerBuffer[10 * sizeof(MSGQUEUE_OBJ_t)];
-osStaticMessageQDef_t queue_loggerControlBlock;
-MSGQUEUE_OBJ_t msg;
+//static uint8_t queue_loggerBuffer[10 * sizeof(MSGQUEUE_OBJ_t)];
+//static osStaticMessageQDef_t queue_loggerControlBlock;
 
-uint16_t incMsgIdCounter = 0;
-osMessageQueueId_t queue_loggerHandle;
+static uint16_t incMsgIdCounter = 0;
+static osMessageQueueId_t queue_loggerHandle;
 osMutexId_t mutex_loggerService_Hnd;
 
-uint8_t status;
+static uint8_t status;
 
 typedef enum
 {
@@ -68,18 +67,20 @@ void StartLoggerServiceTask(void *argument);
  * Initialize log service - must be called once at the start of the program
  * @param huart
  */
-void log_initialize(UART_HandleTypeDef *huart)
+uint8_t log_initialize(UART_HandleTypeDef *huart)
 {
 	assert_param(huart);
 
 	_huartHandler = huart;
 	queue_loggerHandle = osMessageQueueNew(10, sizeof(MSGQUEUE_OBJ_t), NULL);
+	if (!queue_loggerHandle) return (EXIT_FAILURE);
 	mutex_loggerService_Hnd = osMutexNew(NULL);
 	logStatus = logServiceinitOK;
 
 	/* creation of LoggerServiceTask */
-	LoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL,
-	        &LoggerServiceTa_attributes);
+	LoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL, &LoggerServiceTa_attributes);
+	if (!LoggerServiceTaHandle) return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -144,27 +145,20 @@ void log_processUart_task()
 	if (status == osOK) {
 		char finalmsg[MESSAGE_BUFFER + 50];
 
-		sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n",
-		        msg.msgIncId, osKernelGetTickCount(),
-		        decodeLogPriority(msg.priority), msg.msgBuf);
+		sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n", msg.msgIncId, osKernelGetTickCount(), decodeLogPriority(msg.priority), msg.msgBuf);
 
 		status = osMutexAcquire(mutex_loggerService_Hnd, 0U); // will wait until mutex is ok
-		HAL_UART_Transmit(_huartHandler, (uint8_t*) finalmsg, strlen(finalmsg),
-		        0xFFFF);
+		HAL_UART_Transmit(_huartHandler, (uint8_t*) finalmsg, strlen(finalmsg), 0xFFFF);
 		osMutexRelease(mutex_loggerService_Hnd);
 	}
 
 }
 
 /**
- * You may use this function anywhere else in your code (_weak)
- * if you need to add additional process to the logging routine...
- * Just do not forget to include the mandatory call to the
- * 'log_processUart_task()' function or the whole service will
- * be disabled...
+ * main logger service task
  * @param argument
  */
-__weak void StartLoggerServiceTask(void *argument)
+void StartLoggerServiceTask(void *argument)
 {
 	for (;;) {
 		/* prevent compilation warning */
@@ -176,4 +170,5 @@ __weak void StartLoggerServiceTask(void *argument)
 		/* END Add code here if needed */
 		osDelay(1);
 	}
+	osThreadTerminate(LoggerServiceTaHandle);
 }

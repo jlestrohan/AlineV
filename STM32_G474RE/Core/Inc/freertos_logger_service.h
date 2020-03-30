@@ -55,6 +55,6 @@ void log_processUart_task();
  *
  */
 //todo: pass in a struct with as members at least one handler to a chosen log output peripheral (SD, Uart etc...)
-void log_initialize(UART_HandleTypeDef *huart);
+uint8_t log_initialize(UART_HandleTypeDef *huart);
 
 #endif /** end INC_FREERTOS_LOGGER_SERVICE_H */
