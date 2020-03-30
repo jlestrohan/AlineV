@@ -1,22 +1,22 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.h
+ * @brief          : Header for main.c file.
+ *                   This file contains the common defines of the application.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -62,6 +62,8 @@ void Error_Handler(void);
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
 #define B1_EXTI_IRQn EXTI15_10_IRQn
+#define OSCIL_MEAS_Pin GPIO_PIN_1
+#define OSCIL_MEAS_GPIO_Port GPIOA
 #define SDCS_Pin GPIO_PIN_4
 #define SDCS_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
@@ -80,6 +82,7 @@ void Error_Handler(void);
 #define SPI2_SD_MOSI_GPIO_Port GPIOB
 #define HR04_1_ECHO_Pin GPIO_PIN_6
 #define HR04_1_ECHO_GPIO_Port GPIOC
+#define HR04_1_ECHO_EXTI_IRQn EXTI9_5_IRQn
 #define SPDSens1_Pin GPIO_PIN_9
 #define SPDSens1_GPIO_Port GPIOC
 #define SPDSens1_EXTI_IRQn EXTI9_5_IRQn

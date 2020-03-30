@@ -83,12 +83,12 @@ static I2C_HandleTypeDef *_i2cxHandler;
 static osThreadId_t mpu6050ServiceTaHandle;
 static uint32_t mpu6050ServiceTaBuffer[256];
 static osStaticThreadDef_t mpu6050ServiceTaControlBlock;
-static const osThreadAttr_t mpu6050ServiceTa_attributes = { .name =
-        "mpu6050ServiceTask", .stack_mem = &mpu6050ServiceTaBuffer[0],
-        .stack_size = sizeof(mpu6050ServiceTaBuffer), .cb_mem =
-                &mpu6050ServiceTaControlBlock, .cb_size =
-                sizeof(mpu6050ServiceTaControlBlock), .priority =
-                (osPriority_t) osPriorityLow, };
+static const osThreadAttr_t mpu6050ServiceTa_attributes = {
+        .name = "mpu6050ServiceTask", .stack_mem = &mpu6050ServiceTaBuffer[0],
+        .stack_size = sizeof(mpu6050ServiceTaBuffer),
+        .cb_mem = &mpu6050ServiceTaControlBlock,
+        .cb_size = sizeof(mpu6050ServiceTaControlBlock),
+        .priority = (osPriority_t) osPriorityLow, };
 
 /**
  * Let's redefine malloc here to avoid FreeRTOS sprintf stack corruption
@@ -132,14 +132,14 @@ static void StartMPU6050ServiceTask(void *argument)
 			//int16_t g_z = mpu1.Gyroscope_Z;
 
 			MPU6050_ReadAccelerometer(&mpu1);
-			int16_t a_x = mpu1.Accelerometer_X;
-			int16_t a_y = mpu1.Accelerometer_Y;
-			int16_t a_z = mpu1.Accelerometer_Z;
+			//int16_t a_x = mpu1.Accelerometer_X;
+			//int16_t a_y = mpu1.Accelerometer_Y;
+			//int16_t a_z = mpu1.Accelerometer_Z;
 
 			//sprintf(res, "gyroX: %d; gyroY: %d, gyroZ: %d", g_x, g_y, g_z);
-			sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
+			//sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
 			//sprintf(res, "temperature: %g", mpu1.Temperature);
-			loggerI(res);
+			//loggerI(res);
 		}
 		osDelay(20);
 	}
@@ -196,14 +196,12 @@ MPU6050_Result MPU6050_Init(MPU6050 *DataStruct, MPU6050_Device DeviceNumber, MP
 	}
 	/* Check who am I */
 	/* Send address */
-	if (HAL_I2C_Master_Transmit(_i2cxHandler, address, &WHO_AM_I, 1, 1000)
-	        != HAL_OK) {
+	if (HAL_I2C_Master_Transmit(_i2cxHandler, address, &WHO_AM_I, 1, 1000) != HAL_OK) {
 		return (MPU6050_Result_Error);
 	}
 
 	/* Receive multiple byte */
-	if (HAL_I2C_Master_Receive(_i2cxHandler, address, &temp, 1, 1000)
-	        != HAL_OK) {
+	if (HAL_I2C_Master_Receive(_i2cxHandler, address, &temp, 1, 1000) != HAL_OK) {
 		return (MPU6050_Result_Error);
 	}
 
@@ -452,8 +450,7 @@ MPU6050_Result MPU6050_ReadTemperature(MPU6050 *DataStruct)
 
 	/* Format temperature */
 	temp = (data[0] << 8 | data[1]);
-	DataStruct->Temperature = (float) ((int16_t) temp / (float) 340.0
-	        + (float) 36.53);
+	DataStruct->Temperature = (float) ((int16_t) temp / (float) 340.0 + (float) 36.53);
 
 	/* Return OK */
 	return (MPU6050_Result_Ok);
@@ -488,8 +485,7 @@ MPU6050_Result MPU6050_ReadAll(MPU6050 *DataStruct)
 
 	/* Format temperature */
 	temp = (data[6] << 8 | data[7]);
-	DataStruct->Temperature = (float) ((float) ((int16_t) temp) / (float) 340.0
-	        + (float) 36.53);
+	DataStruct->Temperature = (float) ((float) ((int16_t) temp) / (float) 340.0 + (float) 36.53);
 
 	/* Format gyroscope data */
 	DataStruct->Gyroscope_X = (int16_t) (data[8] << 8 | data[9]);

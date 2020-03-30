@@ -29,6 +29,7 @@
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
 #include "i2c.h"
+#include "tim.h"
 #include "mpu6050_service.h"
 #include "button_handler.h"
 #include "buzzer_service.h"
@@ -79,15 +80,20 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void)
 {
 	/* USER CODE BEGIN Init */
-	buttonService_initialize();
-	log_initialize(&hlpuart1);
-	sensor_speed_initialize();
-	MPU6050_Service_Initialize(&hi2c2);
+
+	if (!buttonService_initialize()) Error_Handler();
+	if (!log_initialize(&hlpuart1)) Error_Handler();
+	if (!sensor_speed_initialize()) Error_Handler();
+	if (!MPU6050_Service_Initialize(&hi2c2)) Error_Handler();
 	//buzzerService_initialize();
-	lcdService_initialize(&hi2c1);
-	lcd_send_string("This is a LCD");
+	if (!lcdService_initialize(&hi2c1)) Error_Handler();
+	if (!sensor_HR04_initialize(&htim1)) Error_Handler();
 	//sdcardService_initialize();
-	sensor_HR04_initialize();
+
+	lcd_send_string("Init Complete");
+
+	/** let's start the 1µs timer for the whole application */
+
 	/* USER CODE END Init */
 
 	/* USER CODE BEGIN RTOS_MUTEX */
@@ -108,8 +114,7 @@ void MX_FREERTOS_Init(void)
 
 	/* Create the thread(s) */
 	/* creation of defaultTask */
-	defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
-	        &defaultTask_attributes);
+	defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */

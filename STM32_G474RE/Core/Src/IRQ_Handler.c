@@ -11,6 +11,7 @@
 #include "button_handler.h"
 #include "cmsis_os2.h"
 #include <string.h>
+#include "gpio.h"
 #include <stdio.h>
 #include "sensor_speed_service.h"
 #include "sensor_hr04_service.h"
@@ -43,7 +44,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			 * HR04 Sensors
 			 */
 		case HR04_1_ECHO_Pin:
-			osEventFlagsSet(evt_hr04_echo_sensor, EVENT_HR04_ECHO_SENSOR_1);
+			/* we received an event from the echo trigger */
+			osEventFlagsSet(evt_hr04_sensor, EVENT_HR04_ECHO_SENSOR_1);
 			break;
 
 		case B1_Pin:
@@ -54,6 +56,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 
 }
+
+/**
+ * Timers Elapsed
+ * @param htim
+ *
+ * See in Main.c due to FreeRTOS Timer 20 being used as systick
+ * void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+ */
 
 /**
  *
