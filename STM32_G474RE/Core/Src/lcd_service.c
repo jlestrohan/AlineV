@@ -18,30 +18,41 @@
 #include <string.h>
 #include <stdio.h>
 
-#define SLAVE_ADDRESS_LCD 0x27 << 1 /* have to shift 7bits arduino address to the left for 8 bits compat */
+#define SLAVE_ADDRESS_LCD 	0x27 << 1 	/* have to shift 7bits arduino address to the left for 8 bits compat */
+#define MAX_LINE_CHAR		0x0A		/* max chars per line */
 
 static I2C_HandleTypeDef *_hi2cxHandler; /** change your handler here accordingly */
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticQueue_t osStaticMessageQDef_t;
+static osStatus_t osStatus;
 
-/*typedef enum
- {
- lcdServiceNotInit, lcdServiceInitOK, lcdServiceInitError
- } lcdServiceStatus_t;*/
-//static lcdServiceStatus_t lcdServiceStatus = lcdServiceInitError;
+void lcd_send_data(char data);
+static char *msgchar;
+
+static osMessageQueueId_t queue_lcdHandle;
+
+typedef enum
+{
+	lcdServiceNotInit, lcdServiceInitOK, lcdServiceInitError
+} lcdServiceStatus_t;
+static lcdServiceStatus_t lcdServiceStatus = lcdServiceInitError;
+
 /**
  * Definitions for lcdServiceTask
  */
-//static osThreadId_t lcdServiceTaHandle;
-//static uint32_t lcdServiceTaBuffer[256];
-//static osStaticThreadDef_t lcdServiceTaControlBlock;
-/*static const osThreadAttr_t lcdServiceTa_attributes = {
- .name = "lcdServiceTask", .stack_mem = &lcdServiceTaBuffer[0],
- .stack_size = sizeof(lcdServiceTaBuffer), .cb_mem =
- &lcdServiceTaControlBlock, .cb_size =
- sizeof(lcdServiceTaControlBlock), .priority =
- (osPriority_t) osPriorityLow, };*/
+static osThreadId_t lcdServiceTaHandle;
+static uint32_t lcdServiceTaBuffer[256];
+static osStaticThreadDef_t lcdServiceTaControlBlock;
+static const osThreadAttr_t lcdServiceTa_attributes = {
+        .name = "lcdServiceTask", .stack_mem = &lcdServiceTaBuffer[0],
+        .stack_size = sizeof(lcdServiceTaBuffer),
+        .cb_mem = &lcdServiceTaControlBlock,
+        .cb_size = sizeof(lcdServiceTaControlBlock),
+        .priority = (osPriority_t) osPriorityLow, };
 
-//void lcdService_task(void *argument);
+/**
+ * Pre LCD initialization
+ */
 static void lcd_prepare()
 {
 	/* LCD INITIALIZATION */
@@ -73,38 +84,49 @@ static void lcd_prepare()
 }
 
 /**
+ * LCD main task
+ * @param argument
+ */
+void lcdService_task(void *argument)
+{
+	for (;;) {
+
+		osStatus = osMessageQueueGet(queue_lcdHandle, &msgchar, NULL, osWaitForever);
+		if (osStatus == osOK) {
+			while (*msgchar) {
+				lcd_send_data(*msgchar++);
+			}
+			osDelay(10);
+		}
+	}
+	osThreadTerminate(lcdServiceTaHandle);
+}
+
+/**
  * Initialize lcd
  */
 uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 {
 	_hi2cxHandler = hi2cx;
 
-	/* creation of LoggerServiceTask */
-	//lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
-	//if (!lcdServiceTaHandle) {
-	//	lcdServiceStatus = lcdServiceInitError;
-	//	loggerE("LCD Service - Initialization Failure");
-	//	return (EXIT_FAILURE);
-	//}
+	queue_lcdHandle = osMessageQueueNew(MAX_LINE_CHAR, sizeof(char), NULL);
+	if (!queue_lcdHandle) {
+		return (EXIT_FAILURE);
+	}
+
 	lcd_prepare();
+
+	/* creation of LoggerServiceTask */
+	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
+	if (!lcdServiceTaHandle) {
+		lcdServiceStatus = lcdServiceInitError;
+		loggerE("LCD Service - Initialization Failure");
+		return (EXIT_FAILURE);
+	}
 
 	loggerI("LCD Service - Initialization complete");
 	return (EXIT_SUCCESS);
 }
-
-/**
- * LCD main task
- * @param argument
- */
-/*void lcdService_task(void* argument)
- {
-
- for (;;)
- {
-
- osDelay(100);
- }
- }*/
 
 /**
  * Send command to the LCD
@@ -120,8 +142,7 @@ void lcd_send_cmd(char cmd)
 	data_t[1] = data_u | 0x08; /* en=0, rs=0 */
 	data_t[2] = data_l | 0x0C; /* en=1, rs=0 */
 	data_t[3] = data_l | 0x08; /* en=0, rs=0 */
-	HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t,
-	        4, 100);
+	HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
 }
 
 /**
@@ -138,8 +159,7 @@ void lcd_send_data(char data)
 	data_t[1] = data_u | 0x09; /* en=0, rs=0 */
 	data_t[2] = data_l | 0x0D; /* en=1, rs=0 */
 	data_t[3] = data_l | 0x09; /* en=0, rs=0 */
-	HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t,
-	        4, 100);
+	HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
 }
 
 /**
@@ -148,8 +168,8 @@ void lcd_send_data(char data)
  */
 void lcd_send_string(char *str)
 {
-	while (*str)
-		lcd_send_data(*str++);
+	msgchar = str;
+	osMessageQueuePut(queue_lcdHandle, &msgchar, 0U, osWaitForever);
 }
 
 /**
