@@ -8,6 +8,8 @@
 #include "button_handler.h"
 #include "button_handler_config.h"
 #include "freertos_logger_service.h"
+#include "lcd_service.h"
+#include <stdlib.h>
 #include "stdint.h"
 #include <stdbool.h>
 #include "gpio.h"
@@ -37,19 +39,21 @@ static const osThreadAttr_t buttonServiceTask_attributes = {
  */
 static void buttonService_task(void *argument)
 {
-	while (1) {
+	for (;;) {
+
 		btnflags = osEventFlagsWait(evt_usrbtn_id, BTN_PRESSED_FLAG,
 		osFlagsWaitAny, osWaitForever);
 		if (buttonDebounce(lastPressedTick) || lastPressedTick == 0) {
 			lastPressedTick = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+
+			//osSemaphoreAcquire(sem_lcdService, 100U);
+			lcd_send_string("Button Pressed");
+			//osSemaphoreRelease(sem_lcdService);
 		}
 
 		osDelay(100);
 	}
-	/* if we exit the loop for some reason, let's temrinate that task */
-	/* todo: handle error here */
-	osThreadTerminate(buttonService_task);
 }
 
 /**
@@ -57,14 +61,18 @@ static void buttonService_task(void *argument)
  */
 uint8_t buttonService_initialize()
 {
-	buttonServiceTaskHandle = osThreadNew(buttonService_task, NULL,
-	        &buttonServiceTask_attributes);
+	buttonServiceTaskHandle = osThreadNew(buttonService_task, NULL, &buttonServiceTask_attributes);
+	if (!buttonServiceTaskHandle) {
+		return (EXIT_FAILURE);
+	}
 
 	evt_usrbtn_id = osEventFlagsNew(NULL);
 	if (evt_usrbtn_id == NULL) {
 		loggerE("Event Flags object not created, handle failure");
-		return (-1);
+		return (EXIT_FAILURE);
 	}
-	return (0);
+
+	loggerI("Initializing Button Service... Success!");
+	return (EXIT_SUCCESS);
 }
 

@@ -19,6 +19,8 @@
 #include <stdbool.h>
 #include "i2c.h"
 
+//osSemaphoreId_t sem_lcdService; /* semaphore id */
+
 /**
  * Initialize lcd
  * @return

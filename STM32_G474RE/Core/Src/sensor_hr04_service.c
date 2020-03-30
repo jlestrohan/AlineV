@@ -92,7 +92,6 @@ static void HR04SensorTask_Start(void *argument)
 		osDelay(100); /* we need to calculate distance every 100ms or so */
 
 	}
-
 }
 
 /**

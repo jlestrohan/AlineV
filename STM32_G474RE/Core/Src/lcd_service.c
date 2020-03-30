@@ -93,13 +93,17 @@ void lcdService_task(void *argument)
 
 		osStatus = osMessageQueueGet(queue_lcdHandle, &msgchar, NULL, osWaitForever);
 		if (osStatus == osOK) {
+			//todo: regler ce pb
+			//osSemaphoreAcquire(sem_loggerService, 0U);
+			//loggerI("LCD Text Received");
+			//osSemaphoreRelease(sem_loggerService);
 			while (*msgchar) {
 				lcd_send_data(*msgchar++);
 			}
-			osDelay(10);
 		}
+
+		osDelay(10);
 	}
-	osThreadTerminate(lcdServiceTaHandle);
 }
 
 /**
@@ -115,6 +119,12 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 	}
 
 	lcd_prepare();
+
+	/*sem_lcdService = osSemaphoreNew(1U, 1U, NULL);
+	 if (sem_lcdService == NULL) {
+	 /* Semaphore object not created, handle failure */
+	/*return (EXIT_FAILURE);
+	 }*/
 
 	/* creation of LoggerServiceTask */
 	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
@@ -168,6 +178,7 @@ void lcd_send_data(char data)
  */
 void lcd_send_string(char *str)
 {
+	lcd_send_cmd(0x80); /* clear display */
 	msgchar = str;
 	osMessageQueuePut(queue_lcdHandle, &msgchar, 0U, osWaitForever);
 }

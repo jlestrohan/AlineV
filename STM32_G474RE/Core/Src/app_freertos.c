@@ -26,6 +26,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdlib.h>
+#include "string.h"
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
 #include "i2c.h"
@@ -80,18 +82,44 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void)
 {
 	/* USER CODE BEGIN Init */
+	if (log_initialize(&hlpuart1) == EXIT_FAILURE) {
+		char *msg = "Failed Initializing Logger Service.. cannot continue sorry...";
+		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), 0xFFFF);
+		Error_Handler();
+	}
 
-	if (!buttonService_initialize()) Error_Handler();
-	if (!log_initialize(&hlpuart1)) Error_Handler();
-	if (!sensor_speed_initialize()) Error_Handler();
-	if (!MPU6050_Service_Initialize(&hi2c2)) Error_Handler();
+	if (lcdService_initialize(&hi2c1) == EXIT_FAILURE) {
+		loggerE("Error Initializing LCD Service");
+		Error_Handler();
+	}
+
+	if (buttonService_initialize() == EXIT_FAILURE) {
+		loggerE("Error Initializing Button Service");
+		Error_Handler();
+	}
+
+	if (sensor_speed_initialize() == EXIT_FAILURE) {
+		loggerE("Error Initializing Speed Sensors Service");
+		Error_Handler();
+	}
+
+	if (MPU6050_Service_Initialize(&hi2c2) == EXIT_FAILURE) {
+		loggerE("Error Initializing MPU6050 Sensor Service");
+		Error_Handler();
+	}
+
 	//buzzerService_initialize();
-	if (!lcdService_initialize(&hi2c1)) Error_Handler();
-	if (!sensor_HR04_initialize(&htim1)) Error_Handler();
-	//sdcardService_initialize();
+	if (sensor_HR04_initialize(&htim1) == EXIT_FAILURE) {
+		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
+		Error_Handler();
+	}
 
-	lcd_send_string("Init Complete");
+	if (sdcardService_initialize() == EXIT_FAILURE) {
+		loggerE("Error Initializing SD Card Service");
+		Error_Handler();
+	}
 
+	//lcd_send_string("Init Complete");
 	/** let's start the 1µs timer for the whole application */
 
 	/* USER CODE END Init */

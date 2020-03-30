@@ -32,6 +32,7 @@
 /* USER CODE BEGIN Includes */
 #include "freertos_logger_service.h"
 #include "sensor_hr04_service.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -209,7 +210,8 @@ void Error_Handler(void)
 {
 	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
-
+	char *msg = "Error reported...\n\r";
+	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), 0xFFFF);
 	/* USER CODE END Error_Handler_Debug */
 }
 

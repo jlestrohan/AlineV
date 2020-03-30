@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include "ff.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 #define SD_BUFFER_SIZE	1024
 
@@ -129,7 +130,7 @@ void sdcardTimer_cb()
 /**
  * Main SDCARD Service ionitialization function
  */
-void sdcardService_initialize()
+uint8_t sdcardService_initialize()
 {
 	/* make 1ms task to handle SD Card  dedicated timer */
 	osSDTimer1 = osTimerNew(sdcardTimer_cb, osTimerPeriodic, NULL, NULL);
@@ -138,21 +139,24 @@ void sdcardService_initialize()
 	DSTATUS my_status = SD_disk_initialize(0);
 
 	if (my_status == STA_NOINIT)
-		loggerE("error in initializing SD CARD...\n");
+	loggerE("error in initializing SD CARD...\n");
 
 	if (my_status == STA_NODISK)
-		loggerE("No medium in the drive...\n");
+	loggerE("No medium in the drive...\n");
 
 	if (my_status == STA_PROTECT)
-		loggerE(" Write protected...\n");
+	loggerE(" Write protected...\n");
 
 	fresult = f_mount(&fs, "", 0);
 	if (fresult != FR_OK)
 		loggerE("error in mounting SD CARD");
 	else
-		loggerI("SD CARD mounted succesfully...");
+	loggerI("SD CARD mounted succesfully...");
 
 	sdcard_check_free_space();
 	//sdcard_write_test();
+
+	// todo: error handler here if task is used
+	return (EXIT_SUCCESS);
 }
 

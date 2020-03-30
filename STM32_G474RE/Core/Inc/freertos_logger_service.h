@@ -11,6 +11,8 @@
 #include "cmsis_os2.h"
 #include "usart.h"
 
+//osSemaphoreId_t sem_loggerService; /* semaphore id */
+
 /**
  * Macros defines
  */
@@ -28,8 +30,6 @@ typedef enum
 	LOG_ERROR,  //!< LOG_ERROR
 	LOG_ALERT   //!< LOG_ALERT
 } LogPriority;
-
-osMutexId_t mutex_loggerService_Hnd;
 
 /**
  * raw logger function, must be called from macros

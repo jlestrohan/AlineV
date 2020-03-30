@@ -73,13 +73,24 @@ uint8_t log_initialize(UART_HandleTypeDef *huart)
 
 	_huartHandler = huart;
 	queue_loggerHandle = osMessageQueueNew(10, sizeof(MSGQUEUE_OBJ_t), NULL);
-	if (!queue_loggerHandle) return (EXIT_FAILURE);
-	mutex_loggerService_Hnd = osMutexNew(NULL);
+	if (!queue_loggerHandle) {
+		return (EXIT_FAILURE);
+	}
+
+	/*sem_loggerService = osSemaphoreNew(1U, 1U, NULL);
+	 if (sem_loggerService == NULL) {
+	 /* Semaphore object not created, handle failure */
+	//return (EXIT_FAILURE);
+	//}
 	logStatus = logServiceinitOK;
 
 	/* creation of LoggerServiceTask */
 	LoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL, &LoggerServiceTa_attributes);
-	if (!LoggerServiceTaHandle) return (EXIT_FAILURE);
+	if (!LoggerServiceTaHandle) {
+		return (EXIT_FAILURE);
+	}
+
+	loggerI("Initializing Logger Service... Success!");
 	return (EXIT_SUCCESS);
 }
 
@@ -147,9 +158,9 @@ void log_processUart_task()
 
 		sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n", msg.msgIncId, osKernelGetTickCount(), decodeLogPriority(msg.priority), msg.msgBuf);
 
-		status = osMutexAcquire(mutex_loggerService_Hnd, 0U); // will wait until mutex is ok
+		//status = osMutexAcquire(mutex_loggerService_Hnd, 0U); // will wait until mutex is ok
 		HAL_UART_Transmit(_huartHandler, (uint8_t*) finalmsg, strlen(finalmsg), 0xFFFF);
-		osMutexRelease(mutex_loggerService_Hnd);
+		//osMutexRelease(mutex_loggerService_Hnd);
 	}
 
 }
@@ -168,7 +179,7 @@ void StartLoggerServiceTask(void *argument)
 		/* BEGIN Add code here if needed */
 
 		/* END Add code here if needed */
-		osDelay(1);
+
+		osDelay(10);
 	}
-	osThreadTerminate(LoggerServiceTaHandle);
 }
