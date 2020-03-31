@@ -5,11 +5,15 @@
  *      Author: Jack Lestrohan
  *
  *      SEE https://www.carnetdumaker.net/articles/mesurer-une-distance-avec-un-capteur-ultrason-hc-sr04-et-une-carte-arduino-genuino/
+ *
+ *      https://www.youtube.com/watch?v=Ir-5FnmaESE
+ *      https://www.carminenoviello.com/2015/09/04/precisely-measure-microseconds-stm32/
  */
 
 #include "sensor_hr04_service.h"
 #include <stdlib.h>
 #include <assert.h>
+#include "dwt_delay.h"
 #include "main.h"
 #include "gpio.h"
 #include <FreeRTOS.h>
@@ -24,12 +28,10 @@
 
 //static uint32_t currentSystick; /* contains trig hal_systick for each HR-04 */
 //static osStatus_t status; /* function return status */
-static uint32_t local_time = 0;
-static uint32_t final_time = 0;
-//static uint32_t sensor_time;
-//static uint16_t distance;
 
-static TIM_HandleTypeDef *_htim;
+static uint32_t sensor_time;
+static uint16_t distance;
+
 typedef StaticTask_t osStaticThreadDef_t;
 
 /* Definitions for HR04Sensor_Trig_task TRIGGER EMITTER*/
@@ -43,6 +45,29 @@ static const osThreadAttr_t HR04Sensor_task_attributes = {
         .cb_size = sizeof(HR04SensorTaControlBlock),
         .priority = (osPriority_t) osPriorityBelowNormal, };
 
+uint32_t hcsr04_read(void)
+{
+	uint32_t local_time;
+	/* first we pull the HR04_1_TRIG_Pin high */
+	HAL_GPIO_WritePin(GPIOC, HR04_1_TRIG_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, OSCIL_MEAS_Pin, GPIO_PIN_SET);
+
+	/* 10µs delay */
+	DWT_Delay(10);
+
+	/* pull down Trig pin, signal sent */
+	HAL_GPIO_WritePin(GPIOC, HR04_1_TRIG_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, OSCIL_MEAS_Pin, GPIO_PIN_RESET);
+
+	while (!(HAL_GPIO_ReadPin(GPIOC, HR04_1_ECHO_Pin)));
+
+	while (HAL_GPIO_ReadPin(GPIOC, HR04_1_ECHO_Pin)) {
+		local_time++; // increment local time
+		DWT_Delay(1); // every 1µs
+	}
+	return local_time * 2;
+}
+
 /**
  *	HR04 task
  * @param argument
@@ -53,13 +78,8 @@ static void HR04SensorTask_Start(void *argument)
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		/* first we pull the HR04_1_TRIG_Pin high */
-		HAL_GPIO_WritePin(GPIOC, HR04_1_TRIG_Pin, GPIO_PIN_SET);
-
-		/* and then we start the TIM 1 µs timer */
-		HAL_TIM_Base_Start(_htim);
-
-		/*distance = sensor_time * .034 / 2;*/
+		sensor_time = hcsr04_read();
+		distance = sensor_time * .034 / 2;
 
 		/*lcd_send_cmd(0x80);
 		 lcd_send_string("Dist =");
@@ -68,28 +88,15 @@ static void HR04SensorTask_Start(void *argument)
 		 lcd_send_data(((distance % 10)) + 48);
 		 lcd_send_string(" cm");*/
 
-		osEventFlagsWait(evt_hr04_sensor, EVENT_HR04_TRIG_SENSOR_1, osFlagsWaitAny, osWaitForever);
-
-		/* flag received after 10µs we stop that timer */
-		HAL_TIM_Base_Stop(_htim);
-
-		/* and then lets' pull the HR04_1_TRIG_Pin low */
-		HAL_GPIO_WritePin(GPIOC, HR04_1_TRIG_Pin, GPIO_PIN_RESET);
-
-		/* now we start counting in millis */
-		local_time = HAL_GetTick();
-
 		/* next thing will be waiting for an interrupt signal on the echo pin and then calculate the delay spent inbetween */
-		osEventFlagsWait(evt_hr04_sensor, EVENT_HR04_ECHO_SENSOR_1, osFlagsWaitAny, osWaitForever);
-
+		//osEventFlagsWait(evt_hr04_sensor, EVENT_HR04_ECHO_SENSOR_1, osFlagsWaitAny, osWaitForever);
+		//loggerI("event passed event flag wait routine");
 		/* now we have to get the final time and compare */
-		final_time = HAL_GetTick();
-
+		//final_time = HAL_GetTick();
 		char test[20];
-		sprintf(test, "distance = %lu", final_time - local_time);
+		sprintf(test, "%d cm", distance);
 		loggerI(test);
-
-		osDelay(100); /* we need to calculate distance every 100ms or so */
+		osDelay(30); /* we need to calculate distance every 100ms or so */
 
 	}
 }
@@ -97,22 +104,19 @@ static void HR04SensorTask_Start(void *argument)
 /**
  * Initialization function
  */
-uint8_t sensor_HR04_initialize(TIM_HandleTypeDef *htim)
+uint8_t sensor_HR04_initialize()
 {
-	assert(htim);
-	_htim = htim;
+	/* creates event flag */
+	evt_hr04_sensor = osEventFlagsNew(NULL);
+	if (evt_hr04_sensor == NULL) {
+		loggerE("HR04 Event Initialization Failed");
+		return (EXIT_FAILURE);
+	}
 
 	/* creation of HR04Sensor_task */
 	HR04Sensor_taskHandle = osThreadNew(HR04SensorTask_Start, NULL, &HR04Sensor_task_attributes);
 	if (!HR04Sensor_taskHandle) {
 		loggerE("HR04 Task Initialization Failed");
-		return (EXIT_FAILURE);
-	}
-
-	/* creates event flag */
-	evt_hr04_sensor = osEventFlagsNew(NULL);
-	if (evt_hr04_sensor == NULL) {
-		loggerE("HR04 Event Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 

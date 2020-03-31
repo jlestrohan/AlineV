@@ -43,11 +43,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			/**
 			 * HR04 Sensors
 			 */
-		case HR04_1_ECHO_Pin:
+			//case HR04_1_ECHO_Pin:
 			/* we received an event from the echo trigger */
-			osEventFlagsSet(evt_hr04_sensor, EVENT_HR04_ECHO_SENSOR_1);
-			break;
-
+			//osEventFlagsSet(evt_hr04_sensor, EVENT_HR04_ECHO_SENSOR_1);
+			//break;
 		case B1_Pin:
 			osEventFlagsSet(evt_usrbtn_id, BTN_PRESSED_FLAG);
 			break;
