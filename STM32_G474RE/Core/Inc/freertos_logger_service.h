@@ -11,8 +11,6 @@
 #include "cmsis_os2.h"
 #include "usart.h"
 
-//osSemaphoreId_t sem_loggerService; /* semaphore id */
-
 /**
  * Macros defines
  */
@@ -36,7 +34,7 @@ typedef enum
  * @param log_msg
  * @param priority
  */
-void log_service(char *log_msg, LogPriority priority);
+void log_service(const char *log_msg, LogPriority priority);
 
 /**
  * Returns a human readable log priority message according to the input LogPriority type provided
@@ -46,15 +44,10 @@ void log_service(char *log_msg, LogPriority priority);
 char* decodeLogPriority(LogPriority priority);
 
 /**
- * processes the dequeuing and sends to the UART
- */
-void log_processUart_task();
-
-/**
  * Initializes the logger service - must be called prior to anything!
  *
  */
 //todo: pass in a struct with as members at least one handler to a chosen log output peripheral (SD, Uart etc...)
-uint8_t log_initialize(UART_HandleTypeDef *huart);
+uint8_t log_initialize();
 
 #endif /** end INC_FREERTOS_LOGGER_SERVICE_H */

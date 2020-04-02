@@ -22,7 +22,7 @@
 #define MAX_LINE_CHAR		0x0A		/* max chars per line */
 
 static I2C_HandleTypeDef *_hi2cxHandler; /** change your handler here accordingly */
-typedef StaticTask_t osStaticThreadDef_t;
+//typedef StaticTask_t osStaticThreadDef_t;
 typedef StaticQueue_t osStaticMessageQDef_t;
 static osStatus_t osStatus;
 
@@ -40,11 +40,13 @@ static lcdServiceStatus_t lcdServiceStatus = lcdServiceInitError;
 /**
  * Definitions for lcdServiceTask
  */
+typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t lcdServiceTaHandle;
 static uint32_t lcdServiceTaBuffer[256];
 static osStaticThreadDef_t lcdServiceTaControlBlock;
 static const osThreadAttr_t lcdServiceTa_attributes = {
-        .name = "lcdServiceTask", .stack_mem = &lcdServiceTaBuffer[0],
+        .name = "lcdServiceTask",
+        .stack_mem = &lcdServiceTaBuffer[0],
         .stack_size = sizeof(lcdServiceTaBuffer),
         .cb_mem = &lcdServiceTaControlBlock,
         .cb_size = sizeof(lcdServiceTaControlBlock),
@@ -130,11 +132,11 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
 	if (!lcdServiceTaHandle) {
 		lcdServiceStatus = lcdServiceInitError;
-		loggerE("LCD Service - Initialization Failure");
+		loggerE("Initializing LCD Service - Failed");
 		return (EXIT_FAILURE);
 	}
 
-	loggerI("LCD Service - Initialization complete");
+	loggerI("Initializing LCD Service - Success!");
 	return (EXIT_SUCCESS);
 }
 

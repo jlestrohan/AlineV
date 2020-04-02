@@ -10,7 +10,7 @@
 
 #include "cmsis_os2.h"
 
-#define BTN_PRESSED_FLAG		0x01
+#define BTN_PRESSED_FLAG		0x0002AU
 
 osEventFlagsId_t evt_usrbtn_id;
 

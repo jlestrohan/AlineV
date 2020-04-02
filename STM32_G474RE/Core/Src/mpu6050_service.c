@@ -86,7 +86,8 @@ static osThreadId_t mpu6050ServiceTaHandle;
 static uint32_t mpu6050ServiceTaBuffer[256];
 static osStaticThreadDef_t mpu6050ServiceTaControlBlock;
 static const osThreadAttr_t mpu6050ServiceTa_attributes = {
-        .name = "mpu6050ServiceTask", .stack_mem = &mpu6050ServiceTaBuffer[0],
+        .name = "mpu6050ServiceTask",
+        .stack_mem = &mpu6050ServiceTaBuffer[0],
         .stack_size = sizeof(mpu6050ServiceTaBuffer),
         .cb_mem = &mpu6050ServiceTaControlBlock,
         .cb_size = sizeof(mpu6050ServiceTaControlBlock),
@@ -133,17 +134,16 @@ static void StartMPU6050ServiceTask(void *argument)
 			//lcd_send_string(res);
 			//osSemaphoreRelease(sem_lcdService);
 
-			//MPU6050_ReadGyroscope(&mpu1);
-			//int16_t g_x = mpu1.Gyroscope_X;
-			//int16_t g_y = mpu1.Gyroscope_Y;
-			//int16_t g_z = mpu1.Gyroscope_Z;
+			/*MPU6050_ReadGyroscope(&mpu1);
+			 int16_t g_x = mpu1.Gyroscope_X;
+			 int16_t g_y = mpu1.Gyroscope_Y;
+			 int16_t g_z = mpu1.Gyroscope_Z;*/
 
 			//MPU6050_ReadAccelerometer(&mpu1);
 			//int16_t a_x = mpu1.Accelerometer_X;
 			//int16_t a_y = mpu1.Accelerometer_Y;
 			//int16_t a_z = mpu1.Accelerometer_Z;
-
-			//sprintf(res, "X:%d Y:%d Z:%d", g_x, g_y, g_z);
+			//sprintf(res, "%3d %3d %3d", g_x, g_y, g_z);
 			//sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
 			//sprintf(res, "temperature: %g", mpu1.Temperature);
 			//loggerI(res);

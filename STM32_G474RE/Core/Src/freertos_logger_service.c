@@ -16,7 +16,7 @@
 
 #define		MESSAGE_BUFFER		200
 
-UART_HandleTypeDef *_huartHandler;
+UART_HandleTypeDef hlpuart1;
 
 /**
  * message queue definition
@@ -32,14 +32,13 @@ typedef struct
 } MSGQUEUE_OBJ_t;
 static MSGQUEUE_OBJ_t msg;
 
-//static uint8_t queue_loggerBuffer[10 * sizeof(MSGQUEUE_OBJ_t)];
-//static osStaticMessageQDef_t queue_loggerControlBlock;
-
 static uint16_t incMsgIdCounter = 0;
 static osMessageQueueId_t queue_loggerHandle;
 osMutexId_t mutex_loggerService_Hnd;
 
 static uint8_t status;
+
+typedef StaticTask_t osStaticThreadDef_t;
 
 typedef enum
 {
@@ -51,37 +50,51 @@ logServiceStatus logStatus = logServiceNotInit;
  * Definitions for LoggerServiceTask
  */
 osThreadId_t LoggerServiceTaHandle;
-uint32_t LoggerServiceTaBuffer[256];
-osStaticThreadDef_t LoggerServiceTaControlBlock;
-const osThreadAttr_t LoggerServiceTa_attributes = { .name = "LoggerServiceTask",
-        .stack_mem = &LoggerServiceTaBuffer[0],
-        .stack_size = sizeof(LoggerServiceTaBuffer),
-        .cb_mem = &LoggerServiceTaControlBlock,
-        .cb_size = sizeof(LoggerServiceTaControlBlock),
+static osStaticThreadDef_t LoggerTaControlBlock;
+static uint32_t LoggerTaBuffer[256];
+const osThreadAttr_t LoggerServiceTa_attributes = {
+        .name = "LoggerServiceTask",
+        .stack_mem = &LoggerTaBuffer[0],
+        .stack_size = sizeof(LoggerTaBuffer),
+        .cb_mem = &LoggerTaControlBlock,
+        .cb_size = sizeof(LoggerTaControlBlock),
         .priority = (osPriority_t) osPriorityLow, };
 
 uint8_t _serviceStatus = false;
-void StartLoggerServiceTask(void *argument);
+
+/**
+ * main logger service task
+ * @param argument
+ */
+void StartLoggerServiceTask(void *argument)
+{
+	for (;;) {
+		/* prevent compilation warning */
+		UNUSED(argument);
+
+		osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever); // wait for message
+		if (status == osOK) {
+			char finalmsg[MESSAGE_BUFFER + 50];
+			sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n", msg.msgIncId, osKernelGetTickCount(), decodeLogPriority(msg.priority), msg.msgBuf);
+
+			HAL_UART_Transmit(&hlpuart1, (uint8_t*) finalmsg, strlen(finalmsg), 0xFFFF);
+		}
+
+		osDelay(10);
+	}
+}
 
 /**
  * Initialize log service - must be called once at the start of the program
  * @param huart
  */
-uint8_t log_initialize(UART_HandleTypeDef *huart)
+uint8_t log_initialize()
 {
-	assert_param(huart);
-
-	_huartHandler = huart;
 	queue_loggerHandle = osMessageQueueNew(10, sizeof(MSGQUEUE_OBJ_t), NULL);
 	if (!queue_loggerHandle) {
 		return (EXIT_FAILURE);
 	}
 
-	/*sem_loggerService = osSemaphoreNew(1U, 1U, NULL);
-	 if (sem_loggerService == NULL) {
-	 /* Semaphore object not created, handle failure */
-	//return (EXIT_FAILURE);
-	//}
 	logStatus = logServiceinitOK;
 
 	/* creation of LoggerServiceTask */
@@ -100,11 +113,9 @@ uint8_t log_initialize(UART_HandleTypeDef *huart)
  * @param priority
  * @return
  */
-void log_service(char *log_msg, LogPriority priority)
+void log_service(const char *log_msg, LogPriority priority)
 {
 	assert_param(log_msg);
-
-	/* if (logStatus != logServiceinitOK) log_initialize(); */
 
 	incMsgIdCounter++;
 	/*  fill up the queue with the logger message given as argument */
@@ -145,41 +156,3 @@ char* decodeLogPriority(LogPriority priority)
 	}
 }
 
-/**
- * processes the dequeuing and sends to the UART
- * must be called from a task
- */
-void log_processUart_task()
-{
-
-	osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever); // wait for message
-	if (status == osOK) {
-		char finalmsg[MESSAGE_BUFFER + 50];
-
-		sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n", msg.msgIncId, osKernelGetTickCount(), decodeLogPriority(msg.priority), msg.msgBuf);
-
-		//status = osMutexAcquire(mutex_loggerService_Hnd, 0U); // will wait until mutex is ok
-		HAL_UART_Transmit(_huartHandler, (uint8_t*) finalmsg, strlen(finalmsg), 0xFFFF);
-		//osMutexRelease(mutex_loggerService_Hnd);
-	}
-
-}
-
-/**
- * main logger service task
- * @param argument
- */
-void StartLoggerServiceTask(void *argument)
-{
-	for (;;) {
-		/* prevent compilation warning */
-		UNUSED(argument);
-
-		log_processUart_task();
-		/* BEGIN Add code here if needed */
-
-		/* END Add code here if needed */
-
-		osDelay(10);
-	}
-}
