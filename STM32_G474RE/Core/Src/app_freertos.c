@@ -25,13 +25,14 @@
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */     
 #include <stdlib.h>
 #include "string.h"
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
 #include "i2c.h"
 #include "dwt_delay.h"
+#include "timeofflight_service.h"
 #include "mpu6050_service.h"
 #include "button_handler.h"
 #include "buzzer_service.h"
