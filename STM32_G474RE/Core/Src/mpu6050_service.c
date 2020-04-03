@@ -115,6 +115,7 @@ static const osThreadAttr_t mpu6050ServiceTa_attributes = {
  */
 static void StartMPU6050ServiceTask(void *argument)
 {
+	loggerI("Starting mpu6050 service task...");
 	MPU6050_Result result;
 	char res[100];
 

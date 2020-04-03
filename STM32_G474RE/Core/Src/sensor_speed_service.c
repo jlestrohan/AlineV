@@ -74,6 +74,7 @@ uint8_t sensor_speed_initialize()
  */
 void speedSensorService_task(void *argument)
 {
+	loggerI("Starting lm393 speed service task...");
 	evt_speed_sensor = osEventFlagsNew(NULL);
 	uint32_t flagStatus;
 	char msg[40];

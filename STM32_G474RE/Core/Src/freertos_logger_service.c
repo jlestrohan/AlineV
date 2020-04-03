@@ -68,6 +68,7 @@ uint8_t _serviceStatus = false;
  */
 void StartLoggerServiceTask(void *argument)
 {
+	loggerI("Starting logger service task...");
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);

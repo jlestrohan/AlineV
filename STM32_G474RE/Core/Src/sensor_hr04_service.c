@@ -74,7 +74,7 @@ uint32_t hcsr04_read(void)
  */
 static void HR04SensorTask_Start(void *argument)
 {
-	char test[20];
+	loggerI("Starting hr04 service task...");
 
 	for (;;) {
 		/* prevent compilation warning */

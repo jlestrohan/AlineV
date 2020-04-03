@@ -49,6 +49,7 @@ static const osThreadAttr_t buttonServiceTask_attributes = {
  */
 static void buttonService_task(void *argument)
 {
+	loggerI("Starting button service task...");
 	for (;;) {
 		btnflags = osEventFlagsWait(evt_usrbtn_id, BTN_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
 		if (buttonDebounce(lastPressedTick) || lastPressedTick == 0) {

@@ -91,6 +91,7 @@ static void lcd_prepare()
  */
 void lcdService_task(void *argument)
 {
+	loggerI("Starting lcd service task...");
 	for (;;) {
 
 		osStatus = osMessageQueueGet(queue_lcdHandle, &msgchar, NULL, osWaitForever);
