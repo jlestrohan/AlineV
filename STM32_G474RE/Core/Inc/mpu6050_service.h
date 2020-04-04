@@ -98,7 +98,7 @@ typedef struct
 	int16_t Gyroscope_Z; /*!< Gyroscope value Z axis */
 	float Temperature; /*!< Temperature in degrees */
 } MPU6050;
-MPU6050 mpu1; /* Main data structs holding the constantly updated data */
+static MPU6050 mpu1; /* Main data structs holding the constantly updated data */
 
 /**
  * @brief  Interrupts union and structure
@@ -145,7 +145,7 @@ MPU6050_Result MPU6050_Service_Initialize();
  *            - MPU6050_Result_t: Everything OK
  *            - Other member: in other cases
  */
-MPU6050_Result MPU6050_Init(MPU6050 *DataStruct, MPU6050_Device DeviceNumber, MPU6050_Accelerometer AccelerometerSensitivity, MPU6050_Gyroscope GyroscopeSensitivity);
+MPU6050_Result MPU6050_Init(MPU6050 *DataStruct, MPU6050_Device *DeviceNumber, MPU6050_Accelerometer *AccelerometerSensitivity, MPU6050_Gyroscope *GyroscopeSensitivity);
 
 /**
  * @brief  Sets gyroscope sensitivity
@@ -161,7 +161,7 @@ MPU6050_Result MPU6050_SetGyroscope(MPU6050 *DataStruct, MPU6050_Gyroscope Gyros
  * @param  AccelerometerSensitivity: Gyro sensitivity value. This parameter can be a value of @ref MPU6050_Accelerometer_t enumeration
  * @retval Member of @ref MPU6050_Result_t enumeration
  */
-MPU6050_Result MPU6050_SetAccelerometer(MPU6050 *DataStruct, MPU6050_Accelerometer AccelerometerSensitivity);
+MPU6050_Result MPU6050_SetAccelerometer(MPU6050 *DataStruct, MPU6050_Accelerometer  AccelerometerSensitivity);
 
 /**
  * @brief  Sets output data rate

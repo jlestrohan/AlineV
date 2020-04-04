@@ -37,7 +37,7 @@
 #include "button_handler.h"
 #include "buzzer_service.h"
 #include "sdcard_service.h"
-#include "sensor_hr04_service.h"
+/*#include "sensor_hr04_service.h"*/
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
 /* USER CODE END Includes */
@@ -64,9 +64,10 @@
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-        .name = "defaultTask",
-        .priority = (osPriority_t) osPriorityNormal,
-        .stack_size = 256 * 4 };
+  .name = "defaultTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 256 * 4
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -78,19 +79,18 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-	/* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
 	DWT_Init();
 
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
-	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), 0xFFFF);
+	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 
-	if (log_initialize() == EXIT_FAILURE) {
+	if (log_initialize(&hlpuart1) == EXIT_FAILURE) {
 		char *msg2 = "Failed Initializing Logger Service.. cannot continue sorry...\n\r";
 		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg2, strlen(msg2), 0xFFFF);
 		Error_Handler();
@@ -106,6 +106,11 @@ void MX_FREERTOS_Init(void)
 		Error_Handler();
 	}
 
+	if (timeofflight_initialize(&hi2c1) == EXIT_FAILURE) {
+		loggerE("Error Initializing Time of Flight Service");
+		Error_Handler();
+	}
+
 	/*if (sensor_speed_initialize() == EXIT_FAILURE) {
 	 loggerE("Error Initializing Speed Sensors Service");
 	 Error_Handler();
@@ -116,10 +121,10 @@ void MX_FREERTOS_Init(void)
 		Error_Handler();
 	}
 
-	//buzzerService_initialize();
-	//if (sensor_HR04_initialize() == EXIT_FAILURE) {
-	//	loggerE("Error Initializing HR-SC04 Distance Sensors Service");
-	//}
+	/*buzzerService_initialize(); */
+	/*if (sensor_HR04_initialize() == EXIT_FAILURE) { */
+	/*	loggerE("Error Initializing HR-SC04 Distance Sensors Service"); */
+	/*} */
 
 	/*if (sdcardService_initialize() == EXIT_FAILURE) {
 	 loggerE("Error Initializing SD Card Service");
@@ -129,31 +134,31 @@ void MX_FREERTOS_Init(void)
 	lcd_send_string("Init Complete");
 	/** let's start the 1µs timer for the whole application */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-	/* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-	/* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-	/* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-	/* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-	/* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-	/* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-	/* Create the thread(s) */
-	/* creation of defaultTask */
-	defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-	/* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-	/* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
 }
 
@@ -164,16 +169,16 @@ void MX_FREERTOS_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+__weak void StartDefaultTask(void *argument)
 {
-	/* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
 	loggerI("Initializing default task...");
 	/* Infinite loop */
 	for (;;) {
 
 		osDelay(100);
 	}
-	/* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/

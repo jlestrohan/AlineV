@@ -20,7 +20,7 @@
  * http://www.gnu.org/licenses/.
  */
 
-#include "stm32g4xx_hal.h"          // change to whatever MCU you use
+#include "stm32g4xx_hal.h"          /* change to whatever MCU you use */
 #include "dwt_delay.h"
 
 /**
@@ -45,17 +45,17 @@ void DWT_Init(void)
  * value when delay should stop while keeping things in bounds of uint32.
 */
 
-void DWT_Delay(uint32_t us) // microseconds
+void DWT_Delay(uint32_t us) /* microseconds */
 {
     uint32_t startTick  = DWT->CYCCNT,
              targetTick = DWT->CYCCNT + us * (SystemCoreClock/1000000);
 
-    // Must check if target tick is out of bounds and overflowed
+    /* Must check if target tick is out of bounds and overflowed */
     if (targetTick > startTick) {
-        // Not overflowed
+        /* Not overflowed */
         while (DWT->CYCCNT < targetTick);
     } else {
-        // Overflowed
+        /* Overflowed */
         while (DWT->CYCCNT > startTick || DWT->CYCCNT < targetTick);
     }
 }
@@ -69,12 +69,12 @@ void DWT_Delay(uint32_t us) // microseconds
  *
  * @param uint32_t us  Number of microseconds to delay for
  */
-void DWT_Delay(uint32_t us) // microseconds
+void DWT_Delay(uint32_t us) /* microseconds */
 {
 	uint32_t startTick = DWT->CYCCNT,
 	        delayTicks = us * (SystemCoreClock / 1000000);
 
-	while (DWT->CYCCNT - startTick < delayTicks);
+	while (DWT->CYCCNT - startTick < delayTicks) {};
 }
 
 #endif

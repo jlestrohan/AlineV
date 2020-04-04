@@ -62,6 +62,8 @@ void Error_Handler(void);
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
 #define B1_EXTI_IRQn EXTI15_10_IRQn
+#define HR04_1_ECHO_Pin GPIO_PIN_0
+#define HR04_1_ECHO_GPIO_Port GPIOC
 #define OSCIL_MEAS_Pin GPIO_PIN_1
 #define OSCIL_MEAS_GPIO_Port GPIOA
 #define SDCS_Pin GPIO_PIN_4
@@ -78,8 +80,6 @@ void Error_Handler(void);
 #define SPI2_SD_MISO_GPIO_Port GPIOB
 #define SPI2_SD_MOSI_Pin GPIO_PIN_15
 #define SPI2_SD_MOSI_GPIO_Port GPIOB
-#define HR04_1_ECHO_Pin GPIO_PIN_6
-#define HR04_1_ECHO_GPIO_Port GPIOC
 #define SPDSens1_Pin GPIO_PIN_9
 #define SPDSens1_GPIO_Port GPIOC
 #define SPDSens1_EXTI_IRQn EXTI9_5_IRQn

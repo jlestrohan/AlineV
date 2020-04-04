@@ -59,10 +59,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 /**
  * Timers Elapsed
  * @param htim
- *
- * See in Main.c due to FreeRTOS Timer 20 being used as systick
- * void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+ * keep as __weak as an instance lies in main.c already (generated code)
  */
+__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	loggerI("period elapsed");
+}
 
 /**
  *

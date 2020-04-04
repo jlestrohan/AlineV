@@ -21,8 +21,7 @@
 #define SLAVE_ADDRESS_LCD 	0x27 << 1 	/* have to shift 7bits arduino address to the left for 8 bits compat */
 #define MAX_LINE_CHAR		0x0A		/* max chars per line */
 
-static I2C_HandleTypeDef *_hi2cxHandler; /** change your handler here accordingly */
-//typedef StaticTask_t osStaticThreadDef_t;
+static I2C_HandleTypeDef *_hi2cxHandler;
 typedef StaticQueue_t osStaticMessageQDef_t;
 static osStatus_t osStatus;
 
@@ -94,17 +93,13 @@ void lcdService_task(void *argument)
 	loggerI("Starting lcd service task...");
 	for (;;) {
 
+		/* receives a full string */
 		osStatus = osMessageQueueGet(queue_lcdHandle, &msgchar, NULL, osWaitForever);
 		if (osStatus == osOK) {
-			//todo: regler ce pb
-			//osSemaphoreAcquire(sem_loggerService, 0U);
-			//loggerI("LCD Text Received");
-			//osSemaphoreRelease(sem_loggerService);
 			while (*msgchar) {
 				lcd_send_data(*msgchar++);
 			}
 		}
-
 		osDelay(10);
 	}
 }
@@ -122,12 +117,6 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 	}
 
 	lcd_prepare();
-
-	/*sem_lcdService = osSemaphoreNew(1U, 1U, NULL);
-	 if (sem_lcdService == NULL) {
-	 /* Semaphore object not created, handle failure */
-	/*return (EXIT_FAILURE);
-	 }*/
 
 	/* creation of LoggerServiceTask */
 	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
@@ -148,7 +137,7 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 void lcd_send_cmd(char cmd)
 {
 	char data_u, data_l;
-	uint8_t data_t[4];
+	uint8_t data_t[4] = "";
 	data_u = (cmd & 0xf0);
 	data_l = ((cmd << 4) & 0xf0);
 	*data_t = data_u | 0x0C; /* en=1, rs=0 */
@@ -165,7 +154,7 @@ void lcd_send_cmd(char cmd)
 void lcd_send_data(char data)
 {
 	char data_u, data_l;
-	uint8_t data_t[4];
+	uint8_t data_t[4] = "";
 	data_u = (data & 0xf0);
 	data_l = ((data << 4) & 0xf0);
 	*data_t = data_u | 0x0D; /* en=1, rs=0 */
@@ -182,6 +171,7 @@ void lcd_send_data(char data)
 void lcd_send_string(char *str)
 {
 	lcd_send_cmd(0x80); /* clear display */
+	/* sends the whole string to the queue */
 	msgchar = str;
 	osMessageQueuePut(queue_lcdHandle, &msgchar, 0U, osWaitForever);
 }

@@ -5,7 +5,7 @@
  *      Author: Jack Lestrohan
  */
 
-// see https://www.teachmemicro.com/lm393-ir-module-motor-speed-sensor/
+/* see https://www.teachmemicro.com/lm393-ir-module-motor-speed-sensor/ */
 #include <stdlib.h>
 #include <FreeRTOS.h>
 #include "sensor_speed_service.h"
@@ -17,7 +17,7 @@ typedef enum
 {
 	SP_SENS_1, SP_SENS_2, SP_SENS_3, SP_SENS_4, SP_SENS_RESERVED = 0x7FFFFFFF
 } speedSensorNum_t;
-speedSensorNum_t speedSensorNum;
+static speedSensorNum_t speedSensorNum;
 
 typedef enum
 {
@@ -27,14 +27,17 @@ typedef enum
 	sensorSpeedServiceTaskTerminated,
 	sensorSpeedSeviceReserved = 0x7FFFFFFF
 } sensorSpeedServiceStatus;
-sensorSpeedServiceStatus sensorSpeedStatus = sensorSpeedServiceNotInit;
+static sensorSpeedServiceStatus sensorSpeedStatus = sensorSpeedServiceNotInit;
 
 /**
  * Definitions for SpeedSensorServiceTask, dynamic allocation
  */
-osThreadId_t SpeedSensorServiceTaHandle;
-const osThreadAttr_t SpeedSensorServiceTa_attributes = { .name =
-        "SpeedSensorServiceTask", .priority = (osPriority_t) osPriorityLow };
+static osThreadId_t SpeedSensorServiceTaHandle;
+static const osThreadAttr_t SpeedSensorServiceTa_attributes = {
+		.name = "SpeedSensorServiceTask",
+		.stack_size = 256,
+		.priority = (osPriority_t) osPriorityLow
+};
 
 /**
  * wheel structs
@@ -76,15 +79,15 @@ void speedSensorService_task(void *argument)
 {
 	loggerI("Starting lm393 speed service task...");
 	evt_speed_sensor = osEventFlagsNew(NULL);
-	uint32_t flagStatus;
-	char msg[40];
+	uint32_t flagStatus = 0;
+	char msg[40] = {0};
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		//todo: have to set this for all 3 other sensors
-		//todo use freertos timer to deduce rpm
+		/* todo: have to set this for all 3 other sensors */
+		/* todo use freertos timer to deduce rpm */
 		flagStatus = osEventFlagsWait(evt_speed_sensor,
 		        EVENT_SPEED_SENSOR_1 | EVENT_SPEED_SENSOR_2
 		                | EVENT_SPEED_SENSOR_3 | EVENT_SPEED_SENSOR_4,
@@ -116,7 +119,7 @@ void speedSensorService_task(void *argument)
 		wheelProps[speedSensorNum].currentWheelTick = HAL_GetTick();
 		wheelProps[speedSensorNum].wheelTicksCounter++;
 		sprintf(msg, "Sensor number: %d - tick counts: %d", speedSensorNum,
-		        wheelProps[speedSensorNum].wheelTicksCounter); //(wheelProps[0].wheelTicksCounter/20)*60); /* bad formula to be fixed */
+		        wheelProps[speedSensorNum].wheelTicksCounter); /*(wheelProps[0].wheelTicksCounter/20)*60); */ /* bad formula to be fixed */
 		loggerI(msg);
 
 		osDelay(1);

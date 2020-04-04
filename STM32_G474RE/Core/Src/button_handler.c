@@ -56,9 +56,7 @@ static void buttonService_task(void *argument)
 			lastPressedTick = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
-			//osSemaphoreAcquire(sem_lcdService, 100U);
 			lcd_send_string("Button Pressed");
-			//osSemaphoreRelease(sem_lcdService);
 		}
 
 		osDelay(100);

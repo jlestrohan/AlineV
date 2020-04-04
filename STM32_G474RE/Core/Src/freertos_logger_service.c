@@ -16,7 +16,7 @@
 
 #define		MESSAGE_BUFFER		200
 
-UART_HandleTypeDef hlpuart1;
+static UART_HandleTypeDef *_huart;
 
 /**
  * message queue definition
@@ -25,7 +25,7 @@ typedef StaticQueue_t osStaticMessageQDef_t;
 typedef StaticTask_t osStaticThreadDef_t;
 
 typedef struct
-{                                // object data type
+{
 	char msgBuf[MESSAGE_BUFFER];
 	uint16_t msgIncId;
 	uint8_t priority;
@@ -34,7 +34,6 @@ static MSGQUEUE_OBJ_t msg;
 
 static uint16_t incMsgIdCounter = 0;
 static osMessageQueueId_t queue_loggerHandle;
-osMutexId_t mutex_loggerService_Hnd;
 
 static uint8_t status;
 
@@ -44,23 +43,21 @@ typedef enum
 {
 	logServiceNotInit, logServiceinitOK,
 } logServiceStatus;
-logServiceStatus logStatus = logServiceNotInit;
+static logServiceStatus logStatus = logServiceNotInit;
 
 /**
  * Definitions for LoggerServiceTask
  */
-osThreadId_t LoggerServiceTaHandle;
+static osThreadId_t LoggerServiceTaHandle;
 static osStaticThreadDef_t LoggerTaControlBlock;
 static uint32_t LoggerTaBuffer[256];
-const osThreadAttr_t LoggerServiceTa_attributes = {
+static const osThreadAttr_t LoggerServiceTa_attributes = {
         .name = "LoggerServiceTask",
         .stack_mem = &LoggerTaBuffer[0],
         .stack_size = sizeof(LoggerTaBuffer),
         .cb_mem = &LoggerTaControlBlock,
         .cb_size = sizeof(LoggerTaControlBlock),
         .priority = (osPriority_t) osPriorityLow, };
-
-uint8_t _serviceStatus = false;
 
 /**
  * main logger service task
@@ -73,12 +70,12 @@ void StartLoggerServiceTask(void *argument)
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever); // wait for message
+		osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
-			char finalmsg[MESSAGE_BUFFER + 50];
+			char finalmsg[MESSAGE_BUFFER + 50] = "";
 			sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n", msg.msgIncId, osKernelGetTickCount(), decodeLogPriority(msg.priority), msg.msgBuf);
 
-			HAL_UART_Transmit(&hlpuart1, (uint8_t*) finalmsg, strlen(finalmsg), 0xFFFF);
+			HAL_UART_Transmit(_huart, (uint8_t*) finalmsg, strlen(finalmsg), HAL_MAX_DELAY);
 		}
 
 		osDelay(10);
@@ -89,8 +86,10 @@ void StartLoggerServiceTask(void *argument)
  * Initialize log service - must be called once at the start of the program
  * @param huart
  */
-uint8_t log_initialize()
+uint8_t log_initialize(UART_HandleTypeDef *huart)
 {
+	_huart = huart;
+
 	queue_loggerHandle = osMessageQueueNew(10, sizeof(MSGQUEUE_OBJ_t), NULL);
 	if (!queue_loggerHandle) {
 		return (EXIT_FAILURE);
