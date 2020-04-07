@@ -1,3 +1,5 @@
+#ifndef INC_SENSOR_HR04_SERVICE_H_
+#define INC_SENSOR_HR04_SERVICE_H_
 /*
  * sensor_hr04_service.h
  *
@@ -6,18 +8,15 @@
  *
  *      https://controllerstech.com/hc-sr04-ultrasonic-sensor-and-stm32/
  */
+
 #include <stdint.h>
 #include "cmsis_os2.h"
 
-#ifndef INC_SENSOR_HR04_SERVICE_H_
-#define INC_SENSOR_HR04_SERVICE_H_
+#define MAX_SONAR   3 			/* Current number of sonars that are connected to the board */
 
-//#define HR04_SENSORS_NUMBERS		2		/* how many hr04 sensors in the house ? don't forget this or
-//be prepared for unexpected results*/
-#define EVENT_HR04_ECHO_SENSOR_1	0xA1U 	/* flags returned everytime one of both hr04 sensors echo is returned */
-#define EVENT_HR04_ECHO_SENSOR_2	0xA2U
-
-osEventFlagsId_t evt_hr04_sensor;
+#define HR04_SONAR_1	0x01U
+#define HR04_SONAR_2	0x02U
+#define HR04_SONAR_3	0x03U
 
 uint8_t sensor_HR04_initialize();
 
