@@ -13,8 +13,8 @@
 #ifndef HAL_I2C_MODULE_ENABLED
 #warning "HAL I2C module must be enable "
 #endif
-//extern I2C_HandleTypeDef hi2c1;
-//#define VL53L0X_pI2cHandle    (&hi2c1)
+//extern I2C_HandleTypeDef hi2c3;
+#define VL53L0X_pI2cHandle    (&hi2c3)
 
 /* when not customized by application define dummy one */
 #ifndef VL53L0X_GetI2cBus
@@ -34,7 +34,7 @@
 #endif
 
 
-uint8_t _I2CBuffer[64];
+static uint8_t _I2CBuffer[64];
 
 int _I2CWrite(VL53L0X_DEV Dev, uint8_t *pdata, uint32_t count) {
     int status;
@@ -234,4 +234,4 @@ VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev) {
     return status;
 }
 
-//end of file
+

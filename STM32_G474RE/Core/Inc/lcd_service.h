@@ -25,22 +25,7 @@
  */
 uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx);
 
-/**
- * Send command to the LCD
- * @param cmd
- */
-void lcd_send_cmd(char cmd);
 
-/**
- * Send data to the LCD
- * @param data
- */
-void lcd_send_data(char data);
-
-/**
- * Send string to the LCD
- * @param str
- */
 void lcd_send_string(char *str);
 
 /**

@@ -15,7 +15,7 @@
 #include "freertos_logger_service.h"
 #include "vl53l0x_api.h"
 
-#define TOF_DEFAULT_ADDRESS			0x52U
+#define TOF_DEFAULT_ADDRESS			0x29U << 1
 #define VL53L0X_SENSORS_NUMBER 		1
 
 /* when not customized by application define dummy one */
@@ -31,16 +31,6 @@
  */
 #   define ST53L0A1_PutI2cBus(...) (void)0
 #endif
-
-/**
- * Expander 0 i2c address[7..0] format
- */
-#define I2cExpAddr0 ((int)(0x43*2))
-/**
- * Expander 1 i2c address[7..0] format
- */
-#define I2cExpAddr1 ((int)(0x42*2))
-/** @} XNUCLEO53L0A1_I2CExpanders*/
 
 /**
  * GPIO monitor pin state register
@@ -63,18 +53,7 @@ typedef enum {
 	HIGH_SPEED 		= 1, /*!< High speed mode */
 	HIGH_ACCURACY	= 2, /*!< High accuracy mode */
 } RangingConfig_e;
-static char *RangingConfigTxt[3] = {"LR", "HS", "HA"};
 
-typedef enum {
-	RANGE_VALUE 	= 0, /*!< Range displayed in cm */
-	BAR_GRAPH 		= 1, /*!< Range displayed as a bar graph : one bar per sensor */
-} DemoMode_e;
-static char *DemoModeTxt[2] = {"rng", "bar"};
-
-/**
- * Global ranging struct
- */
-static VL53L0X_RangingMeasurementData_t RangingMeasurementData;
 
 /**
  * 53L0X Device selector
@@ -116,13 +95,8 @@ static uint8_t nDevMask;
 
 static VL53L0X_Dev_t VL53L0XDevs[];
 
-static int ExitWithLongPress;
-static RangingConfig_e RangingConfig = LONG_RANGE;
-static DemoMode_e DemoMode = RANGE_VALUE;
-static int UseSensorsMask = 1 << ST53L0A1_DEV_CENTER;
-
 /* Forward definition of private function */
-
+static uint8_t ST53L0A1_Init(void);
 static int _ExpanderRd(int I2cExpAddr, int index, uint8_t *data, int n_data);
 static int _ExpanderWR(int I2cExpAddr, int index, uint8_t *data, int n_data);
 static int _ExpandersSetAllIO(void);
@@ -157,6 +131,7 @@ static const osThreadAttr_t timeofflightServiceTa_attributes = {
 void timeofflightService_task(void *argument)
 {
 	loggerI("Starting timeofflight task...");
+	ST53L0A1_Init();
 	for (;;) {
 
 
@@ -282,7 +257,7 @@ uint8_t ST53L0A1_ResetId(uint8_t DevNo, uint8_t state)
         if( state ) {
             CurIOVal.bytes[3]|=0x80; /* bit 15 expender 1  => byte #3 */
         }
-        status= _ExpanderWR(I2cExpAddr1, GPSR+1, &CurIOVal.bytes[3], 1);
+        status= _ExpanderWR(TOF_DEFAULT_ADDRESS, GPSR+1, &CurIOVal.bytes[3], 1);
         break;
     case ST53L0A1_DEV_LEFT :
     case 'l' :
@@ -290,7 +265,7 @@ uint8_t ST53L0A1_ResetId(uint8_t DevNo, uint8_t state)
         if( state ) {
             CurIOVal.bytes[1]|=0x40; /* bit 14 expender 0 => byte #1*/
         }
-        status= _ExpanderWR(I2cExpAddr0, GPSR+1, &CurIOVal.bytes[1], 1);
+        status= _ExpanderWR(TOF_DEFAULT_ADDRESS, GPSR+1, &CurIOVal.bytes[1], 1);
         break;
     case 'r' :
     case ST53L0A1_DEV_RIGHT :
@@ -298,17 +273,17 @@ uint8_t ST53L0A1_ResetId(uint8_t DevNo, uint8_t state)
         if( state ) {
             CurIOVal.bytes[1]|=0x80; /* bit 15 expender 0 => byte #1*/
         }
-        status= _ExpanderWR(I2cExpAddr0, GPSR+1, &CurIOVal.bytes[1], 1);
+        status= _ExpanderWR(TOF_DEFAULT_ADDRESS, GPSR+1, &CurIOVal.bytes[1], 1);
         break;
     default:
     	sprintf(errmsg, "Invalid DevNo %d", DevNo);
-        HAL_UART_Transmit(&hlpuart1, (uint8_t *)errmsg, strlen(errmsg), HAL_MAX_DELAY);
+    	loggerE(errmsg);
         return EXIT_FAILURE;
     }
 /*error with valid id */
     if( status ){
     	sprintf(errmsg, "expander i/o error for DevNo %d state %d ",DevNo, state);
-    	HAL_UART_Transmit(&hlpuart1, (uint8_t *)errmsg, strlen(errmsg), HAL_MAX_DELAY);
+    	loggerE(errmsg);
     }
     return status;
 }
@@ -363,11 +338,11 @@ static int _ExpanderWR(int I2cExpAddr, int index, uint8_t *data, int n_data) {
  */
 static int _ExpandersSetAllIO(void){
     int status;
-    status = _ExpanderWR(I2cExpAddr0, GPSR, &CurIOVal.bytes[0], 2);
+    status = _ExpanderWR(TOF_DEFAULT_ADDRESS, GPSR, &CurIOVal.bytes[0], 2);
     if( status ){
         goto done_err;
     }
-    status = _ExpanderWR(I2cExpAddr1, GPSR, &CurIOVal.bytes[2], 2);
+    status = _ExpanderWR(TOF_DEFAULT_ADDRESS, GPSR, &CurIOVal.bytes[2], 2);
 done_err:
     return status;
 }
@@ -376,8 +351,9 @@ done_err:
  *  Setup all detected sensors for single shot mode and setup ranging configuration
  */
 void SetupSingleShot(RangingConfig_e rangingConfig){
-    int i;
-    int status;
+    uint8_t i;
+    char errmsg[50];
+    uint8_t status;
     uint8_t VhvSettings;
     uint8_t PhaseCal;
     uint32_t refSpadCount;
@@ -392,32 +368,38 @@ void SetupSingleShot(RangingConfig_e rangingConfig){
         if( VL53L0XDevs[i].Present){
             status=VL53L0X_StaticInit(&VL53L0XDevs[i]);
             if( status ){
-                debug_printf("VL53L0X_StaticInit %d failed\n",i);
+            	sprintf(errmsg, "VL53L0X_StaticInit %d failed\n",i);
+            	loggerE(errmsg);
             }
 
             status = VL53L0X_PerformRefCalibration(&VL53L0XDevs[i], &VhvSettings, &PhaseCal);
 			if( status ){
-			   debug_printf("VL53L0X_PerformRefCalibration failed\n");
+				sprintf(errmsg, "VL53L0X_PerformRefCalibration failed\n");
+				loggerE(errmsg);
 			}
 
 			status = VL53L0X_PerformRefSpadManagement(&VL53L0XDevs[i], &refSpadCount, &isApertureSpads);
 			if( status ){
-			   debug_printf("VL53L0X_PerformRefSpadManagement failed\n");
+				sprintf(errmsg, "VL53L0X_PerformRefSpadManagement failed\n");
+				loggerE(errmsg);
 			}
 
-            status = VL53L0X_SetDeviceMode(&VL53L0XDevs[i], VL53L0X_DEVICEMODE_SINGLE_RANGING); // Setup in single ranging mode
+            status = VL53L0X_SetDeviceMode(&VL53L0XDevs[i], VL53L0X_DEVICEMODE_SINGLE_RANGING); /* Setup in single ranging mode */
             if( status ){
-               debug_printf("VL53L0X_SetDeviceMode failed\n");
+            	sprintf(errmsg, "VL53L0X_SetDeviceMode failed\n");
+            	loggerE(errmsg);
             }
 
-            status = VL53L0X_SetLimitCheckEnable(&VL53L0XDevs[i], VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1); // Enable Sigma limit
+            status = VL53L0X_SetLimitCheckEnable(&VL53L0XDevs[i], VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1); /* Enable Sigma limit */
 			if( status ){
-			   debug_printf("VL53L0X_SetLimitCheckEnable failed\n");
+				sprintf(errmsg, "VL53L0X_SetLimitCheckEnable failed\n");
+				loggerE(errmsg);
 			}
 
-			status = VL53L0X_SetLimitCheckEnable(&VL53L0XDevs[i], VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1); // Enable Signa limit
+			status = VL53L0X_SetLimitCheckEnable(&VL53L0XDevs[i], VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1); /* Enable Signa limit */
 			if( status ){
-			   debug_printf("VL53L0X_SetLimitCheckEnable failed\n");
+				sprintf(errmsg, "VL53L0X_SetLimitCheckEnable failed\n");
+				loggerE(errmsg);
 			}
 			/* Ranging configuration */
             switch(rangingConfig) {
@@ -443,37 +425,37 @@ void SetupSingleShot(RangingConfig_e rangingConfig){
 				finalRangeVcselPeriod = 10;
 				break;
             default:
-            	debug_printf("Not Supported");
+            	loggerE("Not Supported");
             }
 
             status = VL53L0X_SetLimitCheckValue(&VL53L0XDevs[i],  VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, signalLimit);
 			if( status ){
-			   debug_printf("VL53L0X_SetLimitCheckValue failed\n");
+			   loggerE("VL53L0X_SetLimitCheckValue failed\n");
 			}
 
 			status = VL53L0X_SetLimitCheckValue(&VL53L0XDevs[i],  VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, sigmaLimit);
 			if( status ){
-			   debug_printf("VL53L0X_SetLimitCheckValue failed\n");
+			   loggerE("VL53L0X_SetLimitCheckValue failed\n");
 			}
 
             status = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&VL53L0XDevs[i],  timingBudget);
             if( status ){
-               debug_printf("VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed\n");
+               loggerE("VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed\n");
             }
 
             status = VL53L0X_SetVcselPulsePeriod(&VL53L0XDevs[i],  VL53L0X_VCSEL_PERIOD_PRE_RANGE, preRangeVcselPeriod);
 			if( status ){
-			   debug_printf("VL53L0X_SetVcselPulsePeriod failed\n");
+			   loggerE("VL53L0X_SetVcselPulsePeriod failed\n");
 			}
 
             status = VL53L0X_SetVcselPulsePeriod(&VL53L0XDevs[i],  VL53L0X_VCSEL_PERIOD_FINAL_RANGE, finalRangeVcselPeriod);
 			if( status ){
-			   debug_printf("VL53L0X_SetVcselPulsePeriod failed\n");
+			   loggerE("VL53L0X_SetVcselPulsePeriod failed\n");
 			}
 
 			status = VL53L0X_PerformRefCalibration(&VL53L0XDevs[i], &VhvSettings, &PhaseCal);
 			if( status ){
-			   debug_printf("VL53L0X_PerformRefCalibration failed\n");
+			   loggerE("VL53L0X_PerformRefCalibration failed\n");
 			}
 
             VL53L0XDevs[i].LeakyFirst=1;
@@ -517,5 +499,55 @@ void Sensor_SetNewRange(VL53L0X_Dev_t *pDev, VL53L0X_RangingMeasurementData_t *p
     }
 }
 
+/**
+ *
+ */
+uint8_t ST53L0A1_Init(void) {
+	char errmsg[50];
+    uint8_t status;
+    uint8_t ExpanderData[2];
+
+    status = _ExpanderRd( TOF_DEFAULT_ADDRESS, 0, ExpanderData, 2);
+    if (status != 0 || ExpanderData[0] != 0x00 || ExpanderData[1] != 0x16) {
+    	sprintf (errmsg, "I2C Expander @0x%02X not detected",(int)TOF_DEFAULT_ADDRESS );
+    	loggerE(errmsg);
+        goto done_err;
+
+    }
+    status = _ExpanderRd( TOF_DEFAULT_ADDRESS, 0, ExpanderData, 2);
+    if (status != 0 || ExpanderData[0] != 0x00 || ExpanderData[1] != 0x16) {
+    	sprintf(errmsg, "I2C Expander @0x%02X not detected",(int)TOF_DEFAULT_ADDRESS);
+    	loggerE(errmsg);
+        goto done_err;
+    }
+
+    CurIOVal.u32=0x0;
+    /* setup expender   i/o direction  all output but exp1 bit 14*/
+    ExpanderData[0] = 0xFF;
+    ExpanderData[1] = 0xFF;
+    status = _ExpanderWR(TOF_DEFAULT_ADDRESS, GPDR, ExpanderData, 2);
+    if (status) {
+    	sprintf(errmsg, "Set Expander @0x%02X DR", TOF_DEFAULT_ADDRESS);
+    	loggerE(errmsg);
+        goto done_err;
+    }
+    ExpanderData[0] = 0xFF;
+    ExpanderData[1] = 0xBF; /* all but bit 14-15 that is pb1 and xhurt */
+    status = _ExpanderWR(TOF_DEFAULT_ADDRESS, GPDR, ExpanderData, 2);
+    if (status) {
+    	sprintf(errmsg, "Set Expander @0x%02X DR", TOF_DEFAULT_ADDRESS);
+    	loggerE(errmsg);
+        goto done_err;
+    }
+    /* shut down all segment and all device */
+    CurIOVal.u32=0x7F + (0x7F<<7) + (0x7F<<16)+(0x7F<<(16+7));
+    status= _ExpandersSetAllIO();
+    if( status ){
+        loggerI("Set initial i/o ");
+    }
+
+done_err:
+    return status;
+}
 
 

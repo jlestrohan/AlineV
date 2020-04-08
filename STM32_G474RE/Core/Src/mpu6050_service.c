@@ -128,10 +128,10 @@ static void StartMPU6050ServiceTask(void *argument)
 			/*int16_t a_x = mpu1.Accelerometer_X; */
 			/*int16_t a_y = mpu1.Accelerometer_Y; */
 			/*int16_t a_z = mpu1.Accelerometer_Z; */
-			//sprintf(res, "%3d %3d %3d", g_x, g_y, g_z);
+			/* sprintf(res, "%3d %3d %3d", g_x, g_y, g_z); */
 			/*sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z); */
 			/*sprintf(res, "temperature: %g", mpu1.Temperature); */
-			//loggerI(res);
+			/* loggerI(res); */
 			/*lcd_send_string(res); */
 		}
 		osDelay(200);

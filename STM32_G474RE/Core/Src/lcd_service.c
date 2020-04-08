@@ -44,12 +44,12 @@ static osThreadId_t lcdServiceTaHandle;
 static uint32_t lcdServiceTaBuffer[256];
 static osStaticThreadDef_t lcdServiceTaControlBlock;
 static const osThreadAttr_t lcdServiceTa_attributes = {
-        .name = "lcdServiceTask",
-        .stack_mem = &lcdServiceTaBuffer[0],
-        .stack_size = sizeof(lcdServiceTaBuffer),
-        .cb_mem = &lcdServiceTaControlBlock,
-        .cb_size = sizeof(lcdServiceTaControlBlock),
-        .priority = (osPriority_t) osPriorityLow, };
+		.name = "lcdServiceTask",
+		.stack_mem = &lcdServiceTaBuffer[0],
+		.stack_size = sizeof(lcdServiceTaBuffer),
+		.cb_mem = &lcdServiceTaControlBlock,
+		.cb_size = sizeof(lcdServiceTaControlBlock),
+		.priority = (osPriority_t) osPriorityLow, };
 
 /**
  * Pre LCD initialization
@@ -136,15 +136,20 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
  */
 void lcd_send_cmd(char cmd)
 {
-	char data_u, data_l;
-	uint8_t data_t[4] = "";
-	data_u = (cmd & 0xf0);
-	data_l = ((cmd << 4) & 0xf0);
-	*data_t = data_u | 0x0C; /* en=1, rs=0 */
-	*(data_t + 1) = data_u | 0x08; /* en=0, rs=0 */
-	*(data_t + 2) = data_l | 0x0C; /* en=1, rs=0 */
-	*(data_t + 3) = data_l | 0x08; /* en=0, rs=0 */
-	HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+	osStatus_t val;
+	val = osSemaphoreAcquire(sem_I2C1, osWaitForever);
+	if (val == osOK) {
+		char data_u, data_l;
+		uint8_t data_t[4] = "";
+		data_u = (cmd & 0xf0);
+		data_l = ((cmd << 4) & 0xf0);
+		*data_t = data_u | 0x0C; /* en=1, rs=0 */
+		*(data_t + 1) = data_u | 0x08; /* en=0, rs=0 */
+		*(data_t + 2) = data_l | 0x0C; /* en=1, rs=0 */
+		*(data_t + 3) = data_l | 0x08; /* en=0, rs=0 */
+		HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+		osSemaphoreRelease(sem_I2C1);
+	}
 }
 
 /**
@@ -153,15 +158,20 @@ void lcd_send_cmd(char cmd)
  */
 void lcd_send_data(char data)
 {
-	char data_u, data_l;
-	uint8_t data_t[4] = "";
-	data_u = (data & 0xf0);
-	data_l = ((data << 4) & 0xf0);
-	*data_t = data_u | 0x0D; /* en=1, rs=0 */
-	*(data_t + 1) = data_u | 0x09; /* en=0, rs=0 */
-	*(data_t + 2) = data_l | 0x0D; /* en=1, rs=0 */
-	*(data_t + 3) = data_l | 0x09; /* en=0, rs=0 */
-	HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+	osStatus_t val;
+	val = osSemaphoreAcquire(sem_I2C1, osWaitForever);
+	if (val == osOK) {
+		char data_u, data_l;
+		uint8_t data_t[4] = "";
+		data_u = (data & 0xf0);
+		data_l = ((data << 4) & 0xf0);
+		*data_t = data_u | 0x0D; /* en=1, rs=0 */
+		*(data_t + 1) = data_u | 0x09; /* en=0, rs=0 */
+		*(data_t + 2) = data_l | 0x0D; /* en=1, rs=0 */
+		*(data_t + 3) = data_l | 0x09; /* en=0, rs=0 */
+		HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+		osSemaphoreRelease(sem_I2C1);
+	}
 }
 
 /**
@@ -185,14 +195,14 @@ void lcd_put_cur(int row, int col)
 {
 	switch (row)
 	{
-		case 0:
-			col |= 0x80;
-			break;
-		case 1:
-			col |= 0xC0;
-			break;
-		default:
-			break;
+	case 0:
+		col |= 0x80;
+		break;
+	case 1:
+		col |= 0xC0;
+		break;
+	default:
+		break;
 	}
 
 	lcd_send_cmd(col);

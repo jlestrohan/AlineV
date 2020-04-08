@@ -37,7 +37,7 @@
 #include "button_handler.h"
 #include "buzzer_service.h"
 #include "sdcard_service.h"
-/*#include "sensor_hr04_service.h"*/
+#include "sensor_hr04_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
 /* USER CODE END Includes */
@@ -49,6 +49,15 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define SERVICE_LOGGER_COMPLETE			(1 << 0)
+#define SERVICE_LCD_COMPLETE			(1 << 1)
+#define SERVICE_BUTTON_COMPLETE			(1 << 2)
+#define SERVICE_HR04_COMPLETE			(1 << 3)
+#define SERVICE_V53L0X_COMPLETE			(1 << 4)
+#define SERVICE_MPU6050_COMPLETE		(1 << 5)
+#define SERVICE_SDCARD_COMPLETE			(1 << 6)
+#define SERVICE_SPEED_COMPLETE			(1 << 7)
 
 /* USER CODE END PD */
 
@@ -186,11 +195,28 @@ void MX_FREERTOS_Init(void) {
 __weak void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-	loggerI("Initializing default task...");
+
+	/* very low priority task, checks every second or so if all services are up and running */
+	uint16_t servicesCheck = 0;
+
 	/* Infinite loop */
 	for (;;) {
 
-		osDelay(100);
+		/*if (!(servicesCheck 	& (SERVICE_LOGGER_COMPLETE
+							| SERVICE_LCD_COMPLETE
+							| SERVICE_BUTTON_COMPLETE
+							| SERVICE_HR04_COMPLETE
+							| SERVICE_V53L0X_COMPLETE
+							| SERVICE_MPU6050_COMPLETE
+							| SERVICE_SDCARD_COMPLETE
+							| SERVICE_SPEED_COMPLETE) > 0)) {*/
+
+			//char *msg = "\n\r---------------\n\rOne or more services are not running correctly\n\r";
+
+			//HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+		//}
+
+		osDelay(1000);
 	}
   /* USER CODE END StartDefaultTask */
 }

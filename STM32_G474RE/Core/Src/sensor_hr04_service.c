@@ -66,7 +66,7 @@ static uint16_t triggerSonar(uint8_t sonarNumber)
 	while (HAL_GPIO_ReadPin(GPIOA, echoPin))    // while the pin is high
 	{
 		local_time++;   // measure time for which the pin is high
-		DWT_Delay (1);
+		DWT_Delay (1);  /* microsecond delay */
 	}
 
 	return local_time;
@@ -88,8 +88,8 @@ static void HR04SensorTask_Start(void *argument)
 		/* first we trigger 0 and 2 */
 		sensor_time = triggerSonar(HR04_SONAR_1);
 
-		sprintf(msg, "%d", (uint16_t)(sensor_time * HALF_SOUND_SPEED_10USEC));
-		loggerI(msg);
+		//sprintf(msg, "%d", (uint16_t)(sensor_time * HALF_SOUND_SPEED_10USEC));
+		//loggerI(msg);
 
 		osDelay(70); /* need to wait at least 60ms to start the operation again */
 	}
