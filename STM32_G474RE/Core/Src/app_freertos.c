@@ -60,6 +60,9 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
+uint16_t ServicesSuccessFlags = 0; /* holds the flags of succesfully running services */
+osStatus_t val;
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -88,50 +91,61 @@ void MX_FREERTOS_Init(void) {
 	DWT_Init();
 
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
-	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+	val = osSemaphoreAcquire(sem_UART1, osWaitForever);
+	switch (val) {
+		case osOK:
+			HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+			osSemaphoreRelease(sem_UART1);
+		break;
+		default: break;
+	}
+
 
 	if (log_initialize(&hlpuart1) == EXIT_FAILURE) {
 		char *msg2 = "Failed Initializing Logger Service.. cannot continue sorry...\n\r";
 		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg2, strlen(msg2), 0xFFFF);
 		Error_Handler();
-	}
+	} else { ServicesSuccessFlags |= SERVICE_LOGGER_COMPLETE; }
 
 	if (lcdService_initialize(&hi2c1) == EXIT_FAILURE) {
 		loggerE("Error Initializing LCD Service");
 		Error_Handler();
-	}
+	} else { ServicesSuccessFlags |= SERVICE_LCD_COMPLETE; }
 
 	if (buttonService_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing Button Service");
 		Error_Handler();
-	}
+	} else { ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE; }
 
-	if (timeofflight_initialize(&hi2c1) == EXIT_FAILURE) {
+	if (sensor_HR04_initialize() == EXIT_FAILURE) {
+		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
+	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
+
+
+	/*if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
 		Error_Handler();
-	}
+	} else { ServicesSuccessFlags |= SERVICE_V53L0X_COMPLETE; }
 
-	/*if (sensor_speed_initialize() == EXIT_FAILURE) {
-	 loggerE("Error Initializing Speed Sensors Service");
-	 Error_Handler();
-	 }*/
+	if (sensor_speed_initialize() == EXIT_FAILURE) {
+		loggerE("Error Initializing Speed Sensors Service");
+		Error_Handler();
+	} else { ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE; }
 
 	if (MPU6050_Service_Initialize(&hi2c2) == EXIT_FAILURE) {
 		loggerE("Error Initializing MPU6050 Sensor Service");
 		Error_Handler();
-	}
+	} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }*/
 
 	/*buzzerService_initialize(); */
-	/*if (sensor_HR04_initialize() == EXIT_FAILURE) { */
-	/*	loggerE("Error Initializing HR-SC04 Distance Sensors Service"); */
-	/*} */
 
 	/*if (sdcardService_initialize() == EXIT_FAILURE) {
-	 loggerE("Error Initializing SD Card Service");
-	 Error_Handler();
-	 }*/
+		loggerE("Error Initializing SD Card Service");
+		Error_Handler();
+	} else { ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE; }*/
 
 	lcd_send_string("Init Complete");
+	loggerI("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */
 
   /* USER CODE END Init */

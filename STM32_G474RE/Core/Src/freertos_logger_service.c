@@ -52,12 +52,12 @@ static osThreadId_t LoggerServiceTaHandle;
 static osStaticThreadDef_t LoggerTaControlBlock;
 static uint32_t LoggerTaBuffer[256];
 static const osThreadAttr_t LoggerServiceTa_attributes = {
-        .name = "LoggerServiceTask",
-        .stack_mem = &LoggerTaBuffer[0],
-        .stack_size = sizeof(LoggerTaBuffer),
-        .cb_mem = &LoggerTaControlBlock,
-        .cb_size = sizeof(LoggerTaControlBlock),
-        .priority = (osPriority_t) osPriorityLow, };
+		.name = "LoggerServiceTask",
+		.stack_mem = &LoggerTaBuffer[0],
+		.stack_size = sizeof(LoggerTaBuffer),
+		.cb_mem = &LoggerTaControlBlock,
+		.cb_size = sizeof(LoggerTaControlBlock),
+		.priority = (osPriority_t) osPriorityLow, };
 
 /**
  * main logger service task
@@ -65,22 +65,32 @@ static const osThreadAttr_t LoggerServiceTa_attributes = {
  */
 void StartLoggerServiceTask(void *argument)
 {
+	osStatus_t val;
 	loggerI("Starting logger service task...");
+	char finalmsg[MESSAGE_BUFFER + 50];
+
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);
 
 		osMessageQueueGet(queue_loggerHandle, &msg, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
-			char finalmsg[MESSAGE_BUFFER + 50] = "";
 			sprintf(finalmsg, "(id) %04d | (timestamp) %08lu %s | %s\r\n", msg.msgIncId, osKernelGetTickCount(), decodeLogPriority(msg.priority), msg.msgBuf);
-
-			HAL_UART_Transmit(_huart, (uint8_t*) finalmsg, strlen(finalmsg), HAL_MAX_DELAY);
+			val = osSemaphoreAcquire(sem_UART1, osWaitForever);
+			switch (val) {
+			case osOK:
+				HAL_UART_Transmit(_huart, (uint8_t*) finalmsg, strlen(finalmsg), HAL_MAX_DELAY);
+				osSemaphoreRelease(sem_UART1);
+				break;
+			default:
+				break;
+			}
 		}
-
-		osDelay(10);
 	}
+
+	osDelay(10);
 }
+
 
 /**
  * Initialize log service - must be called once at the start of the program
@@ -135,24 +145,24 @@ char* decodeLogPriority(LogPriority priority)
 {
 	switch (priority)
 	{
-		case LOG_VERBOSE:
-			return ("[VERBOSE]");
-			break;
-		case LOG_INFO:
-			return ("[INFO]");
-			break;
-		case LOG_WARNING:
-			return ("[WARNING]");
-			break;
-		case LOG_ERROR:
-			return ("[ERROR]");
-			break;
-		case LOG_ALERT:
-			return ("[ALERT]");
-			break;
-		default:
-			return ("");
-			break;
+	case LOG_VERBOSE:
+		return ("[VERBOSE]");
+		break;
+	case LOG_INFO:
+		return ("[INFO]");
+		break;
+	case LOG_WARNING:
+		return ("[WARNING]");
+		break;
+	case LOG_ERROR:
+		return ("[ERROR]");
+		break;
+	case LOG_ALERT:
+		return ("[ALERT]");
+		break;
+	default:
+		return ("");
+		break;
 	}
 }
 

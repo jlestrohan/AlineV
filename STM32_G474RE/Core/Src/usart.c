@@ -21,7 +21,7 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-
+#include <string.h>
 /* USER CODE END 0 */
 
 UART_HandleTypeDef hlpuart1;
@@ -87,7 +87,11 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     HAL_NVIC_SetPriority(LPUART1_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(LPUART1_IRQn);
   /* USER CODE BEGIN LPUART1_MspInit 1 */
-
+    sem_UART1 = osSemaphoreNew(1U, 1U, NULL);
+      if (!sem_UART1) {
+        ; /* todo: Semaphore object not created, handle failure */
+        Error_Handler();
+      }
   /* USER CODE END LPUART1_MspInit 1 */
   }
 }
@@ -112,7 +116,9 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
     /* LPUART1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(LPUART1_IRQn);
   /* USER CODE BEGIN LPUART1_MspDeInit 1 */
-
+    if (!osSemaphoreRelease(sem_UART1)) {
+    	Error_Handler();
+    }
   /* USER CODE END LPUART1_MspDeInit 1 */
   }
 } 

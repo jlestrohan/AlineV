@@ -27,13 +27,13 @@
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "cmsis_os2.h"
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef hlpuart1;
 
 /* USER CODE BEGIN Private defines */
-
+osSemaphoreId_t sem_UART1;
 /* USER CODE END Private defines */
 
 void MX_LPUART1_UART_Init(void);
