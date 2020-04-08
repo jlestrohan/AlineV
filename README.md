@@ -29,8 +29,8 @@ to where it started.
 *  IR-08h        Obstacle Avoidance Sensor
 *  VL53L0X       Time Of FLight sensor
 *  MPU6050       Inertial Sensor
-*                Barometric/Pressure sensor
-*                Magnetic sensor
+*  Barometric/Pressure sensor
+*  Magnetic sensor
 *  Buzzer    
 *  SD Card Interface
 *  
