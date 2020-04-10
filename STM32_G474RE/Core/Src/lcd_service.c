@@ -118,6 +118,11 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 
 	lcd_prepare();
 
+	osSemaphoreId_t sem_lcdService = osSemaphoreNew(01U, 01U, NULL);
+	 if (sem_lcdService == NULL) {
+		 loggerE("Initializing LCD Service - Failed (semaphore could not be created)");
+	  }
+
 	/* creation of LoggerServiceTask */
 	lcdServiceTaHandle = osThreadNew(lcdService_task, NULL, &lcdServiceTa_attributes);
 	if (!lcdServiceTaHandle) {

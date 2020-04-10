@@ -156,8 +156,10 @@ void MX_FREERTOS_Init(void) {
 		loggerE("Error Initializing SD Card Service");
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE; }*/
-
+	osSemaphoreAcquire(sem_lcdService, osWaitForever);
 	lcd_send_string("Init Complete");
+	osSemaphoreRelease(sem_lcdService);
+
 	loggerI("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */
 

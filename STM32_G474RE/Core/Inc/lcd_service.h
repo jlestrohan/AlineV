@@ -24,7 +24,7 @@
  * @return
  */
 uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx);
-
+osSemaphoreId_t sem_lcdService;
 
 void lcd_send_string(char *str);
 
