@@ -33,6 +33,7 @@
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
+extern I2C_HandleTypeDef hi2c4;
 
 /* USER CODE BEGIN Private defines */
 osSemaphoreId_t sem_I2C1;
@@ -43,6 +44,7 @@ osSemaphoreId_t sem_I2C3;
 void MX_I2C1_Init(void);
 void MX_I2C2_Init(void);
 void MX_I2C3_Init(void);
+void MX_I2C4_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

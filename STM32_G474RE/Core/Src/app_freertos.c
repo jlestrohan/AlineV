@@ -58,6 +58,7 @@
 #define SERVICE_MPU6050_COMPLETE		(1 << 5)
 #define SERVICE_SDCARD_COMPLETE			(1 << 6)
 #define SERVICE_SPEED_COMPLETE			(1 << 7)
+#define SERVICE_HCM5883_COMPLETE		(1 << 8)
 
 /* USER CODE END PD */
 
@@ -129,6 +130,10 @@ void MX_FREERTOS_Init(void) {
 		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
 	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
 
+	/*if (HMC5883_Initialize(&hi2c4) == EXIT_FAILURE) {
+			loggerE("Error Initializing HCM5883 Magnetometer Service");
+			Error_Handler();
+		} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }*/
 
 	/*if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
@@ -208,6 +213,7 @@ __weak void StartDefaultTask(void *argument)
 							| SERVICE_V53L0X_COMPLETE
 							| SERVICE_MPU6050_COMPLETE
 							| SERVICE_SDCARD_COMPLETE
+							| SERVICE_HCM5883_COMPLETE
 							| SERVICE_SPEED_COMPLETE) > 0)) {*/
 
 			//char *msg = "\n\r---------------\n\rOne or more services are not running correctly\n\r";
@@ -215,6 +221,7 @@ __weak void StartDefaultTask(void *argument)
 			//HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 		//}
 
+		loggerI("ping");
 		osDelay(1000);
 	}
   /* USER CODE END StartDefaultTask */
