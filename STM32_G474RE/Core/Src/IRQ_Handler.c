@@ -15,8 +15,11 @@
 #include <stdio.h>
 #include "sensor_speed_service.h"
 #include "sensor_hr04_service.h"
+#include <stdbool.h>
 
-uint32_t IC_Value1;
+char msg[50];
+
+bool Channel1Edge = false;
 
 /**
  *
@@ -67,44 +70,57 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  * Capture Callback
  * Reads value received from duty high on echo response
  */
-/*void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-	if (htim->Instance == TIM1) { /* TIM1 = Sensor 1 */
-		/*if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) { /* rising edge */
-		/*	IC_Value1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-		} else if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-			uint32_t ic_val = IC_Value1 - HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
-			osMessageQueuePut(queue_icValueHandle, &ic_val, 0U, 0U);
+	if (htim->Instance == TIM2) { /* TIM2 = Sensor 1 echo */
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) { /* rising edge */
+
+			if(!Channel1Edge) {
+				/* next capture will be on falling edge */
+				__HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
+
+				/* on first rising edge we just reset the counter */
+				TIM2->CNT = 0;
+
+				/* and we flip the flag so we can know next stage will be falling */
+				Channel1Edge = true;
+
+			} else  {
+
+				/* on falling edge we just count how many microseconds elapsed since rising */
+				HR04_SensorsData.echo_capture = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_1 );
+
+				/* flip up the polarity for a next capture */
+				__HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+
+				/* this is first sonar, let's record that */
+				HR04_SensorsData.sonar_number = HR04_SONAR_1;
+
+				osMessageQueuePut(queue_icValueHandle, &HR04_SensorsData, 0U, 0U);
+				Channel1Edge = false;
+			}
 		}
-	}*/
-	/*
-	if (htim->Instance == TIM1) { /* TIM1 = Sensor 1 */
-	/*	uint32_t ic_val = HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_2 );
-
-		HR04DataOut.sensorNum = HR04_SONAR_1;
-		HR04DataOut.echo_duration=ic_val;
-		osMessageQueuePut(queue_icValueHandle, &ic_val, 0U, 0U);
-	}*/
-//}
-
-/**
- * Timers Elapsed
- * @param htim
- * keep as __weak as an instance lies in main.c already (generated code)
- */
-__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	loggerI("period elapsed");
+	}
 }
 
-/**
- *
- * @param huart
- */
-/* void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) */
-/* { */
-/* HAL_GPIO_TogglePin(GPIOA, LD2_Pin); */
-/* char *msg="char hello"; */
-/* HAL_UART_Transmit_IT(huart, (uint8_t *)msg, strlen(msg)); */
-/* cmd_parse_uart_cb(huart); */
-/* } */
+	/**
+	 * Timers Elapsed
+	 * @param htim
+	 * keep as __weak as an instance lies in main.c already (generated code)
+	 */
+	__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+	{
+		loggerI("period elapsed");
+	}
+
+	/**
+	 *
+	 * @param huart
+	 */
+	/* void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) */
+	/* { */
+	/* HAL_GPIO_TogglePin(GPIOA, LD2_Pin); */
+	/* char *msg="char hello"; */
+	/* HAL_UART_Transmit_IT(huart, (uint8_t *)msg, strlen(msg)); */
+	/* cmd_parse_uart_cb(huart); */
+	/* } */

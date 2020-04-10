@@ -18,6 +18,14 @@
 #define HR04_SONAR_2	0x02U
 #define HR04_SONAR_3	0x03U
 
+osMessageQueueId_t queue_icValueHandle;
+
+typedef struct {
+	uint8_t		sonar_number;
+	uint32_t 	echo_capture;
+} HR04_SensorsData_t;
+HR04_SensorsData_t HR04_SensorsData;
+
 uint8_t sensor_HR04_initialize();
 
 #endif /* INC_SENSOR_HR04_SERVICE_H_ */

@@ -109,7 +109,6 @@ void MX_FREERTOS_Init(void) {
 		default: break;
 	}
 
-
 	if (log_initialize(&hlpuart1) == EXIT_FAILURE) {
 		char *msg2 = "Failed Initializing Logger Service.. cannot continue sorry...\n\r";
 		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg2, strlen(msg2), 0xFFFF);

@@ -4,10 +4,7 @@
  *  Created on: Mar 21, 2020
  *      Author: Jack Lestrohan
  *
- *      SEE https://www.carnetdumaker.net/articles/mesurer-une-distance-avec-un-capteur-ultrason-hc-sr04-et-une-carte-arduino-genuino/
  *
- *      https://www.youtube.com/watch?v=Ir-5FnmaESE
- *      https://www.carminenoviello.com/2015/09/04/precisely-measure-microseconds-stm32/
  */
 
 #include "sensor_hr04_service.h"
@@ -17,17 +14,14 @@
 #include "main.h"
 #include "gpio.h"
 #include <FreeRTOS.h>
+#include "tim.h"
 #include "freertos_logger_service.h"
 #include "lcd_service.h"
 #include <string.h>
 #include <stdio.h>
 
-#define EVENT_HR04_ENABLE_MEASURE		0x012U 	/* event flag */
-#define TRIG_TIMER_DELAY				10LU 	/* 10µs */
-#define HR04_QUEUE_MAX_VALS				40		/* max number of values held in queue */
-#define HALF_SOUND_SPEED_10USEC 		0.0171821*2	/* distance = measured time * 0.0171821 * 2 */
-
-volatile uint8_t distValid[MAX_SONAR];
+#define HR04_QUEUE_MAX_OBJECTS			40		/* max number of values held in queue */
+#define HALF_SOUND_SPEED_10USEC 		0.0171821	/* distance = measured time * 0.0171821 * 2 */
 
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t HR04Sensor_taskHandle;
@@ -44,32 +38,27 @@ static const osThreadAttr_t HR04SensorTa_attributes = {
 /**
  * Sends a single echo to HR04_1_TRIG_Pin
  */
-static uint16_t triggerSonar(uint8_t sonarNumber)
+static void triggerSonar(uint8_t sonarNumber)
 {
-	uint16_t local_time=0;
-	uint16_t trigPin, echoPin;
+	uint16_t trigPin;
+
 
 	switch (sonarNumber) {
 	case HR04_SONAR_1:
 		trigPin = HR04_1_TRIG_Pin;
-		echoPin = HR04_1_ECHO_Pin;
 		break;
 	default: break;
 	}
+
+	HAL_GPIO_WritePin(GPIOA, trigPin, GPIO_PIN_RESET);
+	DWT_Delay(2);
 
 	HAL_GPIO_WritePin(GPIOA, trigPin, GPIO_PIN_SET);
 	DWT_Delay(10);
 	HAL_GPIO_WritePin(GPIOA, trigPin, GPIO_PIN_RESET);
 
-
-	while (!(HAL_GPIO_ReadPin(GPIOA, echoPin))) {};  // wait for the ECHO pin to go high
-	while (HAL_GPIO_ReadPin(GPIOA, echoPin))    // while the pin is high
-	{
-		local_time++;   // measure time for which the pin is high
-		DWT_Delay (1);  /* microsecond delay */
-	}
-
-	return local_time;
+	/* start the echo counter for one pulse (1000000 * 1µs counter) */
+	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 }
 
 /**
@@ -79,30 +68,35 @@ static uint16_t triggerSonar(uint8_t sonarNumber)
 static void HR04SensorTask_Start(void *argument)
 {
 	char msg[40];
-	uint16_t sensor_time;
+	osStatus_t status;
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);
 
 		/* first we trigger 0 and 2 */
-		sensor_time = triggerSonar(HR04_SONAR_1);
+		triggerSonar(HR04_SONAR_1);
 
-		//sprintf(msg, "%d", (uint16_t)(sensor_time * HALF_SOUND_SPEED_10USEC));
-		//loggerI(msg);
+		status = osMessageQueueGet(queue_icValueHandle, &HR04_SensorsData, NULL, 1000U);   /* waits for message for 1 sec and no more */
+		if (status == osOK) {
+			sprintf(msg, "%d cm", (uint8_t)(HR04_SensorsData.echo_capture * HALF_SOUND_SPEED_10USEC));//(uint16_t)((sensor_time + 0.0f)*2.8 * HALF_SOUND_SPEED_10USEC));
+			loggerI(msg);
+		}
 
-		osDelay(70); /* need to wait at least 60ms to start the operation again */
+		osDelay(60); /* need to wait at least 60ms to start the operation again */
 	}
 }
-
-
-
 
 /**
  * Initialization function
  */
 uint8_t sensor_HR04_initialize()
 {
+	queue_icValueHandle = osMessageQueueNew(HR04_QUEUE_MAX_OBJECTS, sizeof(HR04_SensorsData), NULL);
+	if (!queue_icValueHandle) {
+		loggerE("HR04 Message Queue object not created, handle failure");
+		return (EXIT_FAILURE);
+	}
 
 	/* creation of HR04Sensor_task */
 	HR04Sensor_taskHandle = osThreadNew(HR04SensorTask_Start, NULL, &HR04SensorTa_attributes); /* &HR04Sensor_task_attributes); */
@@ -110,6 +104,8 @@ uint8_t sensor_HR04_initialize()
 		loggerE("HR04 Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
+
+
 
 	loggerI("HR04 - Initialization complete");
 	return (EXIT_SUCCESS);
