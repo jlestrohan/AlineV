@@ -4,6 +4,7 @@
  *  Created on: Apr 9, 2020
  *      Author: Jack lestrohan
  *
+ * see https://github.com/mechasolution/Mecha_QMC5883L
  *******************************************************************/
 
 #include <HMC5883_service.h>
@@ -12,15 +13,13 @@
 #include "freertos_logger_service.h"
 #include "cmsis_os2.h"
 #include <stdbool.h>
+#include <stdio.h>
 
-/* Default I2C address */
-#define HMC5883_I2C_ADDR			0xD0
+// adresses
+// HMC5883l - ADDRESS
+#define HMC5883l_ADDRESS 0x0D << 1 // or D0
 
 static I2C_HandleTypeDef *_hi2cxHandler;
-
-static uint8_t devAddr;
-static uint8_t buffer[6];
-static uint8_t mode;
 
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t HMC5883_taskHandle;
@@ -41,10 +40,11 @@ static const osThreadAttr_t HMC5883Ta_attributes = {
  */
 static void HMC5883Task_Start(void *argument)
 {
+	char msg[40];
 
 	for (;;) {
 
-		osDelay(10);
+		osDelay(20);
 	}
 }
 
@@ -54,6 +54,11 @@ static void HMC5883Task_Start(void *argument)
 uint8_t HMC5883_Initialize(I2C_HandleTypeDef *hi2cx)
 {
 	_hi2cxHandler = hi2cx;
+
+	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, HMC5883l_ADDRESS, 2, 5) != HAL_OK) {
+			loggerE("HMC5883 Device not ready");
+			return (EXIT_FAILURE);
+		}
 
 	/* creation of HMC5883Sensor_task */
 	HMC5883_taskHandle = osThreadNew(HMC5883Task_Start, NULL, &HMC5883Ta_attributes);

@@ -88,8 +88,6 @@ void Error_Handler(void);
 #define HR04_1_TRIG_GPIO_Port GPIOA
 #define T_SWDIO_Pin GPIO_PIN_13
 #define T_SWDIO_GPIO_Port GPIOA
-#define T_SWCLK_Pin GPIO_PIN_14
-#define T_SWCLK_GPIO_Port GPIOA
 #define SPDSens3_Pin GPIO_PIN_11
 #define SPDSens3_GPIO_Port GPIOC
 #define SPDSens3_EXTI_IRQn EXTI15_10_IRQn

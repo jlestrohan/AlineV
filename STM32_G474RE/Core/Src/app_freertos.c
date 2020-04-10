@@ -40,6 +40,7 @@
 #include "sensor_hr04_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
+#include "HMC5883_service.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -130,10 +131,10 @@ void MX_FREERTOS_Init(void) {
 		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
 	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
 
-	/*if (HMC5883_Initialize(&hi2c4) == EXIT_FAILURE) {
+	if (HMC5883_Initialize(&hi2c4) == EXIT_FAILURE) {
 			loggerE("Error Initializing HCM5883 Magnetometer Service");
 			Error_Handler();
-		} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }*/
+		} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }
 
 	/*if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
