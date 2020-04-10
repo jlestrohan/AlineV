@@ -79,7 +79,9 @@ static void HR04SensorTask_Start(void *argument)
 
 		status = osMessageQueueGet(queue_icValueHandle, &HR04_SensorsData, NULL, 1000U);   /* waits for message for 1 sec and no more */
 		if (status == osOK) {
-			sprintf(msg, "%d cm", (uint8_t)(HR04_SensorsData.echo_capture * HALF_SOUND_SPEED_10USEC));//(uint16_t)((sensor_time + 0.0f)*2.8 * HALF_SOUND_SPEED_10USEC));
+
+			sprintf(msg, "cm: %d          ", (uint16_t)(HR04_SensorsData.echo_capture * HALF_SOUND_SPEED_10USEC));
+			lcd_send_string(msg);
 			loggerI(msg);
 		}
 
