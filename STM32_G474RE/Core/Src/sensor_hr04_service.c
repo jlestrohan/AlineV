@@ -41,24 +41,29 @@ static const osThreadAttr_t HR04SensorTa_attributes = {
 static void triggerSonar(uint8_t sonarNumber)
 {
 	uint16_t trigPin;
-
+	TIM_HandleTypeDef *htim;
+	GPIO_TypeDef *GPIOx;
+	uint32_t Channel;
 
 	switch (sonarNumber) {
 	case HR04_SONAR_1:
 		trigPin = HR04_1_TRIG_Pin;
+		htim = &htim2;
+		GPIOx = GPIOA;
+		Channel = TIM_CHANNEL_1;
 		break;
 	default: break;
 	}
 
-	HAL_GPIO_WritePin(GPIOA, trigPin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOx, trigPin, GPIO_PIN_RESET);
 	DWT_Delay(2);
 
-	HAL_GPIO_WritePin(GPIOA, trigPin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOx, trigPin, GPIO_PIN_SET);
 	DWT_Delay(10);
-	HAL_GPIO_WritePin(GPIOA, trigPin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOx, trigPin, GPIO_PIN_RESET);
 
 	/* start the echo counter for one pulse (1000000 * 1µs counter) */
-	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_IC_Start_IT(htim, Channel);
 }
 
 /**
