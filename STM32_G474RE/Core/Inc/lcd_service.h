@@ -40,4 +40,6 @@ void lcd_put_cur(int row, int col);
  */
 void lcd_clear(void);
 
+void lcd_send_cmd(char cmd);
+
 #endif /* INC_LCD_SERVICE_H_ */
