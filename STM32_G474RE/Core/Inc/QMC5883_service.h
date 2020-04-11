@@ -17,21 +17,30 @@
 /* Control Register 1 */
 /**********************************************************************************************/
 #define QMC5883l_CNTRL_REG_1_ADD	0x09U
-#define QMC5883l_MODE_STANDBY    	0b00000000
-#define QMC5883l_MODE_CONTINUOUS 	0b00000001
 
-#define QMC5883l_ODR_10Hz        	0b00000000
-#define QMC5883l_ODR_50Hz        	0b00000100
-#define QMC5883l_ODR_100Hz       	0b00001000
-#define QMC5883l_ODR_200Hz       	0b00001100
+typedef enum {
+	QMC5883l_MODE_STANDBY		= 0b00000000,
+	QMC5883l_MODE_CONTINUOUS 	= 0b00000001
+} QMC5883l_MODE_t;
 
-#define QMC5883l_RNG_2G          	0b00000000
-#define QMC5883l_RNG_8G          	0b00010000
+typedef enum {
+	QMC5883l_ODR_10Hz 			= 0b00000000,
+	QMC5883l_ODR_50Hz 			= 0b00000100,
+	QMC5883l_ODR_100Hz 			= 0b00001000,
+	QMC5883l_ODR_200Hz  		= 0b00001100
+} QMC5881l_ODR_t;
 
-#define QMC5883l_OSR_512         	0b00000000
-#define QMC5883l_OSR_256         	0b01000000
-#define QMC5883l_OSR_128         	0b10000000
-#define QMC5883l_OSR_64          	0b11000000
+typedef enum {
+	QMC5883l_RNG_2G 			= 0b00000000,
+	QMC5883l_RNG_8G				= 0b00010000,
+} QMC5883l_RNG_t;
+
+typedef enum {
+	QMC5883l_OSR_512         	= 0b00000000,
+	QMC5883l_OSR_256         	= 0b01000000,
+	QMC5883l_OSR_128         	= 0b10000000,
+	QMC5883l_OSR_64          	= 0b11000000
+} QMC5883l_OSR_t;
 
 /* Control Register 2 */
 /**********************************************************************************************/
@@ -52,22 +61,23 @@ ROL_PNT: “0”: Normal, “1”: En ROL_PNT: “0”: Normal, “1”: Enable 
 any time of any mode. For example, if soft reset occurs at the middle of continuous mode reading,
 QMC5883L immediately switches to standby mode due to mode register is reset to “00” in default.
 SOFT_RST: “0”: Normal “1”: Soft reset, restore default value of all registers.*/
-#define QCM5883l_ROL_PNT			(1 << 7)
+#define QCM5883l_SOFT_RST			(1 << 7)
 
 /* Output data registers */
 /**********************************************************************************************/
 /* Registers 00H <-> 05H store the measurement data from each axis in cont measurement */
-#define QMC5883l_DATA_OUTPUT_X_LSB_REG	0x00U	/* Data Output X LSB Register XOUT[7:0]  */
-#define QMC5883l_DATA_OUTPUT_X_MSB_REG	0x01U	/* Data Output X MSB Register XOUT[15:8] */
-#define QMC5883l_DATA_OUTPUT_Y_LSB_REG	0x02U	/* Data Output Y LSB Register YOUT[7:0]  */
-#define QMC5883l_DATA_OUTPUT_Y_MSB_REG	0x03U	/* Data Output Y MSB Register YOUT[15:8] */
-#define QMC5883l_DATA_OUTPUT_Z_LSB_REG	0x04U	/* Data Output Z LSB Register ZOUT[7:0]  */
-#define QMC5883l_DATA_OUTPUT_Z_MSB_REG	0x05U	/* Data Output Z MSB Register ZOUT[15:8] */
-
+typedef enum {
+	QMC5883l_DATA_OUTPUT_X_LSB_REG,	/* Data Output X LSB Register XOUT[7:0]  */
+	QMC5883l_DATA_OUTPUT_X_MSB_REG,	/* Data Output X MSB Register XOUT[15:8] */
+	QMC5883l_DATA_OUTPUT_Y_LSB_REG,	/* Data Output Y LSB Register YOUT[7:0]  */
+	QMC5883l_DATA_OUTPUT_Y_MSB_REG,	/* Data Output Y MSB Register YOUT[15:8] */
+	QMC5883l_DATA_OUTPUT_Z_LSB_REG,	/* Data Output Z LSB Register ZOUT[7:0]  */
+	QMC5883l_DATA_OUTPUT_Z_MSB_REG	/* Data Output Z MSB Register ZOUT[15:8] */
+} QMC5883l_DataOutput_t;
 
 /* status registers */
 /**********************************************************************************************/
-#define QMC5883l_STATUS_REG_ADD			0x06U
+#define QMC5883l_STATUS_REG_ADD			0x06
 
 /* Data Ready Register (DRDY), it is set when all three axis data is ready, and loaded to the output
 data registers in the continuous measurement mode. It is reset to “0” by reading any data register
@@ -111,8 +121,33 @@ typedef enum
 	QHM5883_Result_DeviceNotConnected, /*!< There is no device with valid slave address */
 	QHM5883_Result_DeviceInvalid, /*!< Connected device with address is not MPU6050 */
 	QHM5883_Result_ErrorHandlerNotInitialized /*!< I2C Handler not initialized (initialize() function hasn't been called ? */
-} QHM5883_Result;
+} QMC5883_Result;
 
-uint8_t HMC5883_Initialize(I2C_HandleTypeDef *hi2cx);
+/**
+ * Data Structure
+ */
+typedef struct {
+	uint16_t DataX;
+	uint16_t DataY;
+	uint16_t DataZ;
+	uint16_t DataTemperature;
+	uint8_t DataAvailable; /* 0 = not avail, 1 = avail for reading */
+} QMC5883;
+static QMC5883 qmc1; /* Main data structs holding the constantly updated data */
+
+/**
+ * Main module init (freertos)
+ */
+uint8_t HMC5883l_Initialize(I2C_HandleTypeDef *hi2cx);
+
+/**
+ * Main sensor initialization routine
+ */
+QMC5883_Result QCM5883l_Init();
+
+/**
+ * Read all datas from sensor
+ */
+QMC5883_Result QMC5883l_ReadData(QMC5883 *DataStruct);
 
 #endif /* INC_QMC5883_SERVICE_H_ */
