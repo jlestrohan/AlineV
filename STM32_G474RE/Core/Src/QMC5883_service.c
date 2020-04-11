@@ -66,7 +66,7 @@ static void QMC5883lTask_Start(void *argument)
 
 		sprintf(msg, "x: %d - y: %d - z: %d - temp: %d - HDG: %d°",
 				qmc1.DataX, qmc1.DataY, qmc1.DataZ,  qmc1.DataTemperature,
-				(uint8_t)(atan2(qmc1.DataY, qmc1.DataX) * 180 / M_PI));
+				(uint8_t)QMC5883l_Azimuth(qmc1.DataX, qmc1.DataY));
 		loggerI(msg);
 
 		osDelay(200);
@@ -88,7 +88,7 @@ uint8_t QMC5883l_Initialize(I2C_HandleTypeDef *hi2cx)
 	}
 
 	/* default QHM5883 settings */
-	if (QCM5883l_Init() != QHM5883_Result_Ok) {
+	if (QCM5883l_Init() != QMC5883l_Result_Ok) {
 		loggerE("QMC5883 Init procedure Failed");
 		return (EXIT_FAILURE);
 	}
@@ -102,36 +102,33 @@ uint8_t QMC5883l_Initialize(I2C_HandleTypeDef *hi2cx)
  */
 QMC5883_Result QCM5883l_Init()
 {
-	uint8_t data[3];
 	uint8_t temp = 0;
 
 	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, QMC5883l_ADDRESS, 2, 5) != HAL_OK) {
-		return (QHM5883_Result_DeviceNotConnected);
+		return (QMC5883l_Result_DeviceNotConnected);
 	}
 
 	/* Receive multiple byte */
 	if (HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_ADDRESS, &temp, 1, 1000) != HAL_OK) {
-		return (QHM5883_Result_Error);
+		return (QMC5883l_Result_Error);
 	}
 
-	/* Set in continuous mode */
-	data[0] = QMC5883l_SET_RESET_PERIOD_REG;
-	data[1] = 0x01;
-
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, (uint8_t *)data, 2, 1000) != HAL_OK) {
-		return (QHM5883_Result_Error);
+	/* sets modes */
+	if (QMC5883l_SetMode(QMC5883l_MODE_CONTINUOUS, QMC5883l_ODR_200Hz, QMC5883l_RNG_8G, QMC5883l_OSR_512) != QMC5883l_Result_Ok) {
+		return (QMC5883l_Result_Error_Cannot_Set_Mode);
 	}
 
-	data[0] = QMC5883l_CNTRL_REG_1_ADD;
-	data[1] = temp | QMC5883l_MODE_CONTINUOUS | QMC5883l_ODR_200Hz | QMC5883l_RNG_8G | QMC5883l_OSR_512;
-
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, (uint8_t *)data, 2, 1000) != HAL_OK) {
-		return (QHM5883_Result_Error);
+	/* disables interrupts */
+	if (QMC5883l_SetInterrupt(false) != QMC5883l_Result_Ok) {
+		return (QMC5883l_Result_Error_Cannot_Set_Interrupt);
 	}
 
-	return QHM5883_Result_Ok;
+	/* set reset period as per recommended in the DSHT */
+	if (QMC5883l_SetResetPeriod() != QMC5883l_Result_Ok) {
+		return (QMC5883l_Result_Error_Cannot_Set_ResetPeriod);
+	}
+
+	return QMC5883l_Result_Ok;
 }
 
 
@@ -140,48 +137,141 @@ QMC5883_Result QCM5883l_Init()
  */
 QMC5883_Result QMC5883l_ReadData(QMC5883 *DataStruct)
 {
-	uint8_t data[3];
-	uint8_t receive_buffer[10];
-	char test[40];
+	uint8_t data[6];
 
 	/* check status register, 1 = ready */
-	data[0] = QMC5883l_STATUS_REG_ADD;
+	/*if ( HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_ADDRESS, QMC5883l_STATUS_REG_ADD, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY)) {
+		return (QHM5883_Result_Error);
+	}*/
+
+	//DataStruct->DataAvailable = data[0];
+
+	/*if (data[0] != 0) {*/
+	//data[0] = QMC5883l_DATA_OUTPUT_X_LSB_REG;
 
 	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, (uint8_t *)data, 1, 1000) != HAL_OK) {
-		return (QHM5883_Result_Error);
+	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, 0x00, 1, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
 	}
 
-	/* read back value, we're trying to check if there's any data available */
-	if (HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_ADDRESS, receive_buffer, 1, 1000) != HAL_OK) {
-		return (QHM5883_Result_Error);
+	/* receives 6 bits of data X Y Z */
+	if ( HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_ADDRESS, data, 6, HAL_MAX_DELAY)) {
+		return (QMC5883l_Result_Error);
 	}
 
-	DataStruct->DataAvailable = receive_buffer[0];
+	DataStruct->DataX = data[0] | data[1] << 8;
+	DataStruct->DataY = data[2] | data[3] << 8;
+	DataStruct->DataZ = data[4] | data[5] << 8;
 
-	if (receive_buffer != 0) {
-		data[0] = QMC5883l_DATA_OUTPUT_X_LSB_REG;
+	data[0] = QMC5883l_TEMP_OUTPUT_16REG;
+	/* Try to transmit via I2C */
+	/*if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 1, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
+	}*/
 
-		/* Try to transmit via I2C */
-		/*if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 1, 1000) != HAL_OK) {
-			return (QHM5883_Result_Error);
-		}*/
+	/* receives 2 bytes of data temp LSB temp MSB */
+	/*if ( HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY)) {
+		return (QMC5883l_Result_Error);
+	}*/
+	HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_ADDRESS, QMC5883l_TEMP_OUTPUT_16REG, I2C_MEMADD_SIZE_8BIT, data, 2, HAL_MAX_DELAY);
+	DataStruct->DataTemperature = data[0] | data[1] << 8 ;
 
-		/* receives 6 bits of data X Y Z */
-		if ( HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_ADDRESS, QMC5883l_DATA_OUTPUT_X_LSB_REG, I2C_MEMADD_SIZE_8BIT, receive_buffer, 9, 1000)) {
-			return (QHM5883_Result_Error);
-		}
-		//receive_buffer[0] : MSB X data
-		//receive_buffer[1] : LSB X data
-		DataStruct->DataX = receive_buffer[0] | receive_buffer[1]<<8; /* combine the two in 1 16 bits */
-		DataStruct->DataY = receive_buffer[2] | receive_buffer[3]<<8; /* combine the two in 1 16 bits */
-		DataStruct->DataZ = receive_buffer[4] | receive_buffer[5]<<8; /* combine the two in 1 16 bits */
+	//}
 
-		DataStruct->DataTemperature = receive_buffer[7] | receive_buffer[8]<<8; /* combine the two in 1 16 bits */
+	return QMC5883l_Result_Ok;
+}
 
+/**
+ * Sets the device in standby mode
+ */
+QMC5883_Result QMC5883l_StandBy()
+{
+	uint8_t data[2];
+	data[0] = QMC5883l_CNTRL_REG_1_ADD;
+	data[1] = QMC5883l_MODE_STANDBY;
+
+	/* Try to transmit via I2C */
+	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
+	}
+	return (QMC5883l_Result_Ok);
+}
+
+/**
+ * Soft Resets the Device
+ */
+QMC5883_Result QMC5883l_SoftReset()
+{
+	uint8_t data[2];
+	data[0] = QMC5883l_CNTRL_REG2_ADD;
+	data[1] = QCM5883l_SOFT_RST;
+
+	/* Try to transmit via I2C */
+	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
+	}
+	return (QMC5883l_Result_Ok);
+}
+
+/**
+ * Sets device modes
+ * See .h
+ */
+QMC5883_Result QMC5883l_SetMode(QMC5883l_MODE_t mode, QMC5881l_ODR_t odr, QMC5883l_RNG_t rng, QMC5883l_OSR_t osr)
+{
+	uint8_t data[2];
+	data[0] = QMC5883l_CNTRL_REG_1_ADD;
+	data[1] = mode | odr | rng | osr;
+
+	/* Try to transmit via I2C */
+	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
+	}
+	return (QMC5883l_Result_Ok);
+}
+
+/**
+ * returns azimuth
+ */
+uint8_t QMC5883l_Azimuth(uint16_t *x, uint16_t *y)
+{
+	float azimuth = (uint8_t)(atan2((int)*y,(int)*x) * 180.0/M_PI);
+	return (azimuth < 0?360 + azimuth:azimuth);
+}
+
+/**
+ * Enables/disable interrupt flag
+ */
+QMC5883_Result QMC5883l_SetInterrupt(uint8_t flag) /* true/false */
+{
+	uint8_t data[2];
+	data[0] = QMC5883l_CNTRL_REG2_ADD;
+	uint8_t rcvdt = 0;
+
+	HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_ADDRESS, data[0], I2C_MEMADD_SIZE_8BIT, &rcvdt, 1, HAL_MAX_DELAY);
+
+	data[1] = flag ? rcvdt | QCM5883l_INT_ENB : rcvdt;
+	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
 	}
 
-	return QHM5883_Result_Ok;
+	return (QMC5883l_Result_Ok);
+}
+
+/**
+ * Set/Reset Period (recommended 0x01)
+ */
+QMC5883_Result QMC5883l_SetResetPeriod()
+{
+	uint8_t data[2];
+	data[0] = QMC5883l_SET_RESET_PERIOD_REG;
+	data[1] = 0x01;
+
+	/* Try to transmit via I2C */
+	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
+		return (QMC5883l_Result_Error);
+	}
+	return (QMC5883l_Result_Ok);
 }
 
 

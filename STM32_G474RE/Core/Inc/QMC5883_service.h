@@ -44,7 +44,7 @@ typedef enum {
 
 /* Control Register 2 */
 /**********************************************************************************************/
-#define QMC5883l_CNTRL_REG_2_ADD	0x0AH
+#define QMC5883l_CNTRL_REG2_ADD	0x0AU
 
 /*Interrupt enabling is controlled by register INT_ENB in control register 2. Once the interrupt is
 enabled, it will flag when new data is in Data Output Registers.
@@ -66,14 +66,13 @@ SOFT_RST: “0”: Normal “1”: Soft reset, restore default value of all regi
 /* Output data registers */
 /**********************************************************************************************/
 /* Registers 00H <-> 05H store the measurement data from each axis in cont measurement */
-typedef enum {
-	QMC5883l_DATA_OUTPUT_X_LSB_REG,	/* Data Output X LSB Register XOUT[7:0]  */
-	QMC5883l_DATA_OUTPUT_X_MSB_REG,	/* Data Output X MSB Register XOUT[15:8] */
-	QMC5883l_DATA_OUTPUT_Y_LSB_REG,	/* Data Output Y LSB Register YOUT[7:0]  */
-	QMC5883l_DATA_OUTPUT_Y_MSB_REG,	/* Data Output Y MSB Register YOUT[15:8] */
-	QMC5883l_DATA_OUTPUT_Z_LSB_REG,	/* Data Output Z LSB Register ZOUT[7:0]  */
-	QMC5883l_DATA_OUTPUT_Z_MSB_REG	/* Data Output Z MSB Register ZOUT[15:8] */
-} QMC5883l_DataOutput_t;
+#define QMC5883l_DATA_XYZ_REG	0x00,	/* Data Output X LSB/MSB Register XOUT[7:0]  */
+	//QMC5883l_DATA_OUTPUT_X_MSB_REG	= 0x01,	/* Data Output X MSB Register XOUT[15:8] */
+	//QMC5883l_DATA_OUTPUT_Y_LSB_REG	= 0x02,	/* Data Output Y LSB Register YOUT[7:0]  */
+	//QMC5883l_DATA_OUTPUT_Y_MSB_REG	= 0x03,	/* Data Output Y MSB Register YOUT[15:8] */
+	//QMC5883l_DATA_OUTPUT_Z_LSB_REG	= 0x04,	/* Data Output Z LSB Register ZOUT[7:0]  */
+	//QMC5883l_DATA_OUTPUT_Z_MSB_REG	= 0x05  /* Data Output Z MSB Register ZOUT[15:8] */
+
 
 /* status registers */
 /**********************************************************************************************/
@@ -104,8 +103,8 @@ DOR: “0”: normal, “1”: data skipped for reading */
 /* Registers 07H-08H store temperature sensor output data. 16 bits temperature sensor output is in Registers
 2’s complement. Temperature sensor gain is factory-calibrated, but its offset has not been compensated, only relative temperature value is accurate.
 The temperature coefficient is about 100 LSB/°C */
-#define QMC5883l_TEMP_OUTPUT_LSB_REG	0x07U
-#define QMC5883l_TEMP_OUTPUT_MSB_REG	0x08U
+#define QMC5883l_TEMP_OUTPUT_16REG	0x07U
+
 
 /* 12.2.5 SET/RESET Period Register */
 /* SET/RESET Period is controlled by FBR [7:0], it is recommended that the register 0BH is written by 0x01.*/
@@ -116,11 +115,14 @@ The temperature coefficient is about 100 LSB/°C */
  */
 typedef enum
 {
-	QHM5883_Result_Ok = 0x00, /*!< Everything OK */
-	QHM5883_Result_Error, /*!< Unknown error */
-	QHM5883_Result_DeviceNotConnected, /*!< There is no device with valid slave address */
-	QHM5883_Result_DeviceInvalid, /*!< Connected device with address is not MPU6050 */
-	QHM5883_Result_ErrorHandlerNotInitialized /*!< I2C Handler not initialized (initialize() function hasn't been called ? */
+	QMC5883l_Result_Ok = 0x00, /*!< Everything OK */
+	QMC5883l_Result_Error, /*!< Unknown error */
+	QMC5883l_Result_DeviceNotConnected, /*!< There is no device with valid slave address */
+	QMC5883l_Result_DeviceInvalid, /*!< Connected device with address is not MPU6050 */
+	QMC5883l_Result_ErrorHandlerNotInitialized, /*!< I2C Handler not initialized (initialize() function hasn't been called ? */
+	QMC5883l_Result_Error_Cannot_Set_Mode,
+	QMC5883l_Result_Error_Cannot_Set_Interrupt,
+	QMC5883l_Result_Error_Cannot_Set_ResetPeriod
 } QMC5883_Result;
 
 /**
@@ -149,5 +151,37 @@ QMC5883_Result QCM5883l_Init();
  * Read all datas from sensor
  */
 QMC5883_Result QMC5883l_ReadData(QMC5883 *DataStruct);
+
+/**
+ * Sets the device in StandBy mode
+ */
+QMC5883_Result QMC5883l_StandBy();
+
+/**
+ * SoftResets the device
+ */
+QMC5883_Result QMC5883l_SoftReset();
+
+/**
+ * Sets device modes
+ */
+QMC5883_Result QMC5883l_SetMode(QMC5883l_MODE_t mode, QMC5881l_ODR_t odr, QMC5883l_RNG_t rng, QMC5883l_OSR_t osr);
+
+/**
+ * returns azimuth for the input coordinates
+ */
+uint8_t QMC5883l_Azimuth(uint16_t *x, uint16_t *y);
+
+/**
+ * Enables/Disables DRDY interrupt
+ */
+QMC5883_Result QMC5883l_SetInterrupt(uint8_t flag); /* true/false */
+
+/**
+ * Set/Reset Period at recommended 0x01 value, apparently we have to do this... weird
+ */
+QMC5883_Result QMC5883l_SetResetPeriod();
+
+
 
 #endif /* INC_QMC5883_SERVICE_H_ */
