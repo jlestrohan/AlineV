@@ -143,12 +143,12 @@ void MX_FREERTOS_Init(void) {
 	if (sensor_speed_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing Speed Sensors Service");
 		Error_Handler();
-	} else { ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE; }
+	} else { ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE; }*/
 
 	if (MPU6050_Service_Initialize(&hi2c2) == EXIT_FAILURE) {
 		loggerE("Error Initializing MPU6050 Sensor Service");
 		Error_Handler();
-	} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }*/
+	} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }
 
 	/*buzzerService_initialize(); */
 

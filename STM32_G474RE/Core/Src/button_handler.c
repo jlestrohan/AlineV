@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include "stdint.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include "gpio.h"
 
 static uint32_t lastPressedTick = 0;
@@ -36,12 +37,12 @@ static osThreadId_t buttonServiceTaskHandle;
 static uint32_t buttonServiceTaBuffer[256];
 static osStaticThreadDef_t buttonServiceTaControlBlock;
 static const osThreadAttr_t buttonServiceTask_attributes = {
-        .stack_mem = &buttonServiceTaBuffer[0],
-        .name = "buttonServiceTask",
-        .priority = (osPriority_t) osPriorityBelowNormal,
-        .cb_mem = &buttonServiceTaControlBlock,
-        .cb_size = sizeof(buttonServiceTaControlBlock),
-        .stack_size = 256 };
+		.stack_mem = &buttonServiceTaBuffer[0],
+		.name = "buttonServiceTask",
+		.priority = (osPriority_t) osPriorityBelowNormal,
+		.cb_mem = &buttonServiceTaControlBlock,
+		.cb_size = sizeof(buttonServiceTaControlBlock),
+		.stack_size = 256 };
 
 /**
  * Button service main task
@@ -49,8 +50,9 @@ static const osThreadAttr_t buttonServiceTask_attributes = {
  */
 static void buttonService_task(void *argument)
 {
-	loggerI("Starting button service task...");
-	for (;;) {
+
+	for (;;)
+	{
 		btnflags = osEventFlagsWait(evt_usrbtn_id, BTN_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
 		if (buttonDebounce(lastPressedTick) || lastPressedTick == 0) {
 			lastPressedTick = HAL_GetTick();

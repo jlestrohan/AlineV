@@ -85,11 +85,9 @@ typedef enum
  */
 typedef struct
 {
-	/* Private */
 	uint8_t Address; /*!< I2C address of device. */
 	float Gyro_Mult; /*!< Gyroscope corrector from raw data to "degrees/s". Only for private use */
 	float Acce_Mult; /*!< Accelerometer corrector from raw data to "g". Only for private use */
-	/* Public */
 	int16_t Accelerometer_X; /*!< Accelerometer value X axis */
 	int16_t Accelerometer_Y; /*!< Accelerometer value Y axis */
 	int16_t Accelerometer_Z; /*!< Accelerometer value Z axis */

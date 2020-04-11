@@ -125,8 +125,6 @@ uint8_t log_initialize(UART_HandleTypeDef *huart)
  */
 void log_service(const char *log_msg, LogPriority priority)
 {
-	assert_param(log_msg);
-
 	incMsgIdCounter++;
 	/*  fill up the queue with the logger message given as argument */
 

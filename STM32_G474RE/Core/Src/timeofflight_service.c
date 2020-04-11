@@ -248,7 +248,7 @@ uint8_t timeofflight_initialize(I2C_HandleTypeDef *hi2cx)
 uint8_t ST53L0A1_ResetId(uint8_t DevNo, uint8_t state)
 {
     uint8_t status;
-    char errmsg[40];
+    char errmsg[50];
 
     switch( DevNo ){
     case ST53L0A1_DEV_CENTER :

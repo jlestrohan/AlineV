@@ -88,6 +88,7 @@ static void HR04SensorTask_Start(void *argument)
 			result = (uint16_t)(HR04_SensorsData.echo_capture * HALF_SOUND_SPEED_10USEC);
 			if (result < 2000) {
 			sprintf(msg, "cm: %d          ", result);
+
 			osSemaphoreAcquire(sem_lcdService, osWaitForever);
 			lcd_send_string(msg);
 			osSemaphoreRelease(sem_lcdService);
@@ -119,7 +120,7 @@ uint8_t sensor_HR04_initialize()
 
 
 
-	loggerI("HR04 - Initialization complete");
+	loggerI("Initializing HC-SR04 Service... Success!");
 	return (EXIT_SUCCESS);
 }
 

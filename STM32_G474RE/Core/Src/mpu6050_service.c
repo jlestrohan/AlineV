@@ -86,12 +86,12 @@ static osThreadId_t mpu6050ServiceTaHandle;
 static uint32_t mpu6050ServiceTaBuffer[256];
 static osStaticThreadDef_t mpu6050ServiceTaControlBlock;
 static const osThreadAttr_t mpu6050ServiceTa_attributes = {
-        .name = "mpu6050ServiceTask",
-        .stack_mem = &mpu6050ServiceTaBuffer[0],
-        .stack_size = sizeof(mpu6050ServiceTaBuffer),
-        .cb_mem = &mpu6050ServiceTaControlBlock,
-        .cb_size = sizeof(mpu6050ServiceTaControlBlock),
-        .priority = (osPriority_t) osPriorityLow, };
+		.name = "mpu6050ServiceTask",
+		.stack_mem = &mpu6050ServiceTaBuffer[0],
+		.stack_size = sizeof(mpu6050ServiceTaBuffer),
+		.cb_mem = &mpu6050ServiceTaControlBlock,
+		.cb_size = sizeof(mpu6050ServiceTaControlBlock),
+		.priority = (osPriority_t) osPriorityLow, };
 
 /**
  * Service Main task
@@ -105,38 +105,31 @@ static void StartMPU6050ServiceTask(void *argument)
 
 	for (;;) {
 
-		result = MPU6050_Init(&mpu1, MPU6050_Device_0, MPU6050_Accelerometer_2G, MPU6050_Gyroscope_250s);
+		/*osSemaphoreAcquire(sem_lcdService, 0U); */
+		/*MPU6050_ReadTemperature(&mpu1); */
+		/*float temper = mpu1.Temperature; */
+		/*sprintf(res, "temperature: %d", (int) temper); */
+		/*lcd_send_string(res); */
+		/*osSemaphoreRelease(sem_lcdService); */
 
-		if (result != MPU6050_Result_Ok) {
-			loggerI("result NOK");
-		} else {
-			osDelay(20);
-
-			/*osSemaphoreAcquire(sem_lcdService, 0U); */
-			/*MPU6050_ReadTemperature(&mpu1); */
-			/*float temper = mpu1.Temperature; */
-			/*sprintf(res, "temperature: %d", (int) temper); */
-			/*lcd_send_string(res); */
-			/*osSemaphoreRelease(sem_lcdService); */
-
-			/*MPU6050_ReadGyroscope(&mpu1);
+		/*MPU6050_ReadGyroscope(&mpu1);
 			 int16_t g_x = mpu1.Gyroscope_X;
 			 int16_t g_y = mpu1.Gyroscope_Y;
 			 int16_t g_z = mpu1.Gyroscope_Z;*/
 
-			/*MPU6050_ReadAccelerometer(&mpu1); */
-			/*int16_t a_x = mpu1.Accelerometer_X; */
-			/*int16_t a_y = mpu1.Accelerometer_Y; */
-			/*int16_t a_z = mpu1.Accelerometer_Z; */
-			/* sprintf(res, "%3d %3d %3d", g_x, g_y, g_z); */
-			/*sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z); */
-			/*sprintf(res, "temperature: %g", mpu1.Temperature); */
-			/* loggerI(res); */
-			/*lcd_send_string(res); */
-		}
-		osDelay(200);
+		/*MPU6050_ReadAccelerometer(&mpu1);
+			int16_t a_x = mpu1.Accelerometer_X;
+			int16_t a_y = mpu1.Accelerometer_Y;
+			int16_t a_z = mpu1.Accelerometer_Z;*/
+		/* sprintf(res, "%3d %3d %3d", g_x, g_y, g_z); */
+		//sprintf(res, "accelX: %d; accelY: %d, accelZ: %d", a_x, a_y, a_z);
+		/*sprintf(res, "temperature: %g", mpu1.Temperature); */
+		//loggerI(res);
+		/*lcd_send_string(res); */
 	}
+	osDelay(200);
 }
+
 
 /**
  * Initialize the whole service, tasks and stuff
@@ -144,7 +137,14 @@ static void StartMPU6050ServiceTask(void *argument)
  */
 MPU6050_Result MPU6050_Service_Initialize(I2C_HandleTypeDef *i2cxHandler)
 {
+	MPU6050_Result result;
 	_i2cxHandler = i2cxHandler;
+
+	if (HAL_I2C_IsDeviceReady(i2cxHandler, MPU6050_I2C_ADDR, 2, 5) != HAL_OK) {
+		loggerE("MPU6050 Device not ready");
+		return (EXIT_FAILURE);
+	}
+
 	/* creation of LoggerServiceTask */
 	mpu6050ServiceTaHandle = osThreadNew(StartMPU6050ServiceTask, NULL, &mpu6050ServiceTa_attributes);
 	if (!mpu6050ServiceTaHandle) {
@@ -152,7 +152,12 @@ MPU6050_Result MPU6050_Service_Initialize(I2C_HandleTypeDef *i2cxHandler)
 		loggerI("MPU6050 Initialization failed...");
 	}
 
-	loggerI("MPU6050 Initialization completed...");
+	result = MPU6050_Init(&mpu1, MPU6050_Device_0, MPU6050_Accelerometer_2G, MPU6050_Gyroscope_250s);
+	if (result != MPU6050_Result_Ok) {
+		loggerI("MPU6050 Initialization failed");
+	}
+
+	loggerI("Initializing MPU6050 Service... Success!");
 	return (MPU6050_Result_Ok);
 }
 
@@ -283,20 +288,20 @@ MPU6050_Result MPU6050_SetAccelerometer(MPU6050 *DataStruct, MPU6050_Acceleromet
 	/* Set sensitivities for multiplying gyro and accelerometer data */
 	switch (AccelerometerSensitivity)
 	{
-		case MPU6050_Accelerometer_2G:
-			DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_2;
-			break;
-		case MPU6050_Accelerometer_4G:
-			DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_4;
-			break;
-		case MPU6050_Accelerometer_8G:
-			DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_8;
-			break;
-		case MPU6050_Accelerometer_16G:
-			DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_16;
-			break;
-		default:
-			break;
+	case MPU6050_Accelerometer_2G:
+		DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_2;
+		break;
+	case MPU6050_Accelerometer_4G:
+		DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_4;
+		break;
+	case MPU6050_Accelerometer_8G:
+		DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_8;
+		break;
+	case MPU6050_Accelerometer_16G:
+		DataStruct->Acce_Mult = (float) 1 / MPU6050_ACCE_SENS_16;
+		break;
+	default:
+		break;
 	}
 
 	/* Return OK */
@@ -333,20 +338,20 @@ MPU6050_Result MPU6050_SetGyroscope(MPU6050 *DataStruct, MPU6050_Gyroscope Gyros
 
 	switch (GyroscopeSensitivity)
 	{
-		case MPU6050_Gyroscope_250s:
-			DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_250;
-			break;
-		case MPU6050_Gyroscope_500s:
-			DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_500;
-			break;
-		case MPU6050_Gyroscope_1000s:
-			DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_1000;
-			break;
-		case MPU6050_Gyroscope_2000s:
-			DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_2000;
-			break;
-		default:
-			break;
+	case MPU6050_Gyroscope_250s:
+		DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_250;
+		break;
+	case MPU6050_Gyroscope_500s:
+		DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_500;
+		break;
+	case MPU6050_Gyroscope_1000s:
+		DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_1000;
+		break;
+	case MPU6050_Gyroscope_2000s:
+		DataStruct->Gyro_Mult = (float) 1 / MPU6050_GYRO_SENS_2000;
+		break;
+	default:
+		break;
 	}
 	/* Return OK */
 	return (MPU6050_Result_Ok);
