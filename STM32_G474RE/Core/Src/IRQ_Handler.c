@@ -5,6 +5,7 @@
  *      Author: jack
  */
 
+#include <HC_SR04_service.h>
 #include "main.h"
 #include "usart.h"
 #include "freertos_logger_service.h"
@@ -15,7 +16,6 @@
 #include "tim.h"
 #include <stdio.h>
 #include "sensor_speed_service.h"
-#include "sensor_hr04_service.h"
 #include <stdbool.h>
 
 char msg[50];

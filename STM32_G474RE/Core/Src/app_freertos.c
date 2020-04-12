@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <HC_SR04_service.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -37,7 +38,6 @@
 #include "button_handler.h"
 #include "buzzer_service.h"
 #include "sdcard_service.h"
-#include "sensor_hr04_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
 #include "QMC5883_service.h"
@@ -128,7 +128,7 @@ void MX_FREERTOS_Init(void) {
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE; }
 
-	if (sensor_HR04_initialize() == EXIT_FAILURE) {
+	if (HC_SR04_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
 	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
 

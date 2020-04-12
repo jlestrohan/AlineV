@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <HC_SR04_service.h>
 #include "main.h"
 #include "cmsis_os.h"
 #include "app_fatfs.h"
@@ -31,7 +32,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "freertos_logger_service.h"
-#include "sensor_hr04_service.h"
 #include "string.h"
 /* USER CODE END Includes */
 

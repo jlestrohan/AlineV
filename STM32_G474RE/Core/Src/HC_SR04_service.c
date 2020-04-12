@@ -16,12 +16,12 @@
  ****************************************************************************************************
  */
 
-#include "sensor_hr04_service.h"
 #include <stdlib.h>
 #include <assert.h>
 #include "main.h"
 #include "gpio.h"
 #include <FreeRTOS.h>
+#include <HC_SR04_service.h>
 #include "tim.h"
 #include "freertos_logger_service.h"
 #include "lcd_service.h"
@@ -78,7 +78,7 @@ static void HR04SensorTask_Start(void *argument)
  * Initialization function
  * @return
  */
-uint8_t sensor_HR04_initialize()
+uint8_t HC_SR04_initialize()
 {
 	/* creation of HR04Sensor1_task */
 	HR04Sensor_taskHandle = osThreadNew(HR04SensorTask_Start, NULL, &HR04SensorTa_attributes); /* &HR04Sensor1_task_attributes); */

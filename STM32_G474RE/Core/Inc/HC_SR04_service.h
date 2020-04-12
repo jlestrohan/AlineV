@@ -1,5 +1,5 @@
-#ifndef INC_SENSOR_HR04_SERVICE_H_
-#define INC_SENSOR_HR04_SERVICE_H_
+#ifndef INC_HC_SR04_SERVICE_H_
+#define INC_HC_SR04_SERVICE_H_
 /**
  * *********************************************************************************
  * sensor_hr04_service.h
@@ -33,6 +33,6 @@ HR04_SensorsData_t HR04_SensorsData;
  * Main initialization function
  * @return
  */
-uint8_t sensor_HR04_initialize();
+uint8_t HC_SR04_initialize();
 
-#endif /* INC_SENSOR_HR04_SERVICE_H_ */
+#endif /* INC_HC_SR04_SERVICE_H_ */
