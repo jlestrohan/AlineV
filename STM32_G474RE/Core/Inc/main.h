@@ -68,8 +68,12 @@ void Error_Handler(void);
 #define SDCS_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define HR04_1_TRIG_Pin GPIO_PIN_6
+#define HR04_1_TRIG_GPIO_Port GPIOA
 #define mpu6050_SCL_Pin GPIO_PIN_4
 #define mpu6050_SCL_GPIO_Port GPIOC
+#define HR04_2_ECHO_Pin GPIO_PIN_2
+#define HR04_2_ECHO_GPIO_Port GPIOB
 #define SPI2_SD_SCK_Pin GPIO_PIN_13
 #define SPI2_SD_SCK_GPIO_Port GPIOB
 #define SPI2_SD_MISO_Pin GPIO_PIN_14
@@ -84,8 +88,6 @@ void Error_Handler(void);
 #define I2C3_TOF_SCL_GPIO_Port GPIOC
 #define mpu6050_SDA_Pin GPIO_PIN_8
 #define mpu6050_SDA_GPIO_Port GPIOA
-#define HR04_1_TRIG_Pin GPIO_PIN_9
-#define HR04_1_TRIG_GPIO_Port GPIOA
 #define T_SWDIO_Pin GPIO_PIN_13
 #define T_SWDIO_GPIO_Port GPIOA
 #define SPDSens3_Pin GPIO_PIN_11
@@ -100,6 +102,8 @@ void Error_Handler(void);
 #define T_SWO_GPIO_Port GPIOB
 #define I2C3_TOF_SDA_Pin GPIO_PIN_5
 #define I2C3_TOF_SDA_GPIO_Port GPIOB
+#define HR04_2_TRIG_Pin GPIO_PIN_6
+#define HR04_2_TRIG_GPIO_Port GPIOB
 #define LCD_I2C1_SDA_Pin GPIO_PIN_7
 #define LCD_I2C1_SDA_GPIO_Port GPIOB
 #define LCD_I2C1_SCL_Pin GPIO_PIN_8

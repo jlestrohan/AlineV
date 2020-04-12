@@ -1,8 +1,16 @@
-/*
+/**
  * sensor_hr04_service.c
  *
  *  Created on: Mar 21, 2020
  *      Author: Jack Lestrohan
+ *
+ *
+ *	Timers and Pinout:
+ *
+ *		Sonar			Trig Timer		Echo Timer		Trig Pin		Echo Pin
+ *		-------------------------------------------------------------------------
+ *		HR04_SONAR_1	TIM16 PWM		TIM2			PA6				PA0
+ *		HR04_SONAR_2	TIM16 PWM		TIM5			PB6				PB2
  *
  *
  */
@@ -10,7 +18,6 @@
 #include "sensor_hr04_service.h"
 #include <stdlib.h>
 #include <assert.h>
-#include "dwt_delay.h"
 #include "main.h"
 #include "gpio.h"
 #include <FreeRTOS.h>
@@ -24,9 +31,9 @@
 #define HALF_SOUND_SPEED_10USEC 		0.0171821	/* distance = measured time * 0.0171821 * 2 */
 
 typedef StaticTask_t osStaticThreadDef_t;
-static osThreadId_t HR04Sensor_taskHandle;
-static osStaticThreadDef_t HR04SensorTaControlBlock;
-static uint32_t HR04SensorTaBuffer[256];
+static osThreadId_t HR04Sensor_taskHandle, HR04SensorDisplay_taskHandle;
+static osStaticThreadDef_t HR04SensorTaControlBlock, HR04SensorDisplayTaControlBlock;
+static uint32_t HR04SensorTaBuffer[256], HR04SensorDisplayTaBuffer[256];
 static const osThreadAttr_t HR04SensorTa_attributes = {
 		.name = "HR04SensorServiceTask",
 		.stack_mem = &HR04SensorTaBuffer[0],
@@ -35,44 +42,20 @@ static const osThreadAttr_t HR04SensorTa_attributes = {
 		.cb_size = sizeof(HR04SensorTaControlBlock),
 		.priority = (osPriority_t) osPriorityLow1, };
 
-/**
- * Sends a single echo to HR04_1_TRIG_Pin
- */
-static void triggerSonar(uint8_t sonarNumber)
-{
-	uint16_t trigPin;
-	TIM_HandleTypeDef *htim;
-	GPIO_TypeDef *GPIOx;
-	uint32_t Channel;
-
-	switch (sonarNumber) {
-	case HR04_SONAR_1:
-		trigPin = HR04_1_TRIG_Pin;
-		htim = &htim2;
-		GPIOx = GPIOA;
-		Channel = TIM_CHANNEL_1;
-		break;
-	default: break;
-	}
-
-	HAL_GPIO_WritePin(GPIOx, trigPin, GPIO_PIN_RESET);
-	DWT_Delay(2);
-
-	HAL_GPIO_WritePin(GPIOx, trigPin, GPIO_PIN_SET);
-	DWT_Delay(10);
-	HAL_GPIO_WritePin(GPIOx, trigPin, GPIO_PIN_RESET);
-
-	/* start the echo counter for one pulse (1000000 * 1µs counter) */
-	HAL_TIM_IC_Start_IT(htim, Channel);
-}
+static const osThreadAttr_t HR04SensorDisplayTa_attributes = {
+		.name = "HR04SensorDisplayServiceTask",
+		.stack_mem = &HR04SensorDisplayTaBuffer[0],
+		.stack_size = sizeof(HR04SensorDisplayTaBuffer),
+		.cb_mem = &HR04SensorDisplayTaControlBlock,
+		.cb_size = sizeof(HR04SensorDisplayTaControlBlock),
+		.priority = (osPriority_t) osPriorityLow, };
 
 /**
- *	HR04 task
+ *	HR04 Sensor 1 Task
  * @param argument
  */
 static void HR04SensorTask_Start(void *argument)
 {
-	char msg[40];
 	osStatus_t status;
 	uint16_t result;
 
@@ -80,28 +63,47 @@ static void HR04SensorTask_Start(void *argument)
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		/* first we trigger 0 and 2 */
-		triggerSonar(HR04_SONAR_1);
+		/* first we trigger PWM 1 and 2 on PA6/PB6 */
+		HAL_TIM_PWM_Start (&htim16, TIM_CHANNEL_1);
 
-		status = osMessageQueueGet(queue_icValueHandle, &HR04_SensorsData, NULL, 1000U);   /* waits for message for 1 sec and no more */
+		/* start the echo counter for one pulse (1000000 * 1µs counter) */
+		HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+
+		status = osMessageQueueGet(queue_icValueHandle, &HR04_SensorsData, NULL, osWaitForever);   /* waits for message for 1 sec and no more */
 		if (status == osOK) {
-			result = (uint16_t)(HR04_SensorsData.echo_capture * HALF_SOUND_SPEED_10USEC);
-			if (result < 2000) {
-			sprintf(msg, "cm: %d          ", result);
-
-			osSemaphoreAcquire(sem_lcdService, osWaitForever);
-			lcd_send_string(msg);
-			osSemaphoreRelease(sem_lcdService);
-			//loggerI(msg);
+			result = (uint16_t)(HR04_SensorsData.echo_capture_S1 * HALF_SOUND_SPEED_10USEC);
+			if (result < 500) {
+				HR04_SensorsData.HR04_1_Distance = result;
 			}
 		}
-
 		osDelay(60); /* need to wait at least 60ms to start the operation again */
+	}
+}
+
+
+/**
+ * HR04SensorDisplayTask_Start
+ * @param argument
+ */
+static void HR04SensorDisplayTask_Start(void* argument)
+{
+	char msg[40];
+
+	for (;;) {
+		sprintf(msg, "cm1: %d          ", HR04_SensorsData.HR04_1_Distance);
+
+		osSemaphoreAcquire(sem_lcdService, osWaitForever);
+		lcd_send_string(msg);
+		osSemaphoreRelease(sem_lcdService);
+		loggerI(msg);
+
+		osDelay(30);
 	}
 }
 
 /**
  * Initialization function
+ * @return
  */
 uint8_t sensor_HR04_initialize()
 {
@@ -111,14 +113,15 @@ uint8_t sensor_HR04_initialize()
 		return (EXIT_FAILURE);
 	}
 
-	/* creation of HR04Sensor_task */
-	HR04Sensor_taskHandle = osThreadNew(HR04SensorTask_Start, NULL, &HR04SensorTa_attributes); /* &HR04Sensor_task_attributes); */
+	/* creation of HR04Sensor1_task */
+	HR04Sensor_taskHandle = osThreadNew(HR04SensorTask_Start, NULL, &HR04SensorTa_attributes); /* &HR04Sensor1_task_attributes); */
 	if (!HR04Sensor_taskHandle) {
-		loggerE("HR04 Task Initialization Failed");
+		loggerE("HR04 Sensor Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 
-
+	/* creation of display task */
+	HR04SensorDisplay_taskHandle = osThreadNew(HR04SensorDisplayTask_Start, NULL, &HR04SensorDisplayTa_attributes);
 
 	loggerI("Initializing HC-SR04 Service... Success!");
 	return (EXIT_SUCCESS);
