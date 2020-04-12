@@ -49,6 +49,7 @@ static const osThreadAttr_t HR04SensorTa_attributes = {
 		.cb_size = sizeof(HR04SensorTaControlBlock),
 		.priority = (osPriority_t) osPriorityLow1, };
 
+HC_SR04_Result HC_SR04_StartupTimers();
 
 /**
  *	HR04 Sensor 1 Task
@@ -86,35 +87,8 @@ uint8_t sensor_HR04_initialize()
 		loggerE("HR04 Sensor Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
-	/* starst up the different channels for Sensor 1 */
-	if (HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3) != HAL_OK) {
-		loggerE("HR04 Error Could not start PWM Timer for Sensor 1");
-		return (EXIT_FAILURE);
-	}
-
-	if (HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_1) != HAL_OK) {
-		loggerE("HR04 Error Could not start ICDM Timer for Sensor 1");
-		return (EXIT_FAILURE);
-	}
-
-	if (HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2) != HAL_OK) {
-		loggerE("HR04 Error Could not start ICIM Timer for Sensor 1");
-		return (EXIT_FAILURE);
-	}
-
-	/* starst up the different channels for Sensor 2 */
-	if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3) != HAL_OK) {
-		loggerE("HR04 Error Could not start PWM Timer for Sensor 2");
-		return (EXIT_FAILURE);
-	}
-
-	if (HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_1) != HAL_OK) {
-		loggerE("HR04 Error Could not start ICDM Timer for Sensor 2");
-		return (EXIT_FAILURE);
-	}
-
-	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2) != HAL_OK) {
-		loggerE("HR04 Error Could not start ICIM Timer for Sensor 2");
+	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
+		loggerE("HC_SR04 Timers Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 
@@ -123,3 +97,28 @@ uint8_t sensor_HR04_initialize()
 	return (EXIT_SUCCESS);
 }
 
+/**
+ * Starts up the different timers
+ * @return
+ */
+HC_SR04_Result HC_SR04_StartupTimers()
+{
+	TIM_HandleTypeDef timHandlers[] = {htim1, htim2};
+
+	for ( int i=0; i< HC_SR04_SONARS_CNT; i++) {
+		/* starst up the different channels for Sensor 1 */
+		if (HAL_TIM_PWM_Start(&timHandlers[i], TIM_CHANNEL_3) != HAL_OK) {
+			return (HC_SR04_Result_TimerStart_Failed);
+		}
+
+		if (HAL_TIM_IC_Start(&timHandlers[i], TIM_CHANNEL_1) != HAL_OK) {
+			return (HC_SR04_Result_TimerStart_Failed);
+		}
+
+		if (HAL_TIM_IC_Start_IT(&timHandlers[i], TIM_CHANNEL_2) != HAL_OK) {
+			return (HC_SR04_Result_TimerStart_Failed);
+		}
+	}
+
+	return (HC_SR04_Result_Ok);
+}
