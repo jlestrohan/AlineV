@@ -20,8 +20,6 @@
 
 char msg[50];
 
-
-
 /**
  *
  * @param GPIO_Pin
@@ -74,60 +72,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-	static bool tim5Edge, tim2Edge;
-
-	if (htim->Instance == TIM2) { /* TIM2 = Sensor 2 echo */
-		if(!tim2Edge) {
-			/* next capture will be on falling edge */
-			__HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
-
-			/* on first rising edge we just reset the counter */
-			TIM2->CNT = 0;
-
-			/* and we flip the flag so we can know next stage will be falling */
-			tim2Edge = true;
-
-		} else  {
-
-			/* on falling edge we just count how many microseconds elapsed since rising */
-			HR04_SensorsData.echo_capture_S1 = TIM2->CNT; //HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_1 );
-
-			/* flip up the polarity for a next capture */
-			__HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
-
-			/* this is first sonar, let's record that */
-			HR04_SensorsData.sonar_number = HR04_SONAR_1;
-
-			/* stop the PWM generation timer , using one pulse doesn't work todo: find why */
-			HAL_TIM_PWM_Stop(&htim16, TIM_CHANNEL_1);
-
-			osMessageQueuePut(queue_icValueHandle, &HR04_SensorsData, 0U, 0U);
-			tim2Edge = false;
-		}
-	} else if (htim->Instance == TIM5) { /* TIM1 = Sensor 1 echo */
-		if(!tim5Edge) {
-			/* next capture will be on falling edge */
-			__HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
-
-			/* on first rising edge we just reset the counter */
-			TIM5->CNT = 0;
-
-			/* and we flip the flag so we can know next stage will be falling */
-			tim5Edge = true;
-
-		} else  {
-
-			/* on falling edge we just count how many microseconds elapsed since rising */
-			HR04_SensorsData.echo_capture_S2 = TIM5->CNT;//HAL_TIM_ReadCapturedValue( htim, TIM_CHANNEL_1 );
-
-			/* flip up the polarity for a next capture */
-			__HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
-
-			/* this is first sonar, let's record that */
-			HR04_SensorsData.sonar_number = HR04_SONAR_2;
-
-			osMessageQueuePut(queue_icValueHandle, &HR04_SensorsData, 0U, 0U);
-			tim5Edge = false;
+	if (htim->Instance == TIM1) { /* HC-SR04 Sensor ONE */
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
+		{
+			HR04_SensorsData.HR04_1_Distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
 		}
 	}
 }

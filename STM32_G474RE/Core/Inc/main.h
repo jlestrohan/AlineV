@@ -63,13 +63,13 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define B1_EXTI_IRQn EXTI15_10_IRQn
 #define HR04_1_ECHO_Pin GPIO_PIN_0
-#define HR04_1_ECHO_GPIO_Port GPIOA
+#define HR04_1_ECHO_GPIO_Port GPIOC
+#define HR04_1_TRIG_Pin GPIO_PIN_2
+#define HR04_1_TRIG_GPIO_Port GPIOC
 #define SDCS_Pin GPIO_PIN_4
 #define SDCS_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
-#define HR04_1_TRIG_Pin GPIO_PIN_6
-#define HR04_1_TRIG_GPIO_Port GPIOA
 #define mpu6050_SCL_Pin GPIO_PIN_4
 #define mpu6050_SCL_GPIO_Port GPIOC
 #define HR04_2_ECHO_Pin GPIO_PIN_2
@@ -102,8 +102,6 @@ void Error_Handler(void);
 #define T_SWO_GPIO_Port GPIOB
 #define I2C3_TOF_SDA_Pin GPIO_PIN_5
 #define I2C3_TOF_SDA_GPIO_Port GPIOB
-#define HR04_2_TRIG_Pin GPIO_PIN_6
-#define HR04_2_TRIG_GPIO_Port GPIOB
 #define LCD_I2C1_SDA_Pin GPIO_PIN_7
 #define LCD_I2C1_SDA_GPIO_Port GPIOB
 #define LCD_I2C1_SCL_Pin GPIO_PIN_8

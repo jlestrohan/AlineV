@@ -14,12 +14,11 @@
 #include "cmsis_os2.h"
 
 #define MAX_SONAR   3 			/* Current number of sonars that are connected to the board */
+#define MICROSECONDS_TO_CM 		29/2 /* have to divide µsec by this number to get distance in cm */
 
 #define HR04_SONAR_1	0x01U
 #define HR04_SONAR_2	0x02U
 #define HR04_SONAR_3	0x03U
-
-osMessageQueueId_t queue_icValueHandle;
 
 typedef struct {
 	uint8_t		sonar_number;
