@@ -24,6 +24,8 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /**
  * returns true if not a bounce while releasing
+ * @param tick
+ * @return
  */
 static uint8_t buttonDebounce(uint32_t tick)
 {
@@ -62,7 +64,6 @@ static void buttonService_task(void *argument)
 			lcd_send_string("Button Pressed");
 			osSemaphoreRelease(sem_lcdService);
 		}
-
 		osDelay(100);
 	}
 }

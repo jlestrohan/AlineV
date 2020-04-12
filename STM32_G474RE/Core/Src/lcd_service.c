@@ -106,6 +106,8 @@ void lcdService_task(void *argument)
 
 /**
  * Initialize lcd
+ * @param hi2cx
+ * @return
  */
 uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 {

@@ -6,7 +6,7 @@
  *
  *******************************************************************/
 
-/*
+/**
  * 	10.1 Continuous Mode Setup Example
 		• Write Register 0BH by 0x01 (Define Set/Reset period)
 		• Write Register 09H by 0x1D (Define OSR = 512, Full Scale Range = 8 Gauss, ODR = 200Hz, set
@@ -64,10 +64,10 @@ static void QMC5883lTask_Start(void *argument)
 
 		result = QMC5883l_ReadData(&qmc1);
 
-		sprintf(msg, "x: %d - y: %d - z: %d - temp: %d - HDG: %d°",
+		/*sprintf(msg, "x: %d - y: %d - z: %d - temp: %d - HDG: %d°",
 				qmc1.DataX, qmc1.DataY, qmc1.DataZ,  qmc1.DataTemperature,
-				(uint8_t)QMC5883l_Azimuth(qmc1.DataX, qmc1.DataY));
-		loggerI(msg);
+				(uint8_t)QMC5883l_Azimuth(qmc1.DataX, qmc1.DataY));*/
+		//loggerI(msg);
 
 		osDelay(200);
 	}
@@ -75,6 +75,8 @@ static void QMC5883lTask_Start(void *argument)
 
 /**
  * Main QMC5883_Initialize
+ * @param hi2cx
+ * @return
  */
 uint8_t QMC5883l_Initialize(I2C_HandleTypeDef *hi2cx)
 {
@@ -99,6 +101,7 @@ uint8_t QMC5883l_Initialize(I2C_HandleTypeDef *hi2cx)
 
 /**
  * Sensor main initialization function
+ * @return
  */
 QMC5883_Result QCM5883l_Init()
 {
@@ -134,6 +137,8 @@ QMC5883_Result QCM5883l_Init()
 
 /**
  * Update all magnetometer data
+ * @param DataStruct
+ * @return
  */
 QMC5883_Result QMC5883l_ReadData(QMC5883 *DataStruct)
 {
@@ -183,6 +188,7 @@ QMC5883_Result QMC5883l_ReadData(QMC5883 *DataStruct)
 
 /**
  * Sets the device in standby mode
+ * @return
  */
 QMC5883_Result QMC5883l_StandBy()
 {
@@ -199,6 +205,7 @@ QMC5883_Result QMC5883l_StandBy()
 
 /**
  * Soft Resets the Device
+ * @return
  */
 QMC5883_Result QMC5883l_SoftReset()
 {
@@ -216,6 +223,11 @@ QMC5883_Result QMC5883l_SoftReset()
 /**
  * Sets device modes
  * See .h
+ * @param mode
+ * @param odr
+ * @param rng
+ * @param osr
+ * @return
  */
 QMC5883_Result QMC5883l_SetMode(QMC5883l_MODE_t mode, QMC5881l_ODR_t odr, QMC5883l_RNG_t rng, QMC5883l_OSR_t osr)
 {
@@ -232,6 +244,9 @@ QMC5883_Result QMC5883l_SetMode(QMC5883l_MODE_t mode, QMC5881l_ODR_t odr, QMC588
 
 /**
  * returns azimuth
+ * @param x
+ * @param y
+ * @return
  */
 uint8_t QMC5883l_Azimuth(uint16_t *x, uint16_t *y)
 {
@@ -241,6 +256,8 @@ uint8_t QMC5883l_Azimuth(uint16_t *x, uint16_t *y)
 
 /**
  * Enables/disable interrupt flag
+ * @param flag
+ * @return
  */
 QMC5883_Result QMC5883l_SetInterrupt(uint8_t flag) /* true/false */
 {
@@ -260,6 +277,7 @@ QMC5883_Result QMC5883l_SetInterrupt(uint8_t flag) /* true/false */
 
 /**
  * Set/Reset Period (recommended 0x01)
+ * @return
  */
 QMC5883_Result QMC5883l_SetResetPeriod()
 {
