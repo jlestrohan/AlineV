@@ -77,6 +77,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 		{
 			HR04_SensorsData.HR04_1_Distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
 		}
+	} else if (htim->Instance == TIM2) { /* HC-SR04 Sensor ONE */
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
+		{
+			HR04_SensorsData.HR04_2_Distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+		}
 	}
 }
 

@@ -11,7 +11,7 @@
  *		Sonar			Timer			PWM Channel		Echo Channels		Trig Pin		Echo Pin
  *		--------------------------------------------------------------------------------------------
  *		HR04_SONAR_1	TIM1 			3				Dir1, Ind2			PC2				PC0
- *		HR04_SONAR_2
+ *		HR04_SONAR_2	TIM2			3				Dir1, Ind2			PB10			PA0
  *
  ****************************************************************************************************
  */
@@ -62,7 +62,7 @@ static void HR04SensorTask_Start(void *argument)
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		sprintf(msg, "cm1: %d          ", HR04_SensorsData.HR04_1_Distance);
+		sprintf(msg, "%0*dcm      %0*dcm", 3,HR04_SensorsData.HR04_1_Distance, 3, HR04_SensorsData.HR04_2_Distance);
 
 		osSemaphoreAcquire(sem_lcdService, osWaitForever);
 		lcd_send_string(msg);
@@ -99,6 +99,22 @@ uint8_t sensor_HR04_initialize()
 
 	if (HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2) != HAL_OK) {
 		loggerE("HR04 Error Could not start ICIM Timer for Sensor 1");
+		return (EXIT_FAILURE);
+	}
+
+	/* starst up the different channels for Sensor 2 */
+	if (HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3) != HAL_OK) {
+		loggerE("HR04 Error Could not start PWM Timer for Sensor 2");
+		return (EXIT_FAILURE);
+	}
+
+	if (HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_1) != HAL_OK) {
+		loggerE("HR04 Error Could not start ICDM Timer for Sensor 2");
+		return (EXIT_FAILURE);
+	}
+
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_2) != HAL_OK) {
+		loggerE("HR04 Error Could not start ICIM Timer for Sensor 2");
 		return (EXIT_FAILURE);
 	}
 
