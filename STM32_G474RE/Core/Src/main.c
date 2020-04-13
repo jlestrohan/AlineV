@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include <HC_SR04_service.h>
 #include "main.h"
 #include "cmsis_os.h"
 #include "app_fatfs.h"
@@ -106,6 +105,7 @@ int main(void)
   MX_I2C4_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

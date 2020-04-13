@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include <HC_SR04_service.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"

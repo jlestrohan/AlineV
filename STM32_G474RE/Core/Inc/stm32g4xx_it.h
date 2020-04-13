@@ -55,6 +55,7 @@ void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void TIM1_CC_IRQHandler(void);
 void TIM2_IRQHandler(void);
+void TIM3_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 void TIM20_UP_IRQHandler(void);
 void LPUART1_IRQHandler(void);

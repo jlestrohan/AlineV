@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include "cmsis_os2.h"
 
-#define HC_SR04_SONARS_CNT	   	2 			/* Current number of sonars that are connected to the board */
+#define HC_SR04_SONARS_CNT	   	3 			/* Current number of sonars that are connected to the board */
 #define MICROSECONDS_TO_CM 		29/2 /* have to divide µsec by this number to get distance in cm */
 
 #define HR04_SONAR_1	0x01U
@@ -21,11 +21,10 @@
 #define HR04_SONAR_3	0x03U
 
 typedef struct {
-	uint8_t		sonar_number;
-	uint32_t 	echo_capture_S1;
-	uint32_t 	echo_capture_S2;
+	uint8_t		sonar_count;
 	uint8_t		HR04_1_Distance;
 	uint8_t		HR04_2_Distance;
+	uint8_t		HR04_3_Distance;
 } HR04_SensorsData_t;
 HR04_SensorsData_t HR04_SensorsData;
 

@@ -72,8 +72,12 @@ void Error_Handler(void);
 #define SDCS_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define HR04_3_ECHO_Pin GPIO_PIN_6
+#define HR04_3_ECHO_GPIO_Port GPIOA
 #define mpu6050_SCL_Pin GPIO_PIN_4
 #define mpu6050_SCL_GPIO_Port GPIOC
+#define HR04_3_TRIG_Pin GPIO_PIN_0
+#define HR04_3_TRIG_GPIO_Port GPIOB
 #define HR04_2_TRIG_Pin GPIO_PIN_10
 #define HR04_2_TRIG_GPIO_Port GPIOB
 #define SPI2_SD_SCK_Pin GPIO_PIN_13

@@ -8,10 +8,11 @@
  *
  *	Timers and Pinout:
  *
- *		Sonar			Timer			PWM Channel		Echo Channels		Trig Pin		Echo Pin
- *		--------------------------------------------------------------------------------------------
- *		HR04_SONAR_1	TIM1 			3				Dir1, Ind2			PC2				PC0
- *		HR04_SONAR_2	TIM2			3				Dir1, Ind2			PB10			PA0
+ *		Sonar				Timer	PWM Channel		Echo Channels		Trig Pin	Echo Pin
+ *		---------------------------------------------------------------------------------------------
+ *		HC_SR04_SONAR_1		TIM1 	3				Dir1, Ind2			PC2			PC0
+ *		HC_SR04_SONAR_2		TIM2	3				Dir1, Ind2			PB10		PA0
+ *		HC_SR04_SONAR_3		TIM3	3				Dir1, Ind2			PB0			PA6
  *
  ****************************************************************************************************
  */
@@ -92,6 +93,7 @@ uint8_t HC_SR04_initialize()
 		return (EXIT_FAILURE);
 	}
 
+	HR04_SensorsData.sonar_count = HC_SR04_SONARS_CNT;
 
 	loggerI("Initializing HC-SR04 Service... Success!");
 	return (EXIT_SUCCESS);
@@ -103,19 +105,19 @@ uint8_t HC_SR04_initialize()
  */
 HC_SR04_Result HC_SR04_StartupTimers()
 {
-	TIM_HandleTypeDef timHandlers[] = {htim1, htim2};
+	TIM_HandleTypeDef timHandlers[] = {htim1, htim2, htim3};
 
 	for ( int i=0; i< HC_SR04_SONARS_CNT; i++) {
 		/* starst up the different channels for Sensor 1 */
-		if (HAL_TIM_PWM_Start(&timHandlers[i], TIM_CHANNEL_3) != HAL_OK) {
+		if (HAL_TIM_PWM_Start(&*(timHandlers+i), TIM_CHANNEL_3) != HAL_OK) {
 			return (HC_SR04_Result_TimerStart_Failed);
 		}
 
-		if (HAL_TIM_IC_Start(&timHandlers[i], TIM_CHANNEL_1) != HAL_OK) {
+		if (HAL_TIM_IC_Start(&*(timHandlers+i), TIM_CHANNEL_1) != HAL_OK) {
 			return (HC_SR04_Result_TimerStart_Failed);
 		}
 
-		if (HAL_TIM_IC_Start_IT(&timHandlers[i], TIM_CHANNEL_2) != HAL_OK) {
+		if (HAL_TIM_IC_Start_IT(&*(timHandlers+i), TIM_CHANNEL_2) != HAL_OK) {
 			return (HC_SR04_Result_TimerStart_Failed);
 		}
 	}
