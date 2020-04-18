@@ -59,17 +59,22 @@ HC_SR04_Result HC_SR04_StartupTimers();
 static void HR04SensorTask_Start(void *argument)
 {
 	char msg[30];
+	HR04_SensorsData_t HR04_SensorsData;
+	osStatus_t status = -1;
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		sprintf(msg, "%0*dcm      %0*dcm", 3,HR04_SensorsData.HR04_1_Distance, 3, HR04_SensorsData.HR04_2_Distance);
+		osMessageQueueGet(queue_HC_SR04Handle, &HR04_SensorsData, NULL, osWaitForever); /* wait for message */
+		if (status == osOK) {
+			sprintf(msg, "%0*dcm      %0*dcm", 3,HR04_SensorsData.HR04_1_Distance, 3, HR04_SensorsData.HR04_2_Distance);
 
-		osSemaphoreAcquire(sem_lcdService, osWaitForever);
-		lcd_send_string(msg);
-		osSemaphoreRelease(sem_lcdService);
-		loggerI(msg);
+			osSemaphoreAcquire(sem_lcdService, osWaitForever);
+			lcd_send_string(msg);
+			osSemaphoreRelease(sem_lcdService);
+			loggerI(msg);
+		}
 
 		osDelay(60);
 	}
@@ -81,6 +86,11 @@ static void HR04SensorTask_Start(void *argument)
  */
 uint8_t HC_SR04_initialize()
 {
+	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(HR04_SensorsData_t), NULL);
+	if (!queue_HC_SR04Handle) {
+		return (EXIT_FAILURE);
+	}
+
 	/* creation of HR04Sensor1_task */
 	HR04Sensor_taskHandle = osThreadNew(HR04SensorTask_Start, NULL, &HR04SensorTa_attributes); /* &HR04Sensor1_task_attributes); */
 	if (!HR04Sensor_taskHandle) {
@@ -92,8 +102,6 @@ uint8_t HC_SR04_initialize()
 		loggerE("HC_SR04 Timers Initialization Failed");
 		return (EXIT_FAILURE);
 	}
-
-	HR04_SensorsData.sonar_count = HC_SR04_SONARS_CNT;
 
 	loggerI("Initializing HC-SR04 Service... Success!");
 	return (EXIT_SUCCESS);

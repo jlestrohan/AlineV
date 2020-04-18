@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <MPU6050_service.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -28,12 +29,11 @@
 /* USER CODE BEGIN Includes */     
 
 #include <stdlib.h>
+#include <VL53L0X_TOF_service.h>
 #include "string.h"
 #include "freertos_logger_service.h"
 #include "sensor_speed_service.h"
 #include "i2c.h"
-#include "timeofflight_service.h"
-#include "mpu6050_service.h"
 #include "button_handler.h"
 #include "buzzer_service.h"
 #include "sdcard_service.h"
@@ -41,6 +41,7 @@
 #include "lcd_service.h"
 #include "QMC5883_service.h"
 #include "BMP280_service.h"
+#include "HC_SR04_service.h"
 
 /* USER CODE END Includes */
 
@@ -79,9 +80,9 @@ osStatus_t val;
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 256 * 4
+		.name = "defaultTask",
+		.priority = (osPriority_t) osPriorityLow,
+		.stack_size = 256 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,61 +95,62 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
 	val = osSemaphoreAcquire(sem_UART1, osWaitForever);
 	switch (val) {
-		case osOK:
-			HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
-			osSemaphoreRelease(sem_UART1);
+	case osOK:
+		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+		osSemaphoreRelease(sem_UART1);
 		break;
-		default: break;
+	default: break;
 	}
 
 	if (log_initialize(&hlpuart1) == EXIT_FAILURE) {
 		char *msg2 = "Failed Initializing Logger Service.. cannot continue sorry...\n\r";
 		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg2, strlen(msg2), 0xFFFF);
-		Error_Handler();
+		Error_Handler(); /* blocking fault, cannot continue */
 	} else { ServicesSuccessFlags |= SERVICE_LOGGER_COMPLETE; }
 
 	if (lcdService_initialize(&hi2c1) == EXIT_FAILURE) {
 		loggerE("Error Initializing LCD Service");
-		Error_Handler();
+		/* non blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_LCD_COMPLETE; }
 
 	if (buttonService_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing Button Service");
-		Error_Handler();
+		/* non blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE; }
 
 	if (HC_SR04_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
+		/* todo: change to blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
 
-	/*if (QMC5883l_Initialize(&hi2c4) == EXIT_FAILURE) {
-			loggerE("Error Initializing HCM5883 Magnetometer Service");
-			Error_Handler();
-		} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }*/
+	if (QMC5883l_Initialize(&hi2c4) == EXIT_FAILURE) {
+		loggerE("Error Initializing QCM5883 Magnetometer Service");
+		//Error_Handler();
+	} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }
 
-	/*if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
+	if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
-		Error_Handler();
+		/* todo: change to blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_V53L0X_COMPLETE; }
 
-	if (sensor_speed_initialize() == EXIT_FAILURE) {
+	/*if (sensor_speed_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing Speed Sensors Service");
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE; }*/
 
 	if (MPU6050_Service_Initialize(&hi2c2) == EXIT_FAILURE) {
 		loggerE("Error Initializing MPU6050 Sensor Service");
-		Error_Handler();
+		/* todo: change to blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }
 
 	/*buzzerService_initialize(); */
@@ -157,38 +159,38 @@ void MX_FREERTOS_Init(void) {
 		loggerE("Error Initializing SD Card Service");
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE; }*/
+
 	osSemaphoreAcquire(sem_lcdService, osWaitForever);
 	lcd_send_string("Init Complete");
 	osSemaphoreRelease(sem_lcdService);
-
 	loggerI("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+	/* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+	/* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+	/* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+	/* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+	/* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+	/* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+	/* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+	/* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+	/* Create the thread(s) */
+	/* creation of defaultTask */
+	defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+	/* USER CODE END RTOS_THREADS */
 
 }
 
@@ -201,13 +203,17 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 __weak void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+	/* USER CODE BEGIN StartDefaultTask */
 
 	/* very low priority task, checks every second or so if all services are up and running */
 	uint16_t servicesCheck = 0;
 
 	/* Infinite loop */
 	for (;;) {
+
+		if (!(servicesCheck & SERVICE_LCD_COMPLETE)) {
+			//loggerE("LCD Service not running...");
+		}
 
 		/*if (!(servicesCheck 	& (SERVICE_LOGGER_COMPLETE
 							| SERVICE_LCD_COMPLETE
@@ -219,15 +225,15 @@ __weak void StartDefaultTask(void *argument)
 							| SERVICE_HCM5883_COMPLETE
 							| SERVICE_SPEED_COMPLETE) > 0)) {*/
 
-			//char *msg = "\n\r---------------\n\rOne or more services are not running correctly\n\r";
+		//char *msg = "\n\r---------------\n\rOne or more services are not running correctly\n\r";
 
-			//HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+		//HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 		//}
 
-		loggerI("ping");
-		osDelay(1000);
+		//loggerI("Main loop execution here...");
+		osDelay(5000);
 	}
-  /* USER CODE END StartDefaultTask */
+	/* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/

@@ -20,13 +20,14 @@
 #define HR04_SONAR_2	0x02U
 #define HR04_SONAR_3	0x03U
 
+osMessageQueueId_t queue_HC_SR04Handle;
+
 typedef struct {
-	uint8_t		sonar_count;
 	uint8_t		HR04_1_Distance;
 	uint8_t		HR04_2_Distance;
 	uint8_t		HR04_3_Distance;
 } HR04_SensorsData_t;
-HR04_SensorsData_t HR04_SensorsData;
+
 
 /**
  * Main initialization function

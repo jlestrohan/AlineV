@@ -5,8 +5,8 @@
  *      Author: aez03
  */
 
-#ifndef INC_TIMEOFFLIGHT_SERVICE_H_
-#define INC_TIMEOFFLIGHT_SERVICE_H_
+#ifndef INC_VL53L0X_TOF_SERVICE_H_
+#define INC_VL53L0X_TOF_SERVICE_H_
 
 #include "i2c.h"
 
@@ -23,4 +23,4 @@ uint8_t timeofflight_initialize(I2C_HandleTypeDef *hi2cx);
  */
 uint8_t ST53L0A1_ResetId(uint8_t DevNo,  uint8_t state );
 
-#endif /* INC_TIMEOFFLIGHT_SERVICE_H_ */
+#endif /* INC_VL53L0X_TOF_SERVICE_H_ */

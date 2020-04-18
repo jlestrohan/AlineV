@@ -12,7 +12,7 @@
 #include "i2c.h"
 #include <stdbool.h>
 
-#define QMC5883l_ADDRESS 			0x0DU << 1 /* device I2C Address */
+#define QMC5883l_I2C_ADDRESS 			0x0DU << 1 /* device I2C Address */
 
 /* Control Register 1 */
 /**********************************************************************************************/
@@ -133,8 +133,10 @@ typedef enum
 {
 	QMC5883l_Result_Ok = 0x00, /*!< Everything OK */                                                                           //!< QMC5883l_Result_Ok
 	QMC5883l_Result_Error, /*!< Unknown error */                                                                               //!< QMC5883l_Result_Error
+	QMC5883l_Result_Initialization_Error,
 	QMC5883l_Result_DeviceNotConnected, /*!< There is no device with valid slave address */                                    //!< QMC5883l_Result_DeviceNotConnected
 	QMC5883l_Result_DeviceInvalid, /*!< Connected device with address is not MPU6050 */                                        //!< QMC5883l_Result_DeviceInvalid
+	QMC5883l_Result_Cannot_Init_Task,
 	QMC5883l_Result_ErrorHandlerNotInitialized, /*!< I2C Handler not initialized (initialize() function hasn't been called ? *///!< QMC5883l_Result_ErrorHandlerNotInitialized
 	QMC5883l_Result_Error_Cannot_Set_Mode,                                                                                     //!< QMC5883l_Result_Error_Cannot_Set_Mode
 	QMC5883l_Result_Error_Cannot_Set_Interrupt,                                                                                //!< QMC5883l_Result_Error_Cannot_Set_Interrupt
@@ -158,7 +160,7 @@ static QMC5883 qmc1; /* Main data structs holding the constantly updated data */
  * @param hi2cx
  * @return
  */
-uint8_t HMC5883l_Initialize(I2C_HandleTypeDef *hi2cx);
+uint8_t QMC5883l_Initialize(I2C_HandleTypeDef *hi2cx);
 
 /**
  * Main sensor initialization routine

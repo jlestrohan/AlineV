@@ -10,9 +10,9 @@
  ******************************************************************************
  */
 
-#include "mpu6050_service.h"
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
+#include <MPU6050_service.h>
 #include "lcd_service.h"
 #include "i2c.h"
 #include <stdio.h>

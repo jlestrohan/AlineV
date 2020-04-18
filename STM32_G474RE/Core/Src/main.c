@@ -32,6 +32,7 @@
 /* USER CODE BEGIN Includes */
 #include "freertos_logger_service.h"
 #include "string.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -217,8 +218,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
-	char *msg = "Error reported...\n\r";
+	char msg[50];
+	sprintf(msg, "Error reported... File %s on line %d\n\r", file, line);
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+	//while(1) {
+	//	HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+	//	HAL_Delay(200);
+	//}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -235,9 +241,11 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
       printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-	char msg[50];
-	sprintf(printf(msg, "Wrong parameters value: file %s on line %d\r\n", file, line);
-	HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+	char msg[100];
+	sprintf(msg, "Wrong parameters value: file %s", file);// on line %lu\r\n", file, line);
+	loggerE(msg);
+	//HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

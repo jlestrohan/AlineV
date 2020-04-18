@@ -113,6 +113,12 @@ uint8_t lcdService_initialize(I2C_HandleTypeDef *hi2cx)
 {
 	_hi2cxHandler = hi2cx;
 
+	/** is device ready and responding ? */
+	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, SLAVE_ADDRESS_LCD, 2, 5) != HAL_OK) {
+		loggerE("LCD Device not ready");
+		return (EXIT_FAILURE);
+	}
+
 	queue_lcdHandle = osMessageQueueNew(MAX_LINE_CHAR, sizeof(char), NULL);
 	if (!queue_lcdHandle) {
 		return (EXIT_FAILURE);
