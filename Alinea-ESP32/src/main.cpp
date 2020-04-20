@@ -2,17 +2,17 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-20 23:50:09
+ * @ Modified time: 2020-04-21 01:25:02
  * @ Description:
  *******************************************************************************************/
 
 #include <Arduino.h>
 #include <IotWebConf.h>
 #include "ota.h"
-#include "RemoteDebug.h" //https://github.com/JoaoLopesF/RemoteDebug
 
 #define USE_ARDUINO_OTA true
 #define STATUS_PIN LED_BUILTIN
+
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "73727170";
 
@@ -20,70 +20,20 @@ DNSServer dnsServer;
 WebServer server(80);
 
 RemoteDebug Debug;
+
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
 
+uint32_t mLastTime = 0;
+uint32_t mTimeSeconds = 0;
+
 void handleRoot();
-
-/**
- * @brief  
- * @note   
- * @retval None
- */
-void setupOTA()
-{
-  ArduinoOTA.setHostname(thingName); // on donne une petit nom a notre module
-  //ArduinoOTA.setPassword("sGF3Rbd9ix9oD");
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH)
-    {
-      type = "sketch";
-    }
-    else
-    { // U_FS
-      type = "filesystem";
-    }
-
-    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
-    debugI("Start updating %s", type.c_str());
-  });
-  ArduinoOTA.onEnd([]() {
-    debugI("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    debugI("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    debugE("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR)
-    {
-      debugE("Auth Failed");
-    }
-    else if (error == OTA_BEGIN_ERROR)
-    {
-      debugE("Begin Failed");
-    }
-    else if (error == OTA_CONNECT_ERROR)
-    {
-      debugE("Connect Failed");
-    }
-    else if (error == OTA_RECEIVE_ERROR)
-    {
-      debugE("Receive Failed");
-    }
-    else if (error == OTA_END_ERROR)
-    {
-      debugE("End Failed");
-    }
-  });
-  ArduinoOTA.begin();
-}
 
 void setup()
 {
   Serial.begin(115200);
   // put your setup code here, to run once:
   // -- Initializing the configuration.
+  iotWebConf.setStatusPin(STATUS_PIN);  
   iotWebConf.init();
 
   // -- Set up required URL handlers on the web server.
