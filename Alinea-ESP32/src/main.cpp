@@ -12,7 +12,7 @@
 #include "RemoteDebug.h" //https://github.com/JoaoLopesF/RemoteDebug
 
 #define USE_ARDUINO_OTA true
-const char thingName[] = "Aline-ESP32";
+#define STATUS_PIN LED_BUILTIN
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "73727170";
 
@@ -101,6 +101,31 @@ void loop()
   // put your main code here, to run repeatedly:
   iotWebConf.doLoop();
   ArduinoOTA.handle();
+
+  if ((millis() - mLastTime) >= 1000)
+  {
+    // Time
+    mLastTime = millis();
+    mTimeSeconds++;
+
+    // Debug the time (verbose level)
+    debugV("* Time: %u seconds (VERBOSE)", mTimeSeconds);
+    if (mTimeSeconds % 5 == 0)
+    { // Each 5 seconds
+      // Debug levels
+      debugV("* This is a message of debug level VERBOSE");
+      debugD("* This is a message of debug level DEBUG");
+      debugI("* This is a message of debug level INFO");
+      debugW("* This is a message of debug level WARNING");
+      debugE("* This is a message of debug level ERROR");
+    }
+  }
+
+  // RemoteDebug handle
+
+  Debug.handle();
+
+  // Give a time for ESP
 }
 
 /**
