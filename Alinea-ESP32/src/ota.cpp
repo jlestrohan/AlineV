@@ -2,12 +2,11 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 01:18:57
+ * @ Modified time: 2020-04-21 22:41:25
  * @ Description:
  *******************************************************************************************/
 
 #include <ota.h>
-
 
 /**
  * @brief  
@@ -17,10 +16,8 @@
 void setupOTA()
 {
   Debug.begin(thingName); // Initialize the WiFi server
-
   ArduinoOTA.setHostname(thingName); // on donne une petit nom a notre module
-  //ArduinoOTA.setPassword("sGF3Rbd9ix9oD");
-
+ 
   ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH)
@@ -65,4 +62,15 @@ void setupOTA()
     }
   });
   ArduinoOTA.begin();
+}
+
+/**
+ * @brief  To be called on loop()
+ * @note   
+ * @retval 
+ */
+void otaLoop() 
+{
+  Debug.handle();
+  ArduinoOTA.handle();
 }

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 15:52:25
+ * @ Modified time: 2020-04-21 22:48:44
  * @ Description:
  *******************************************************************************************/
 
@@ -12,7 +12,7 @@
 #include "buzmusic.h"
 
 #define USE_ARDUINO_OTA true
-#define STATUS_PIN LED_BUILTIN
+#define STATUS_PIN 2
 
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "73727170";
@@ -21,7 +21,6 @@ DNSServer dnsServer;
 WebServer server(80);
 
 RemoteDebug Debug;
-
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
 
 uint32_t mLastTime = 0;
@@ -31,12 +30,17 @@ void handleRoot();
 // -- Callback method declarations.
 void wifiConnected();
 
+/**
+ * @brief  Main setup
+ * @note   
+ * @retval None
+ */
 void setup()
 {
   Serial.begin(115200);
   // put your setup code here, to run once:
   // -- Initializing the configuration.
-  iotWebConf.setStatusPin(STATUS_PIN);  
+  iotWebConf.setStatusPin(STATUS_PIN);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
   iotWebConf.init();
 
@@ -47,17 +51,21 @@ void setup()
 
   setupOTA();
   setupBuzzer();
-  
+
   Serial.println("Ready.");
 }
 
+/**
+ * @brief  Main program loop
+ * @note   
+ * @retval None
+ */
 void loop()
 {
-  
+  otaLoop();
   // put your main code here, to run repeatedly:
   iotWebConf.doLoop();
-  ArduinoOTA.handle();
-
+  
   if ((millis() - mLastTime) >= 1000)
   {
     // Time
@@ -77,11 +85,7 @@ void loop()
     }
   }
 
-  // RemoteDebug handle
-
-  Debug.handle();
-
-  // Give a time for ESP
+  
 }
 
 /**
@@ -106,5 +110,6 @@ void handleRoot()
 void wifiConnected()
 {
   debugI("WiFi connected.");
+  digitalWrite(STATUS_PIN, LOW);
   wifiSuccessBuz();
 }
