@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 22:43:39
+ * @ Modified time: 2020-04-21 23:13:11
  * @ Description:
  *******************************************************************************************/
 
@@ -146,6 +146,8 @@ void wifiSuccessBuz()
     tone(BUZZER_OUTPIN,note_C5,S); 
     delay(E);
     tone(BUZZER_OUTPIN,note_G4,S); 
+    delay(E);
+    tone(BUZZER_OUTPIN,note_G3,S); 
     delay(E);
     tone(BUZZER_OUTPIN,note_C4,S); 
     delay(E);
