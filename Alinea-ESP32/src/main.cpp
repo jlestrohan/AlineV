@@ -2,13 +2,14 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 01:25:02
+ * @ Modified time: 2020-04-21 15:52:25
  * @ Description:
  *******************************************************************************************/
 
 #include <Arduino.h>
 #include <IotWebConf.h>
 #include "ota.h"
+#include "buzmusic.h"
 
 #define USE_ARDUINO_OTA true
 #define STATUS_PIN LED_BUILTIN
@@ -27,6 +28,8 @@ uint32_t mLastTime = 0;
 uint32_t mTimeSeconds = 0;
 
 void handleRoot();
+// -- Callback method declarations.
+void wifiConnected();
 
 void setup()
 {
@@ -34,6 +37,7 @@ void setup()
   // put your setup code here, to run once:
   // -- Initializing the configuration.
   iotWebConf.setStatusPin(STATUS_PIN);  
+  iotWebConf.setWifiConnectionCallback(&wifiConnected);
   iotWebConf.init();
 
   // -- Set up required URL handlers on the web server.
@@ -42,12 +46,14 @@ void setup()
   server.onNotFound([]() { iotWebConf.handleNotFound(); });
 
   setupOTA();
-
+  setupBuzzer();
+  
   Serial.println("Ready.");
 }
 
 void loop()
 {
+  
   // put your main code here, to run repeatedly:
   iotWebConf.doLoop();
   ArduinoOTA.handle();
@@ -95,4 +101,10 @@ void handleRoot()
   s += "</body></html>\n";
 
   server.send(200, "text/html", s);
+}
+
+void wifiConnected()
+{
+  debugI("WiFi connected.");
+  wifiSuccessBuz();
 }
