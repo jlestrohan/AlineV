@@ -16,6 +16,8 @@
 #include "ota.h"
 #include <FreeRTOS.h>
 #include "autoconnect_service.h"
+#include "ntp_service.h"
+
 
 /**
  * @brief  Main setup
@@ -26,6 +28,7 @@ void setup()
 {
   Serial.begin(115200);
   setupAutoConnect();
+  setupNTPService();
   setupOTA();
   setupUARTListener();
   
