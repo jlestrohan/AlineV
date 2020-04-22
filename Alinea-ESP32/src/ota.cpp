@@ -46,34 +46,42 @@ void setupOTA()
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
     debugI("Start updating %s", type);
+    Serial.println("Start updating " + type);
   });
   ArduinoOTA.onEnd([]() {
     debugI("\nEnd");
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     debugI("Progress: %u%%\r", (progress / (total / 100)));
+    Serial.println("Progress: " + (progress / (total / 100)));
   });
   ArduinoOTA.onError([](ota_error_t error) {
     debugE("Error[%u]: ", error);
+    Serial.println("Error[%u]: " + error);
     if (error == OTA_AUTH_ERROR)
     {
       debugE("Auth Failed");
+      Serial.println("Auth Failed");
     }
     else if (error == OTA_BEGIN_ERROR)
     {
       debugE("Begin Failed");
+      Serial.println("Begin Failed");
     }
     else if (error == OTA_CONNECT_ERROR)
     {
       debugE("Connect Failed");
+      Serial.println("Connect Failed");
     }
     else if (error == OTA_RECEIVE_ERROR)
     {
       debugE("Receive Failed");
+      Serial.println("Receive Failed");
     }
     else if (error == OTA_END_ERROR)
     {
       debugE("End Failed");
+      Serial.println("End Failed");
     }
   });
   ArduinoOTA.begin();
