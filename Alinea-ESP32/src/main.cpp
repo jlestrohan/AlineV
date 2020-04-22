@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 17:30:22
+ * @ Modified time: 2020-04-22 17:50:22
  * @ Description:
  *******************************************************************************************/
 
@@ -15,33 +15,7 @@
 #include <Arduino.h>
 #include "ota.h"
 #include <FreeRTOS.h>
-
-RemoteDebug Debug;
-
-char uartBuffer[50];
-int uartBufferIndex = 0;
-
-void serialListener_task(void *parameter)
-{
-  for (;;)
-  {
-    if (Serial.available())
-    {
-      char ch = (char)Serial.read();
-      if (ch == '\n') // is this the terminating carriage return
-      {
-        uartBuffer[uartBufferIndex] = 0; // terminate the string with a 0
-        uartBufferIndex = 0;             // reset the index ready for another string
-        // do something with the string
-        debugI("%s", uartBuffer);
-      }
-      else
-        uartBuffer[uartBufferIndex++] = ch; // add the character into the buffer
-    }
-    vTaskDelay(10);
-  }
-  vTaskDelete(NULL);
-}
+#include "serial_listener.h"
 
 /**
  * @brief  Main setup
@@ -53,16 +27,9 @@ void setup()
   Serial.begin(115200);
 
   setupOTA();
+  setupUARTListener();
+  
   debugI("Ready.");
-
-  /** FREERTOS OTA Task */
-  xTaskCreate(
-      serialListener_task,   /* Task function. */
-      "serialListener_task", /* String with name of task. */
-      10000,                 /* Stack size in words. */
-      NULL,                  /* Parameter passed as input of the task */
-      2,                     /* Priority of the task. */
-      NULL);                 /* Task handle. */
 
   Serial.println("Ready UART");
 }
