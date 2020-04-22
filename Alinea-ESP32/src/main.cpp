@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 02:26:27
+ * @ Modified time: 2020-04-22 16:05:47
  * @ Description:
  *******************************************************************************************/
 
@@ -31,7 +31,6 @@ void setup()
 
   setupOTA();
   debugI("Ready.");
-  system_print_meminfo();
 
   Serial.println("Ready UART");
 }

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 23:13:11
+ * @ Modified time: 2020-04-22 15:24:43
  * @ Description:
  *******************************************************************************************/
 
@@ -139,7 +139,7 @@ void setupBuzzer()
  */
 void wifiSuccessBuz()
 {
-    tone(BUZZER_OUTPIN,note_D5,S); 
+   /* tone(BUZZER_OUTPIN,note_D5,S); 
     delay(E);
     tone(BUZZER_OUTPIN,note_E5,S); 
     delay(E);
@@ -154,5 +154,5 @@ void wifiSuccessBuz()
     tone(BUZZER_OUTPIN,note_C5,S); 
     delay(E);
     tone(BUZZER_OUTPIN,note_G5,S); 
-    delay(E);  
+    delay(E);  */
 }

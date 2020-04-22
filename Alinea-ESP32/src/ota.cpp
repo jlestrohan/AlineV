@@ -2,21 +2,25 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 23:11:06
+ * @ Modified time: 2020-04-22 16:24:26
  * @ Description:
  *******************************************************************************************/
 
 #include <ota.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <AutoConnect.h>
+#include <ArduinoOTA.h>
 #include "buzmusic.h"
 
-void handleRoot();
-// -- Callback method declarations.
-void wifiConnected_cb();
+WebServer Server;
+AutoConnect Portal(Server);
 
-DNSServer dnsServer;
-WebServer server(80);
-
-IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
+void rootPage()
+{
+  char content[] = "Hello World";
+  Server.send(200, "text/plain", content);
+}
 
 /**
  * @brief  
@@ -26,32 +30,32 @@ IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword);
 void setupOTA()
 {
   setupBuzzer();
-  // -- Initializing the configuration.
-  iotWebConf.setStatusPin(STATUS_PIN);
-  iotWebConf.setWifiConnectionCallback(&wifiConnected_cb);
-  iotWebConf.init();
 
-  // -- Set up required URL handlers on the web server.
-  server.on("/", handleRoot);
-  server.on("/config", [] { iotWebConf.handleConfig(); });
-  server.onNotFound([]() { iotWebConf.handleNotFound(); });
+  Server.on("/", rootPage);
+  Portal.begin();
+  Serial.println("Web server started:" + WiFi.localIP().toString());
 
-  Debug.begin(thingName);            // Initialize the WiFi server
-  ArduinoOTA.setHostname(thingName); // on donne une petit nom a notre module
+  Debug.begin(thingName); // Initialize the WiFi server
+
+  // Hostname defaults to esp3232-[MAC]
+  ArduinoOTA.setHostname(thingName);
+
+  // No authentication by default
+  // ArduinoOTA.setPassword("admin");
+
+  // Password can be set with it's md5 value as well
+  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+  //ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
 
   ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH)
-    {
       type = "sketch";
-    }
-    else
-    { // U_FS
+    else // U_SPIFFS
       type = "filesystem";
-    }
 
-    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
-    debugI("Start updating %s", type.c_str());
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    debugI("Start updating %s", type);
   });
   ArduinoOTA.onEnd([]() {
     debugI("\nEnd");
@@ -61,24 +65,15 @@ void setupOTA()
   });
   ArduinoOTA.onError([](ota_error_t error) {
     debugE("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR)
-    {
+    if (error == OTA_AUTH_ERROR) {
       debugE("Auth Failed");
-    }
-    else if (error == OTA_BEGIN_ERROR)
-    {
+    } else if (error == OTA_BEGIN_ERROR) {
       debugE("Begin Failed");
-    }
-    else if (error == OTA_CONNECT_ERROR)
-    {
+    } else if (error == OTA_CONNECT_ERROR) {
       debugE("Connect Failed");
-    }
-    else if (error == OTA_RECEIVE_ERROR)
-    {
+    } else if (error == OTA_RECEIVE_ERROR) {
       debugE("Receive Failed");
-    }
-    else if (error == OTA_END_ERROR)
-    {
+    } else if (error == OTA_END_ERROR) {
       debugE("End Failed");
     }
   });
@@ -92,38 +87,7 @@ void setupOTA()
  */
 void otaLoop()
 {
-  Debug.handle();
+  Portal.handleClient();
   ArduinoOTA.handle();
-  iotWebConf.doLoop();
-}
-
-/**
- * Handle web requests to "/" path.
- */
-void handleRoot()
-{
-  // -- Let IotWebConf test and handle captive portal requests.
-  if (iotWebConf.handleCaptivePortal())
-  {
-    // -- Captive portal request were already served.
-    return;
-  }
-  String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-  s += "<title>IotWebConf 01 Minimal</title></head><body>Hello world!";
-  s += "Go to <a href='config'>configure page</a> to change settings.";
-  s += "</body></html>\n";
-
-  server.send(200, "text/html", s);
-}
-
-/**
- * @brief  WiFio connected callback
- * @note   
- * @retval None
- */
-void wifiConnected_cb()
-{
-  debugI("WiFi connected.");
-  digitalWrite(STATUS_PIN, LOW); /* to avoid stuck lit led */ 
-  wifiSuccessBuz();
+  Debug.handle();
 }
