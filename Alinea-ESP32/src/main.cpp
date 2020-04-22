@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 17:50:22
+ * @ Modified time: 2020-04-22 23:23:23
  * @ Description:
  *******************************************************************************************/
 
@@ -15,7 +15,7 @@
 #include <Arduino.h>
 #include "ota.h"
 #include <FreeRTOS.h>
-#include "serial_listener.h"
+#include "autoconnect_service.h"
 
 /**
  * @brief  Main setup
@@ -25,7 +25,7 @@
 void setup()
 {
   Serial.begin(115200);
-
+  setupAutoConnect();
   setupOTA();
   setupUARTListener();
   
@@ -41,4 +41,5 @@ void setup()
  */
 void loop()
 {
+  // nada here everything is FreeRTOS!
 }

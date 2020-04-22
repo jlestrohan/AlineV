@@ -10,20 +10,11 @@
 #include <FreeRTOS.h>
 #include <WiFi.h>
 #include <WebServer.h>
-#include <AutoConnect.h>
 #include <ArduinoOTA.h>
 #include "buzmusic.h"
 
-WebServer Server;
-AutoConnect Portal(Server);
 
 void otaLoop_task(void *parameter);
-
-void rootPage()
-{
-  char content[] = "Hello World";
-  Server.send(200, "text/plain", content);
-}
 
 /**
  * @brief  
@@ -33,10 +24,6 @@ void rootPage()
 void setupOTA()
 {
   setupBuzzer();
-
-  Server.on("/", rootPage);
-  Portal.begin();
-  Serial.println("Web server started:" + WiFi.localIP().toString());
 
   Debug.begin(thingName); // Initialize the WiFi server
 
@@ -110,7 +97,6 @@ void otaLoop_task(void *parameter)
 {
   for (;;)
   {
-    Portal.handleClient();
     ArduinoOTA.handle();
     Debug.handle();
 
