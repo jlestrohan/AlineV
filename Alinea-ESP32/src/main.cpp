@@ -16,6 +16,7 @@
 #include "ota.h"
 #include <FreeRTOS.h>
 #include "autoconnect_service.h"
+#include "serial_service.h"
 #include "ntp_service.h"
 
 
