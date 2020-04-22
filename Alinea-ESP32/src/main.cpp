@@ -21,8 +21,13 @@ uint32_t mTimeSeconds = 0;
  */
 void setup()
 {
+  Serial.begin(115200);
+
   setupOTA();
   debugI("Ready.");
+  	system_print_meminfo();
+
+  Serial.println("Ready UART");
 }
 
 /**
@@ -53,6 +58,13 @@ void loop()
     }
   }
 
+ if(Serial.available()>0)
+  {
+    byte x = Serial.read();
+    debugI("%c",x);
+    
+  }
+  
   
 }
 
