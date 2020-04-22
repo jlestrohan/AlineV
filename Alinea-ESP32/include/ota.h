@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-21 23:04:58
+ * @ Modified time: 2020-04-22 17:15:28
  * @ Description:
  *******************************************************************************************/
 
@@ -20,6 +20,5 @@ const char wifiInitialApPassword[] = "73727170";
 extern RemoteDebug Debug;
 
 void setupOTA();
-void otaLoop();
 
 #endif /* _IC_OTA_H */

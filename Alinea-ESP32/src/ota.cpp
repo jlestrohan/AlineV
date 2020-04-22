@@ -2,11 +2,12 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 16:24:26
+ * @ Modified time: 2020-04-22 17:17:29
  * @ Description:
  *******************************************************************************************/
 
 #include <ota.h>
+#include <FreeRTOS.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <AutoConnect.h>
@@ -15,6 +16,8 @@
 
 WebServer Server;
 AutoConnect Portal(Server);
+
+void otaLoop_task(void *parameter);
 
 void rootPage()
 {
@@ -65,29 +68,53 @@ void setupOTA()
   });
   ArduinoOTA.onError([](ota_error_t error) {
     debugE("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) {
+    if (error == OTA_AUTH_ERROR)
+    {
       debugE("Auth Failed");
-    } else if (error == OTA_BEGIN_ERROR) {
+    }
+    else if (error == OTA_BEGIN_ERROR)
+    {
       debugE("Begin Failed");
-    } else if (error == OTA_CONNECT_ERROR) {
+    }
+    else if (error == OTA_CONNECT_ERROR)
+    {
       debugE("Connect Failed");
-    } else if (error == OTA_RECEIVE_ERROR) {
+    }
+    else if (error == OTA_RECEIVE_ERROR)
+    {
       debugE("Receive Failed");
-    } else if (error == OTA_END_ERROR) {
+    }
+    else if (error == OTA_END_ERROR)
+    {
       debugE("End Failed");
     }
   });
   ArduinoOTA.begin();
+
+  /** FREERTOS OTA Task */
+  xTaskCreate(
+      otaLoop_task, /* Task function. */
+      "OTALoop",    /* String with name of task. */
+      10000,        /* Stack size in words. */
+      NULL,         /* Parameter passed as input of the task */
+      1,            /* Priority of the task. */
+      NULL);        /* Task handle. */
 }
 
 /**
- * @brief  To be called on loop()
+ * @brief  OTA Task, handles OTA + Webserver + Debug routines
  * @note   
  * @retval 
  */
-void otaLoop()
+void otaLoop_task(void *parameter)
 {
-  Portal.handleClient();
-  ArduinoOTA.handle();
-  Debug.handle();
+  for (;;)
+  {
+    Portal.handleClient();
+    ArduinoOTA.handle();
+    Debug.handle();
+
+    vTaskDelay(10);
+  }
+  vTaskDelete(NULL);
 }
