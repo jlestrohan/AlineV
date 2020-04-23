@@ -18,6 +18,7 @@
 #include "autoconnect_service.h"
 #include "serial_service.h"
 #include "ntp_service.h"
+#include "oled_service.h"
 #include "remoteDebug_service.h"
 
 RemoteDebug Debug;
@@ -35,6 +36,7 @@ void setup()
   setupNTPService();
   setupOTA();
   setupUARTListener();
+  setupOLED();
   
   debugI("Ready.");
 
