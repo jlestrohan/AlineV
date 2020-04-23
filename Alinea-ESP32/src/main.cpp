@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 23:23:23
+ * @ Modified time: 2020-04-23 12:24:38
  * @ Description:
  *******************************************************************************************/
 
@@ -18,7 +18,9 @@
 #include "autoconnect_service.h"
 #include "serial_service.h"
 #include "ntp_service.h"
+#include "remoteDebug_service.h"
 
+RemoteDebug Debug;
 
 /**
  * @brief  Main setup
@@ -29,6 +31,7 @@ void setup()
 {
   Serial.begin(115200);
   setupAutoConnect();
+  setupRemoteDebug();
   setupNTPService();
   setupOTA();
   setupUARTListener();

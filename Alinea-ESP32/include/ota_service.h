@@ -10,14 +10,6 @@
 #define _IC_OTA_H
 
 #include <Arduino.h>
-#include "RemoteDebug.h" //https://github.com/JoaoLopesF/RemoteDebug
-
-// -- Initial name of the Thing. Used e.g. as SSID of the own Access Point.
-const char thingName[] = "Alinea-ESP32";
-// -- Initial password to connect to the Thing, when it creates an own Access Point.
-const char wifiInitialApPassword[] = "73727170";
-
-extern RemoteDebug Debug;
 
 void setupOTA();
 
