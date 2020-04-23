@@ -31,13 +31,14 @@ RemoteDebug Debug;
 void setup()
 {
   Serial.begin(115200);
+
   setupAutoConnect();
   setupRemoteDebug();
   setupNTPService();
   setupOTA();
   setupUARTListener();
   setupOLED();
-  
+ 
   debugI("Ready.");
 
   Serial.println("Ready UART");

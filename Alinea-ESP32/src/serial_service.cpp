@@ -2,17 +2,16 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 22:10:39
+ * @ Modified time: 2020-04-23 12:19:43
  * @ Description:
  *******************************************************************************************/
 
 #include "serial_service.h"
-#include "ota.h"
+#include "remoteDebug_service.h"
 
 char uartBuffer[50];
 int uartBufferIndex = 0;
 
-RemoteDebug Debug;
 
 /**
  * @brief  Serial Listener task

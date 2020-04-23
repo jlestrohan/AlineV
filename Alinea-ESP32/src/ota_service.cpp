@@ -2,17 +2,16 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 17:17:29
+ * @ Modified time: 2020-04-23 12:17:25
  * @ Description:
  *******************************************************************************************/
 
-#include <ota.h>
+#include "ota_service.h"
 #include <FreeRTOS.h>
-#include <WiFi.h>
-#include <WebServer.h>
 #include <ArduinoOTA.h>
-#include "buzmusic.h"
-
+#include "buzzer_service.h"
+#include "remoteDebug_service.h"
+#include "autoconnect_service.h"
 
 void otaLoop_task(void *parameter);
 
@@ -23,10 +22,6 @@ void otaLoop_task(void *parameter);
  */
 void setupOTA()
 {
-  setupBuzzer();
-
-  Debug.begin(thingName); // Initialize the WiFi server
-
   // Hostname defaults to esp3232-[MAC]
   ArduinoOTA.setHostname(thingName);
 
@@ -50,6 +45,7 @@ void setupOTA()
   });
   ArduinoOTA.onEnd([]() {
     debugI("\nEnd");
+    ESP.restart();
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     debugI("Progress: %u%%\r", (progress / (total / 100)));
@@ -106,7 +102,6 @@ void otaLoop_task(void *parameter)
   for (;;)
   {
     ArduinoOTA.handle();
-    Debug.handle();
 
     vTaskDelay(10);
   }
