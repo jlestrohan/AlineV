@@ -29,14 +29,15 @@ HashMD5 is a md5 hash of the content of the data transmitted between the tags. I
 - [CMD:(hashmd5)]CMD[/CMD] = Command with md5 hash, implying an ACK response from the receiver
 - [DTA:(hashmd5)]DATA[/DTA] = Data to be sent over (ie MQTT or whatever), can accept JSON formatted string
 - [SYN] = First emitted by the sender to check if the other controller is in listen mode. It will reply by an [ACK] if applicable or an [ERR] flag if the communication is not possible
-- [ACK:(hashmd5)] = Acknowledge flag (md5 hash is mandatory) is sent back in response to any message containing the same hashcode
+- [ACK:(hashmd5)] = Acknowledge flag (md5 hash is optional) is sent back in response to any message containing the same hashcode or just the last SYN if no hash
 - [RST] = Clears any ongoing communication process that could not be over and sets the status of the communication to Ready!
 - [ERR:(hashmd5)]CODE[/ERR] = An error occured concerning the hashmd5 message..
   - 001: Last transmission failed
   - 002: Unknown command
-  - 003: Missing closure timeout transmission dumped
-  - 004: Invalid hashcode
+  - 003: Missing closing tag
+  - 004: Invalid hashcode (response given does not correspond to any known hash)
   - 005: Unable to execute command
+  - 006: malformed command
 
 
 
