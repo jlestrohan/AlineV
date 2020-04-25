@@ -10,6 +10,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <AutoConnect.h>
+#include "buzzer_service.h"
 
 WebServer Server;
 AutoConnect Portal(Server);
@@ -30,9 +31,12 @@ void rootPage()
 void setupAutoConnect()
 {
     Server.on("/", rootPage);
-    Portal.begin();
+  if (Portal.begin())
+  {
+    Serial.println("WiFi connected: " + WiFi.localIP().toString());
     Serial.println("Web server started:" + WiFi.localIP().toString());
-
+    wifiSuccessBuz();
+  }
     /** FREERTOS AutoConnect Task */
   xTaskCreate(
       autoConnectLoop_task, /* Task function. */

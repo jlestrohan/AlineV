@@ -16,6 +16,7 @@
 #include "ota.h"
 #include <FreeRTOS.h>
 #include "autoconnect_service.h"
+#include "buzzer_service.h"
 #include "serial_service.h"
 #include "ntp_service.h"
 #include "oled_service.h"
@@ -32,6 +33,7 @@ void setup()
 {
   Serial.begin(115200);
 
+  setupBuzzer();
   setupAutoConnect();
   setupRemoteDebug();
   setupNTPService();
