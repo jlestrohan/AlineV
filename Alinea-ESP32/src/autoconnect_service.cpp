@@ -35,7 +35,7 @@ void setupAutoConnect()
   {
     Serial.println("WiFi connected: " + WiFi.localIP().toString());
     Serial.println("Web server started:" + WiFi.localIP().toString());
-    wifiSuccessBuz();
+    wifiSuccessTune();
   }
     /** FREERTOS AutoConnect Task */
   xTaskCreate(

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-26 02:00:35
+ * @ Modified time: 2020-04-26 13:10:49
  * @ Description:
  *******************************************************************************************/
 
@@ -10,11 +10,7 @@
 #include "buzzer_service.h"
 #include "remoteDebug_service.h"
 
-#define BUZZER_OUTPIN 23
-
 // NB: ALL NOTES DEFINED WITH STANDARD ENGLISH NAMES, EXCEPT FROM "A"
-//THAT IS CALLED WITH THE ITALIAN NAME "LA" BECAUSE A0,A1...ARE THE ANALOG PINS ON ARDUINO.
-// (Ab IS CALLED Ab AND NOT LAb)
 #define note_C0 16.35
 #define note_Db0 17.32
 #define note_D0 18.35
@@ -116,13 +112,35 @@
 #define note_D8 4698.64
 #define note_Eb8 4978.03
 
+#define BUZZER_OUTPIN 23
+
+#define BUZ_MELODY_MAX_NOTES 20
+
+
+/* functions definitions */
+void buzzer_task(void *pvParameters);
+
+/**
+ * @brief  Main melody struct definition
+ * @note   
+ * @retval None
+ */
+typedef struct
+{
+    double melody[BUZ_MELODY_MAX_NOTES];     /* the melody itself, array of notes limited in number of notes - todo: make that dynamic! */
+    uint8_t durations[BUZ_MELODY_MAX_NOTES]; /* array of durations - todo make that dynamic! */
+    size_t notesNumber;                      /* number of notes */
+    uint8_t tempo;                           /* melody tempo between 0 and 255 BEWARE the littlest the fastest!! */
+} buzMelody_t;
+
 // note, durée
-const double melodie[][3] = {{note_D5, 1}, {note_E5, 1}, {note_C5, 1}, {note_G4, 1}, {note_G3, 1}, {note_C4, 1}, {note_C5, 1}, {note_G5, 1}};
+//onst double melody[][3] = {{note_D5, 1}, {note_E5, 1}, {note_C5, 1}, {note_G4, 1}, {note_G3, 1}, {note_C4, 1}, {note_C5, 1}, {note_G5, 1}};
 
-const int nombreDeNotes = 8;
-const int tempo = 200; // plus c'est petit, plus c'est rapide
+//const int notesNumber = 8;
+//const int tempo = 200; /* the littlest the fastest */
 
-xTaskHandle buzzer_wifiDone_task_hndl;
+xTaskHandle xBuzzerTask_handle = NULL;
+QueueHandle_t xBuzzerMelodyQueue = NULL;
 
 /**
  * @brief  Setup routine
@@ -132,32 +150,56 @@ xTaskHandle buzzer_wifiDone_task_hndl;
 void setupBuzzer()
 {
     ledcAttachPin(BUZZER_OUTPIN, 0); //broche 18 associée au canal PWM 0
+
+    xBuzzerMelodyQueue = xQueueCreate(10, sizeof(buzMelody_t));
+    if (xBuzzerMelodyQueue == NULL)
+    {
+        debugE("error creatring the buzzer melody queue");
+    }
+    else
+    {
+        /* creates buzzer update task */
+        xTaskCreate(
+            buzzer_task,          /* Task function. */
+            "buzzer_task",        /* String with name of task. */
+            10000,                /* Stack size in words. */
+            NULL,                 /* Parameter passed as input of the task */
+            1,                    /* Priority of the task. */
+            &xBuzzerTask_handle); /* Task handle. */
+    }
 }
 
-void buzzer_wifiDone_task(void *parameter)
+/**
+ * @brief  Buzzer one shot task, takes a melody struct in argument and then goes idle until next melody is requested
+ * @note   
+ * @param  *pvParameters: 
+ * @retval None
+ */
+void buzzer_task(void *pvParameters)
 {
     uint8_t idx = 0;
+    int frequency;
+    buzMelody_t melodyBuffer;
+
     for (;;)
     {
-        int frequence;
+        /* waits for any melody */
+        xQueueReceive(xBuzzerMelodyQueue, &melodyBuffer, portMAX_DELAY);
 
-        for (int i = 0; i < nombreDeNotes; i++)
+        for (int i = 0; i < melodyBuffer.notesNumber; i++)
         {
-            frequence = melodie[i][0];
-            ledcSetup(0, frequence, 12);
+            frequency = melodyBuffer.melody[i];
+            ledcSetup(0, frequency, 12);
             ledcWrite(0, 3592); // rapport cyclique 25%
-            delay(tempo * melodie[i][1] - 50);
+            vTaskDelay(melodyBuffer.tempo * melodyBuffer.durations[i] - 50);
             ledcWrite(0, 0); // rapport cyclique 0% (silence, pour séparer les notes adjacentes)
             vTaskDelay(50);
             idx++;
-            if (idx == nombreDeNotes) {
-                debugI("deleting current tune task");
-                vTaskDelete(buzzer_wifiDone_task_hndl); /* once that tone is played we just suppress the task */
-            }
         }
         vTaskDelay(10);
     }
-    vTaskDelete(buzzer_wifiDone_task_hndl);
+    /* we never get here but if so... suicides itself */
+    vTaskDelete(xBuzzerTask_handle);
 }
 
 /**
@@ -167,12 +209,32 @@ void buzzer_wifiDone_task(void *parameter)
  */
 void wifiSuccessTune()
 {
-    /* creates buzzer update task */
-    xTaskCreate(
-        buzzer_wifiDone_task,       /* Task function. */
-        "buzzer_wifiDone_task",     /* String with name of task. */
-        10000,                      /* Stack size in words. */
-        NULL,                       /* Parameter passed as input of the task */
-        1,                          /* Priority of the task. */
-        &buzzer_wifiDone_task_hndl); /* Task handle. */
+    /* let's setup ou melody here on purpose then we'll pass it to the main task */
+    buzMelody_t wifiSuccessMelody = {
+        {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5},{1,1,1,1,1,1,1,1}, 8, 150 };
+    xQueueSend(xBuzzerMelodyQueue, &wifiSuccessMelody, portMAX_DELAY);
+}
+
+/**
+ * @brief  Command received Melody
+ * @note   
+ * @retval None
+ */
+void commandReceivedTune()
+{
+    buzMelody_t cmdReceivedMelody = {
+        {note_C5, note_G5, note_C6},{1,1,1}, 3, 80 };
+    xQueueSend(xBuzzerMelodyQueue, &cmdReceivedMelody, portMAX_DELAY);
+}
+
+/**
+ * @brief  Command ready Melody
+ * @note   
+ * @retval None
+ */
+void commandReadyTune()
+{
+    buzMelody_t cmdReadyMelody = {
+        {note_C5, note_G5, note_E5, note_C6},{1,2,1,3}, 4, 140 };
+    xQueueSend(xBuzzerMelodyQueue, &cmdReadyMelody, portMAX_DELAY);
 }

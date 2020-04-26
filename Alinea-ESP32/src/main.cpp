@@ -21,6 +21,7 @@
 #include "ntp_service.h"
 #include "oled_service.h"
 #include "remoteDebug_service.h"
+#include "buzzer_service.h"
 
 RemoteDebug Debug;
 
@@ -44,7 +45,7 @@ void setup()
   debugI("Ready.");
 
   Serial.println("Ready UART");
-}
+  commandReadyTune();
 
 /**
  * @brief  Main program loop
