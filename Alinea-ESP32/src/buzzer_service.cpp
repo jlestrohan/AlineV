@@ -2,12 +2,13 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-25 21:21:59
+ * @ Modified time: 2020-04-26 02:00:35
  * @ Description:
  *******************************************************************************************/
 
 #include <Arduino.h>
 #include "buzzer_service.h"
+#include "remoteDebug_service.h"
 
 #define BUZZER_OUTPIN 23
 
@@ -121,6 +122,8 @@ const double melodie[][3] = {{note_D5, 1}, {note_E5, 1}, {note_C5, 1}, {note_G4,
 const int nombreDeNotes = 8;
 const int tempo = 200; // plus c'est petit, plus c'est rapide
 
+xTaskHandle buzzer_wifiDone_task_hndl;
+
 /**
  * @brief  Setup routine
  * @note   
@@ -148,12 +151,13 @@ void buzzer_wifiDone_task(void *parameter)
             vTaskDelay(50);
             idx++;
             if (idx == nombreDeNotes) {
-                vTaskDelete(NULL); /* once that tone is played we just suppress the task */
+                debugI("deleting current tune task");
+                vTaskDelete(buzzer_wifiDone_task_hndl); /* once that tone is played we just suppress the task */
             }
         }
         vTaskDelay(10);
     }
-    vTaskDelete(NULL);
+    vTaskDelete(buzzer_wifiDone_task_hndl);
 }
 
 /**
@@ -161,10 +165,8 @@ void buzzer_wifiDone_task(void *parameter)
  * @note   
  * @retval None
  */
-void wifiSuccessBuz()
+void wifiSuccessTune()
 {
-    xTaskHandle *buzzer_wifiDone_task_hndl;
-
     /* creates buzzer update task */
     xTaskCreate(
         buzzer_wifiDone_task,       /* Task function. */
@@ -172,5 +174,5 @@ void wifiSuccessBuz()
         10000,                      /* Stack size in words. */
         NULL,                       /* Parameter passed as input of the task */
         1,                          /* Priority of the task. */
-        buzzer_wifiDone_task_hndl); /* Task handle. */
+        &buzzer_wifiDone_task_hndl); /* Task handle. */
 }

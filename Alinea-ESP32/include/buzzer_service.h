@@ -10,7 +10,7 @@
 #define _IC_BUZMUSIC_H
 
 void setupBuzzer();
-void wifiSuccessBuz();
+void wifiSuccessTune();
 
 
 
