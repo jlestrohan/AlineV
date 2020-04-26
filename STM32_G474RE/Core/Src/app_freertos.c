@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include <MPU6050_service.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -80,9 +79,9 @@ osStatus_t val;
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-		.name = "defaultTask",
-		.priority = (osPriority_t) osPriorityLow,
-		.stack_size = 256 * 4
+  .name = "defaultTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 256 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,12 +94,12 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 void MX_FREERTOS_Init(void) {
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
 	val = osSemaphoreAcquire(sem_UART1, osWaitForever);
@@ -133,10 +132,10 @@ void MX_FREERTOS_Init(void) {
 		/* todo: change to blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
 
-	if (QMC5883l_Initialize(&hi2c4) == EXIT_FAILURE) {
+	/*if (QMC5883l_Initialize(&hi2c4) == EXIT_FAILURE) {
 		loggerE("Error Initializing QCM5883 Magnetometer Service");
 		//Error_Handler();
-	} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }
+	} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }*/
 
 	if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
@@ -148,11 +147,10 @@ void MX_FREERTOS_Init(void) {
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE; }*/
 
-	if (MPU6050_Service_Initialize(&hi2c2) == EXIT_FAILURE) {
+	/*if (MPU6050_Service_Initialize(&hi2c2) == EXIT_FAILURE) {
 		loggerE("Error Initializing MPU6050 Sensor Service");
 		/* todo: change to blocking fault */
-	} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }
-
+	//} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }
 
 	/*if (sdcardService_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing SD Card Service");
@@ -167,31 +165,31 @@ void MX_FREERTOS_Init(void) {
 	loggerI("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-	/* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-	/* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-	/* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-	/* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-	/* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-	/* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-	/* Create the thread(s) */
-	/* creation of defaultTask */
-	defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-	/* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-	/* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
 }
 
@@ -204,7 +202,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 __weak void StartDefaultTask(void *argument)
 {
-	/* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
 
 	/* very low priority task, checks every second or so if all services are up and running */
 	uint16_t servicesCheck = 0;
@@ -234,7 +232,7 @@ __weak void StartDefaultTask(void *argument)
 		//loggerI("Main loop execution here...");
 		osDelay(5000);
 	}
-	/* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
