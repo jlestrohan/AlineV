@@ -4,10 +4,16 @@
  *  Created on: Apr 18, 2020
  *      Author: Jack Lestrohan
  *
+ *
+ *	PINOUT:
+ *			MOTOR1: PWM16 -> Pin PA12 - IN1 -> PA11 - IN2 -> PA10
+ *			MOTOR2: PWM17 -> Pin PA7 - IN3 -> PC10 - IN4 -> PD2
  *******************************************************************/
 
 #ifndef INC_MOTORSCONTROL_SERVICE_H_
 #define INC_MOTORSCONTROL_SERVICE_H_
+
+#include <stdint.h>
 
 /**
  * @brief  MPU6050 result enumeration
@@ -96,7 +102,12 @@ void MotorSetSpeed(MotorsPace_t pace);
  */
 void MotorStop(MotorsMotionChangeRate_t motionchange);
 
+void motorSetForward();
+void motorSetBackward();
+void motorSetTurnLeft();
+void motorSetTurnRight();
 
+void motorsSetIdle();
 
 #endif /* INC_MOTORSCONTROL_SERVICE_H_ */
 

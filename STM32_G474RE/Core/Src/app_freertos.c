@@ -41,6 +41,7 @@
 #include "QMC5883_service.h"
 #include "BMP280_service.h"
 #include "HC_SR04_service.h"
+#include "MotorsControl_service.h"
 
 /* USER CODE END Includes */
 
@@ -157,6 +158,8 @@ void MX_FREERTOS_Init(void) {
 		loggerE("Error Initializing SD Card Service");
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE; }*/
+
+	MotorsControl_Service_Initialize();
 
 	osSemaphoreAcquire(sem_lcdService, osWaitForever);
 	lcd_send_string("Init Complete");
