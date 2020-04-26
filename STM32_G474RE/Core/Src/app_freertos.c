@@ -35,7 +35,6 @@
 #include "sensor_speed_service.h"
 #include "i2c.h"
 #include "button_handler.h"
-#include "buzzer_service.h"
 #include "sdcard_service.h"
 #include "IRQ_Handler.h"
 #include "lcd_service.h"
@@ -153,7 +152,6 @@ void MX_FREERTOS_Init(void) {
 		/* todo: change to blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE; }
 
-	/*buzzerService_initialize(); */
 
 	/*if (sdcardService_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing SD Card Service");
