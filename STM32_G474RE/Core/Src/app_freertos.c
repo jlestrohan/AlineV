@@ -73,7 +73,6 @@
 /* USER CODE BEGIN Variables */
 
 uint16_t ServicesSuccessFlags = 0; /* holds the flags of succesfully running services */
-osStatus_t val;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -102,14 +101,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
-	val = osSemaphoreAcquire(sem_UART1, osWaitForever);
-	switch (val) {
-	case osOK:
-		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
-		osSemaphoreRelease(sem_UART1);
-		break;
-	default: break;
-	}
+	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 
 	if (log_initialize(&hlpuart1) == EXIT_FAILURE) {
 		char *msg2 = "Failed Initializing Logger Service.. cannot continue sorry...\n\r";

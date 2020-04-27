@@ -23,9 +23,8 @@
 osMessageQueueId_t queue_HC_SR04Handle;
 
 typedef struct {
-	uint8_t		HR04_1_Distance;
-	uint8_t		HR04_2_Distance;
-	uint8_t		HR04_3_Distance;
+	uint8_t		distance;
+	uint8_t		sonarNum;
 } HR04_SensorsData_t;
 
 

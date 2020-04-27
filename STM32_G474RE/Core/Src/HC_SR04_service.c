@@ -59,20 +59,20 @@ HC_SR04_Result HC_SR04_StartupTimers();
 static void HR04SensorTask_Start(void *argument)
 {
 	char msg[30];
-	HR04_SensorsData_t HR04_SensorsData;
+	HR04_SensorsData_t data;
 	osStatus_t status = -1;
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		osMessageQueueGet(queue_HC_SR04Handle, &HR04_SensorsData, NULL, osWaitForever); /* wait for message */
+		status = osMessageQueueGet(queue_HC_SR04Handle, &data, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
-			sprintf(msg, "%0*dcm      %0*dcm", 3,HR04_SensorsData.HR04_1_Distance, 3, HR04_SensorsData.HR04_2_Distance);
+			sprintf(msg, "%d - %0*dcm", data.sonarNum, 3,data.distance);
 
-			osSemaphoreAcquire(sem_lcdService, osWaitForever);
-			lcd_send_string(msg);
-			osSemaphoreRelease(sem_lcdService);
+			//osSemaphoreAcquire(sem_lcdService, osWaitForever);
+			//lcd_send_string(msg);
+			//osSemaphoreRelease(sem_lcdService);
 			loggerI(msg);
 		}
 

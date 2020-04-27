@@ -27,7 +27,7 @@ char msg[50];
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	char msg[30];
+	//char msg[30];
 
 	switch (GPIO_Pin)
 	{
@@ -74,25 +74,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	HR04_SensorsData_t HR04_SensorsData;
-	osStatus_t status;
+	//osStatus_t status;
 
 	if (htim->Instance == TIM1) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
-			HR04_SensorsData.HR04_1_Distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &HR04_SensorsData, 0x10U, 0U);
+			HR04_SensorsData.distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+			HR04_SensorsData.sonarNum = HR04_SONAR_1;
+			osMessageQueuePut(queue_HC_SR04Handle, &HR04_SensorsData, 0U, 0U);
 		}
 	} else if (htim->Instance == TIM2) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
-			HR04_SensorsData.HR04_2_Distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &HR04_SensorsData, 0x10U, 0U);
+			HR04_SensorsData.distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+			HR04_SensorsData.sonarNum = HR04_SONAR_2;
+			osMessageQueuePut(queue_HC_SR04Handle, &HR04_SensorsData, 0x0U, 0U);
 		}
 	} else if (htim->Instance == TIM3) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
-			HR04_SensorsData.HR04_3_Distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &HR04_SensorsData, 0x10U, 0U);
+			HR04_SensorsData.distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+			HR04_SensorsData.sonarNum = HR04_SONAR_3;
+			osMessageQueuePut(queue_HC_SR04Handle, &HR04_SensorsData, 0U, 0U);
 		}
 	}
 }
