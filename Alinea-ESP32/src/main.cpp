@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-23 12:24:38
+ * @ Modified time: 2020-04-27 07:44:32
  * @ Description:
  *******************************************************************************************/
 
@@ -22,6 +22,7 @@
 #include "oled_service.h"
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
+#include "command_parser.h"
 
 RemoteDebug Debug;
 
@@ -35,6 +36,7 @@ void setup()
   Serial.begin(115200);
 
   setupBuzzer();
+  setupCmdParser();
   setupAutoConnect();
   setupRemoteDebug();
   setupNTPService();
