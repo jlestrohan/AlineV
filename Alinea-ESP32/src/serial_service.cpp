@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-27 07:45:58
+ * @ Modified time: 2020-04-27 07:56:23
  * @ Description:
  *******************************************************************************************/
 
@@ -44,12 +44,14 @@ void vSerialListenerTaskCode(void *pvParameters)
           debugE("xQueueCommandParse not available or NULL - last command not processed");
 
         uartBuffer[0] = '\0';
+        Serial.print(ch);
       }
       else
       {
         if (uartBufferPos < CMD_TAG_MSG_MAX_LGTH)
         {
           uartBuffer[uartBufferPos++] = ch; // add the character into the buffer
+          Serial.print(ch);
         }
         else
         {
