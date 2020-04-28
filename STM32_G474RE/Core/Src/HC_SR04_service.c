@@ -68,15 +68,17 @@ static void HR04SensorTask_Start(void *argument)
 
 		status = osMessageQueueGet(queue_HC_SR04Handle, &data, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
+			if (data.sonarNum == HR04_SONAR_1) {
 			sprintf(msg, "%d - %0*dcm", data.sonarNum, 3,data.distance);
 
-			//osSemaphoreAcquire(sem_lcdService, osWaitForever);
-			//lcd_send_string(msg);
-			//osSemaphoreRelease(sem_lcdService);
-			loggerI(msg);
+			osSemaphoreAcquire(sem_lcdService, osWaitForever);
+			lcd_send_string(msg);
+			osSemaphoreRelease(sem_lcdService);
+			//loggerI(msg);
+			}
 		}
 
-		osDelay(60);
+		osDelay(10);
 	}
 }
 

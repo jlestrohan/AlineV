@@ -86,9 +86,11 @@ void StartLoggerServiceTask(void *argument)
 				break;
 			}
 		}
+
+		osDelay(20);
 	}
 
-	osDelay(10);
+
 }
 
 

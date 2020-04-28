@@ -29,12 +29,12 @@ static const osThreadAttr_t MotorsControlTa_attributes = {
  * Motors Control main task
  * @param argument
  */
-static void MotorsControlTask_Start(void *argument)
+static void MotorsControlTask_Start(void *vParameters)
 {
 
 
 	/* prevent compilation warning */
-	UNUSED(argument);
+	UNUSED(vParameters);
 
 	/* TEST DRIVE */
 	// 1 - set motors motion forward
