@@ -124,6 +124,10 @@ void MX_FREERTOS_Init(void) {
 		/* todo: change to blocking fault */
 	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
 
+	if (setupFrontServo() == EXIT_FAILURE) {
+		loggerE("Error Initializing Front Servo Service");
+	}
+
 	/*if (QMC5883l_Initialize(&hi2c4) == EXIT_FAILURE) {
 		loggerE("Error Initializing QCM5883 Magnetometer Service");
 		//Error_Handler();

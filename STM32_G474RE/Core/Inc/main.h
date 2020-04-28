@@ -80,6 +80,8 @@ void Error_Handler(void);
 #define mpu6050_SCL_GPIO_Port GPIOC
 #define HR04_3_TRIG_Pin GPIO_PIN_0
 #define HR04_3_TRIG_GPIO_Port GPIOB
+#define MG90S_PWM_Pin GPIO_PIN_2
+#define MG90S_PWM_GPIO_Port GPIOB
 #define HR04_2_TRIG_Pin GPIO_PIN_10
 #define HR04_2_TRIG_GPIO_Port GPIOB
 #define SPI2_SD_SCK_Pin GPIO_PIN_13
