@@ -28,6 +28,7 @@ HashMD5 is a md5 hash of the content of the data transmitted between the tags. I
 
 - [CMD:(hashmd5)]CMD[/CMD] = Command with md5 hash, implying an ACK response from the receiver
 - [DTA:(hashmd5)]DATA[/DTA] = Data to be sent over (ie MQTT or whatever), can accept JSON formatted string
+- [MSG]one message[/MSG] = sends a message to be displayed on the debug console of the ESP32
 - [SYN] = First emitted by the sender to check if the other controller is in listen mode. It will reply by an [ACK] if applicable or an [ERR] flag if the communication is not possible
 - [ACK:(hashmd5)] = Acknowledge flag (md5 hash is optional) is sent back in response to any message containing the same hashcode or just the last SYN if no hash
 - [RST] = Clears any ongoing communication process that could not be over and sets the status of the communication to Ready!
