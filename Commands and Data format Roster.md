@@ -13,17 +13,13 @@ All commands are to be included between [CMD:(sha256)] **command here** [/CMD] t
 ##### <u>emitted by the STM32 to ESP32:</u>
 
 * **tune** *tunetype* *prioritary*
-
   *  will command the ESP32 to play the selected tune. 
   * *tunetype*: (string) name of the tune
   * *prioritary*: if true, this flag will order the ESP32 to immediately play the tune even if something else is playing
-
 * **tune** *tunelist* - will command the ESP32 to send back an array of the tunes available
-
   * tunelist: keyword
 
   
-
 ##### <u>emitted by the ESP32 to STM32:</u>
 
 - **restart**
@@ -34,41 +30,24 @@ All commands are to be included between [CMD:(sha256)] **command here** [/CMD] t
   - that command will also be invoked when the LiPo battery sensor detects a weak battery, in order to avoid the destruction of the lipo's cells. In such case a recognizable tune will also be played by the buzzer to inform the driver that the Lipo has to be changed.
 - **wakeup**
   - commands the STM32 to exit deepsleep mode and become fully operational again
-
 * **motion** *forward/backward* *milliseconds* *<u>speed</u>*
-
   * commands the rover to start moving backward or forward for x millis at the optional speed between 1 to 100 (0 will return a bad command error)
-
 * **motion** *left/right millis <u>speed</u>*
-
   * commands the rover to start turning left or right for x millis at the optional speed 1-100 (0 would return a bad command error)
-
 * **motion** *azimuth milliseconds <u>speed</u>*
-
   * commands the rover to start moving toward the azimuth given in degrees (magnetic) for x millis at the speed of (1-100, 0 returning a bad command error)
-
 * **motion** *stop*
-
   * will immediately stop the rover commanding the motors to idle
 
+    All motion commands will still be driven by the obstacle detection sensors and the rover will never endanger itself, thus stopping itself even if it has 
+    been commanded to move. 
+  
 * **lcd** *clear*
-
   * clears the LCD display
-
 * **lcd** *cursor X Y*
-
   * sets LCD cursor to X Y
-
 * **lcd** *print text*
-
   * prints "text" to the display, trimming anything over 16 chars
-
-  
-
-  
-
-
-
 
 
 ### datas:
@@ -96,9 +75,6 @@ json format for STM general status:
     "device_uuid": "123e4567-e89b-12d3-a456-426655440000",
     },
  } 
-  
-    
-    
 
 ```
 
@@ -116,9 +92,6 @@ json format for STM general status:
     	},
     },
  } 
-  
-    
-    
 
 ```
 
@@ -135,9 +108,6 @@ json format for STM general status:
     	},
     },
  } 
-  
-    
-    
 
 ```
 
