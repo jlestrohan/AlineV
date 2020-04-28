@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-27 07:50:56
+ * @ Modified time: 2020-04-27 14:04:17
  * @ Description:
  *******************************************************************************************/
 
@@ -59,7 +59,7 @@ uint8_t setupCmdParser()
         1,                        /* Priority of the task. */
         &xCommandParserTask_hnd); /* Task handle. */
 
-    if (xCommandParserTask_hnd = NULL)
+    if (xCommandParserTask_hnd == NULL)
     {
         debugE("Error creating serial parser task!");
         /* cannot create task, remove all created stuff and exit failure */

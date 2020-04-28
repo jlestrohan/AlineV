@@ -41,6 +41,7 @@
 #include "BMP280_service.h"
 #include "HC_SR04_service.h"
 #include "MotorsControl_service.h"
+#include "MG90S_service.h"
 
 /* USER CODE END Includes */
 
@@ -133,10 +134,10 @@ void MX_FREERTOS_Init(void) {
 		//Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE; }*/
 
-	if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
+	/*if (timeofflight_initialize(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
 		/* todo: change to blocking fault */
-	} else { ServicesSuccessFlags |= SERVICE_V53L0X_COMPLETE; }
+	/*} else { ServicesSuccessFlags |= SERVICE_V53L0X_COMPLETE; }*/
 
 	/*if (sensor_speed_initialize() == EXIT_FAILURE) {
 		loggerE("Error Initializing Speed Sensors Service");
@@ -153,12 +154,12 @@ void MX_FREERTOS_Init(void) {
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE; }*/
 
-	MotorsControl_Service_Initialize();
+	//MotorsControl_Service_Initialize();
 
-	osSemaphoreAcquire(sem_lcdService, osWaitForever);
+	/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
 	lcd_send_string("Init Complete");
 	osSemaphoreRelease(sem_lcdService);
-	loggerI("Init sequence complete....");
+	loggerI("Init sequence complete....");*/
 	/** let's start the 1µs timer for the whole application */
 
   /* USER CODE END Init */

@@ -83,6 +83,8 @@ uint8_t setupFrontServo()
 		return (EXIT_FAILURE);
 	}
 
+	osThreadSuspend(xFrontServo_taskHandle); /* suspending for now */
+
 	loggerI("Initializing Front Servo... Success!");
 	return (EXIT_SUCCESS);
 }

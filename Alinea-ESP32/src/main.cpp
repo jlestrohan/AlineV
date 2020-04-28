@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-27 16:34:11
+ * @ Modified time: 2020-04-27 18:37:54
  * @ Description:
  *******************************************************************************************/
 
@@ -23,8 +23,21 @@
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
 #include "command_parser.h"
+#include "bluetooth_serial.h"
+
+#define GET_CHIPID() (ESP.getCpuFreqMHz())
 
 RemoteDebug Debug;
+
+/**
+ * @brief  Main program loop
+ * @note   
+ * @retval None
+ */
+void loop()
+{
+  // nada here everything is FreeRTOS!
+}
 
 /**
  * @brief  Main setup
@@ -37,23 +50,16 @@ void setup()
 
   setupBuzzer();
   setupCmdParser();
+  //setupBTSerial();
   setupAutoConnect();
   setupRemoteDebug();
   setupNTPService();
   setupUARTListener();
   setupOLED();
- 
+
   debugI("Ready.");
+  //Serial.println(GET_CHIPID());
 
   Serial.println("Ready UART");
   commandReadyTune();
-
-/**
- * @brief  Main program loop
- * @note   
- * @retval None
- */
-void loop()
-{
-  // nada here everything is FreeRTOS!
 }

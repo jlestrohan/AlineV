@@ -1,16 +1,16 @@
 /*******************************************************************************************
  * @ Author: Jack Lestrohan
- * @ Create Time: 2020-04-21 00:30:15
+ * @ Create Time: 2020-04-27 13:55:31
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 17:15:28
+ * @ Modified time: 2020-04-27 14:01:29
  * @ Description:
  *******************************************************************************************/
 
-#ifndef _IC_OTA_H
-#define _IC_OTA_H
+#ifndef _IC_BLUETOOTH_SERIAL_H
+#define _IC_BLUETOOTH_SERIAL_H
 
-#include <Arduino.h>
+#include <stdint.h>
 
-void setupOTA();
+uint8_t setupBTSerial();
 
-#endif /* _IC_OTA_H */
+#endif /* _IC_BLUETOOTH_SERIAL_H */

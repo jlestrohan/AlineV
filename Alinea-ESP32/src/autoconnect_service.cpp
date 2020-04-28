@@ -2,8 +2,9 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 22:22:16
+ * @ Modified time: 2020-04-27 08:17:49
  * @ Description: https://hieromon.github.io/AutoConnect/otaupdate.html
+ * //https://hieromon.github.io/AutoConnect/howtoembed.html
  *******************************************************************************************/
 
 #include "autoconnect_service.h"
@@ -19,8 +20,8 @@ void autoConnectLoop_task(void *parameter);
 
 void rootPage()
 {
-    char content[] = "Hello World";
-    Server.send(200, "text/plain", content);
+  char content[] = "Hello World";
+  Server.send(200, "text/plain", content);
 }
 
 /**
@@ -30,21 +31,23 @@ void rootPage()
  */
 void setupAutoConnect()
 {
-    Server.on("/", rootPage);
+  Server.on("/", rootPage);
+
   if (Portal.begin())
   {
+    Serial.println();
     Serial.println("WiFi connected: " + WiFi.localIP().toString());
-    Serial.println("Web server started:" + WiFi.localIP().toString());
+    Serial.println("Web server started");
     wifiSuccessTune();
   }
-    /** FREERTOS AutoConnect Task */
+  /** FREERTOS AutoConnect Task */
   xTaskCreate(
-      autoConnectLoop_task, /* Task function. */
-      "autoConnectLoop_task",    /* String with name of task. */
-      10000,        /* Stack size in words. */
-      NULL,         /* Parameter passed as input of the task */
-      1,            /* Priority of the task. */
-      NULL);        /* Task handle. */
+      autoConnectLoop_task,   /* Task function. */
+      "autoConnectLoop_task", /* String with name of task. */
+      10000,                  /* Stack size in words. */
+      NULL,                   /* Parameter passed as input of the task */
+      1,                      /* Priority of the task. */
+      NULL);                  /* Task handle. */
 }
 
 /**
@@ -57,7 +60,6 @@ void autoConnectLoop_task(void *parameter)
   for (;;)
   {
     Portal.handleClient();
-
     vTaskDelay(10);
   }
   vTaskDelete(NULL);

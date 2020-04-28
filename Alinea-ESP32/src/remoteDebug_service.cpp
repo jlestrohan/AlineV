@@ -2,12 +2,13 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-23 12:22:22
+ * @ Modified time: 2020-04-27 14:05:41
  * @ Description:
  *******************************************************************************************/
 
 #include "remoteDebug_service.h"
 #include "autoconnect_service.h"
+#include "configuration_esp32.h"
 
 void remoteDebug_task(void *parameter);
 
@@ -18,16 +19,16 @@ void remoteDebug_task(void *parameter);
  */
 void setupRemoteDebug()
 {
-    Debug.begin(thingName); // Initialize the WiFi server
+    Debug.begin(THINGNAME); // Initialize the WiFi server
 
     /** FREERTOS Debug Task */
     xTaskCreate(
-        remoteDebug_task, /* Task function. */
-        "remoteDebug_task",    /* String with name of task. */
-        10000,        /* Stack size in words. */
-        NULL,         /* Parameter passed as input of the task */
-        5,            /* Priority of the task. */
-        NULL);        /* Task handle. */
+        remoteDebug_task,   /* Task function. */
+        "remoteDebug_task", /* String with name of task. */
+        10000,              /* Stack size in words. */
+        NULL,               /* Parameter passed as input of the task */
+        5,                  /* Priority of the task. */
+        NULL);              /* Task handle. */
 }
 
 /**
