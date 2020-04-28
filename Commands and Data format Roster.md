@@ -16,12 +16,10 @@ All commands are to be included between [CMD:(sha256)] **command here** [/CMD] t
   *  will command the ESP32 to play the selected tune. 
   * *tunetype*: (string) name of the tune
   * *prioritary*: if true, this flag will order the ESP32 to immediately play the tune even if something else is playing
-
 * **tune** *tunelist* - will command the ESP32 to send back an array of the tunes available
   * tunelist: keyword
 
   
-
 ##### <u>emitted by the ESP32 to STM32:</u>
 
 - **restart**
@@ -40,6 +38,10 @@ All commands are to be included between [CMD:(sha256)] **command here** [/CMD] t
   * commands the rover to start moving toward the azimuth given in degrees (magnetic) for x millis at the speed of (1-100, 0 returning a bad command error)
 * **motion** *stop*
   * will immediately stop the rover commanding the motors to idle
+
+    All motion commands will still be driven by the obstacle detection sensors and the rover will never endanger itself, thus stopping itself even if it has 
+    been commanded to move. 
+  
 * **lcd** *clear*
   * clears the LCD display
 * **lcd** *cursor X Y*
