@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-27 07:56:23
+ * @ Modified time: 2020-04-28 23:51:44
  * @ Description:
  *******************************************************************************************/
 
@@ -13,16 +13,63 @@
 #include "buzzer_service.h"
 #include "command_parser.h"
 
-xTaskHandle xSerialListenerTask_hnd = NULL;
+xTaskHandle xSerial0ListenerTask_hnd = NULL; /* for debug only */
+xTaskHandle xSerial2ListenerTask_hnd = NULL; /* from STM32 */
+
 QueueHandle_t xQueueCommandParse;
 
 /**
- * @brief  Serial Listener task. Listens to UART and sends every command received to the command parser
+ * @brief   Serial 2 Listener task (from STM32)
+ *          Listens to UART2 and pass all commands to the parser queue.
+ * @note   
+ * @param  *pvParameters: 
+ * @retval None
+ */
+void vSerial2ListenerTaskCode(void *pvParameters)
+{
+  char uartBuffer[CMD_TAG_MSG_MAX_LGTH + 1];
+  int uartBufferPos = 0;
+
+  while (1)
+  {
+    if (Serial2.available())
+    {
+      char ch = (char)Serial2.read();
+      if (ch == '\n') // is this the terminating carriage return
+      {
+        uartBuffer[uartBufferPos] = 0; // terminate the string with a 0
+        uartBufferPos = 0;             // reset the index ready for another string
+        /* todo: here we compare uartBuffer with cmd_parser_tag_list[] to check if the beginning of the command is recognized */
+        /* send it thru a msgQueue to another dedicated task */
+        /*if (xQueueCommandParse)
+          xQueueSend(xQueueCommandParse, &uartBuffer, portMAX_DELAY);
+        else
+          debugE("xQueueCommandParse not available or NULL - last command not processed");*/
+        Serial.print(uartBuffer);
+        uartBuffer[0] = '\0';
+        Serial.println();
+      }
+      else
+      {
+        // if (uartBufferPos < CMD_TAG_MSG_MAX_LGTH)
+        // {
+        uartBuffer[uartBufferPos++] = ch; // add the character into the buffer
+                                          //Serial.print(ch);
+                                          // }
+      }
+    }
+    vTaskDelay(10);
+  }
+  vTaskDelete(xSerial2ListenerTask_hnd);
+}
+
+/**
+ * @brief  Serial 0 Listener task. Listens to UART0 and sends every command received to the command parser (debug purposes)
  * @note   
  * @param  *parameter: 
  * @retval None
  */
-void vSerialListenerTaskCode(void *pvParameters)
+void vSerial0ListenerTaskCode(void *pvParameters)
 {
   char uartBuffer[CMD_TAG_MSG_MAX_LGTH + 1];
   int uartBufferPos = 0;
@@ -65,7 +112,7 @@ void vSerialListenerTaskCode(void *pvParameters)
     }
     vTaskDelay(10);
   }
-  vTaskDelete(NULL);
+  vTaskDelete(xSerial0ListenerTask_hnd);
 }
 
 /**
@@ -75,19 +122,39 @@ void vSerialListenerTaskCode(void *pvParameters)
  */
 uint8_t setupUARTListener()
 {
+  /* setup UART communications to and from STM32 on UART2 port */
+  Serial2.begin(460800, SERIAL_8N1, RXD2, TXD2);
+
   /* we attempt to create the serial listener task */
   xTaskCreate(
-      vSerialListenerTaskCode,   /* Task function. */
-      "serialListener_task",     /* String with name of task. */
-      10000,                     /* Stack size in words. */
-      NULL,                      /* Parameter passed as input of the task */
-      2,                         /* Priority of the task. */
-      &xSerialListenerTask_hnd); /* Task handle. */
+      vSerial0ListenerTaskCode,   /* Task function. */
+      "serial0Listener_task",     /* String with name of task. */
+      10000,                      /* Stack size in words. */
+      NULL,                       /* Parameter passed as input of the task */
+      2,                          /* Priority of the task. */
+      &xSerial0ListenerTask_hnd); /* Task handle. */
 
   /* check and deinit stuff if applicable */
-  if (xSerialListenerTask_hnd == NULL)
+  if (xSerial0ListenerTask_hnd == NULL)
   {
-    debugE("Error creating xSerialListenerTask_hnd task!");
+    debugE("Error creating xSerial0Listener task!");
+    /* cannot create task, remove all created stuff and exit failure */
+    return EXIT_FAILURE;
+  }
+
+  /* we attempt to create the serial 2 listener task */
+  xTaskCreate(
+      vSerial2ListenerTaskCode,   /* Task function. */
+      "serial2Listener_task",     /* String with name of task. */
+      10000,                      /* Stack size in words. */
+      NULL,                       /* Parameter passed as input of the task */
+      5,                          /* Priority of the task. */
+      &xSerial2ListenerTask_hnd); /* Task handle. */
+
+  /* check and deinit stuff if applicable */
+  if (xSerial2ListenerTask_hnd == NULL)
+  {
+    debugE("Error creating xSerial2Listener task!");
     /* cannot create task, remove all created stuff and exit failure */
     return EXIT_FAILURE;
   }

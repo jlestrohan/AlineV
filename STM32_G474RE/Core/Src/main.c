@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "dma.h"
 #include "app_fatfs.h"
 #include "i2c.h"
 #include "usart.h"
@@ -95,6 +96,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_LPUART1_UART_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
@@ -110,6 +112,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM16_Init();
   MX_TIM17_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -174,9 +177,10 @@ void SystemClock_Config(void)
   }
   /** Initializes the peripherals clocks 
   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_LPUART1|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_I2C3
-                              |RCC_PERIPHCLK_I2C4;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_LPUART1
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C2
+                              |RCC_PERIPHCLK_I2C3|RCC_PERIPHCLK_I2C4;
+  PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_SYSCLK;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
   PeriphClkInit.I2c2ClockSelection = RCC_I2C2CLKSOURCE_SYSCLK;

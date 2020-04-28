@@ -16,6 +16,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "gpio.h"
+#include "usart.h"
+#include <string.h>
 
 static uint32_t lastPressedTick = 0;
 static uint32_t btnflags;
@@ -59,6 +61,9 @@ static void buttonService_task(void *argument)
 		if (buttonDebounce(lastPressedTick) || lastPressedTick == 0) {
 			lastPressedTick = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
+
+			char *msg="[CMD]button pressed on STM32[/CMD]\n";
+			HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 
 			osSemaphoreAcquire(sem_lcdService, osWaitForever);
 			lcd_send_string("Button Pressed");

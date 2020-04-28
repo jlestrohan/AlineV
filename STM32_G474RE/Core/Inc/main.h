@@ -84,6 +84,8 @@ void Error_Handler(void);
 #define MG90S_PWM_GPIO_Port GPIOB
 #define HR04_2_TRIG_Pin GPIO_PIN_10
 #define HR04_2_TRIG_GPIO_Port GPIOB
+#define USART3_ESP_RX_Pin GPIO_PIN_11
+#define USART3_ESP_RX_GPIO_Port GPIOB
 #define SPI2_SD_SCK_Pin GPIO_PIN_13
 #define SPI2_SD_SCK_GPIO_Port GPIOB
 #define SPI2_SD_MISO_Pin GPIO_PIN_14
@@ -124,6 +126,8 @@ void Error_Handler(void);
 #define LCD_I2C1_SDA_GPIO_Port GPIOB
 #define LCD_I2C1_SCL_Pin GPIO_PIN_8
 #define LCD_I2C1_SCL_GPIO_Port GPIOB
+#define USART3_ESP_TX_Pin GPIO_PIN_9
+#define USART3_ESP_TX_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 /** error handler fix */
 #define GET_MACRO( _0, _1, NAME, ... ) NAME
