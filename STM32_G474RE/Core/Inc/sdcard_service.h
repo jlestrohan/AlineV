@@ -20,6 +20,6 @@
 
 #include <stdint.h>
 
-uint8_t sdcardService_initialize();
+uint8_t uSdCardServiceInit();
 
 #endif /* INC_SDCARD_SERVICE_H_ */

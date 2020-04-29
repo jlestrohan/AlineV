@@ -127,7 +127,7 @@ void MX_I2C4_Init(void)
 {
 
   hi2c4.Instance = I2C4;
-  hi2c4.Init.Timing = 0x10802D9B;
+  hi2c4.Init.Timing = 0x30A0A7FB;
   hi2c4.Init.OwnAddress1 = 0;
   hi2c4.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c4.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -257,10 +257,10 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PC6     ------> I2C4_SCL
     PC7     ------> I2C4_SDA 
     */
-    GPIO_InitStruct.Pin = I2C4_HC5883_SCL_Pin|I2C4_HC5883_SDA_Pin;
+    GPIO_InitStruct.Pin = I2C4_GY271_SCL_Pin|I2C4_GY271_SDA_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF8_I2C4;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -345,7 +345,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     PC6     ------> I2C4_SCL
     PC7     ------> I2C4_SDA 
     */
-    HAL_GPIO_DeInit(GPIOC, I2C4_HC5883_SCL_Pin|I2C4_HC5883_SDA_Pin);
+    HAL_GPIO_DeInit(GPIOC, I2C4_GY271_SCL_Pin|I2C4_GY271_SDA_Pin);
 
   /* USER CODE BEGIN I2C4_MspDeInit 1 */
 

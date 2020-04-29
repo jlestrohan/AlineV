@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-28 23:51:44
+ * @ Modified time: 2020-04-29 00:59:37
  * @ Description:
  *******************************************************************************************/
 
@@ -30,7 +30,7 @@ void vSerial2ListenerTaskCode(void *pvParameters)
   char uartBuffer[CMD_TAG_MSG_MAX_LGTH + 1];
   int uartBufferPos = 0;
 
-  while (1)
+  for (;;)
   {
     if (Serial2.available())
     {
@@ -41,21 +41,25 @@ void vSerial2ListenerTaskCode(void *pvParameters)
         uartBufferPos = 0;             // reset the index ready for another string
         /* todo: here we compare uartBuffer with cmd_parser_tag_list[] to check if the beginning of the command is recognized */
         /* send it thru a msgQueue to another dedicated task */
-        /*if (xQueueCommandParse)
+        if (xQueueCommandParse)
           xQueueSend(xQueueCommandParse, &uartBuffer, portMAX_DELAY);
         else
-          debugE("xQueueCommandParse not available or NULL - last command not processed");*/
-        Serial.print(uartBuffer);
+          debugE("xQueueCommandParse not available or NULL - last command not processed");
         uartBuffer[0] = '\0';
-        Serial.println();
       }
       else
       {
-        // if (uartBufferPos < CMD_TAG_MSG_MAX_LGTH)
-        // {
-        uartBuffer[uartBufferPos++] = ch; // add the character into the buffer
-                                          //Serial.print(ch);
-                                          // }
+        /* checks if the command received isn't too large (security) */
+        if (uartBufferPos < CMD_TAG_MSG_MAX_LGTH)
+        {
+          uartBuffer[uartBufferPos++] = ch; // add the character into the buffer
+        }
+        /* if so we trash it */
+        else
+        {
+          uartBuffer[0] = '\0';
+          uartBufferPos = 0;
+        }
       }
     }
     vTaskDelay(10);

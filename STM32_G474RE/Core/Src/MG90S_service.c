@@ -8,6 +8,7 @@
  *******************************************************************/
 
 #include "MG90S_service.h"
+#include "configuration.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include <stdio.h>
@@ -25,7 +26,7 @@ static const osThreadAttr_t xFrontServoTa_attributes = {
 		.stack_size = sizeof(xFrontServoTaBuffer),
 		.cb_mem = &xFrontServoTaControlBlock,
 		.cb_size = sizeof(xFrontServoTaControlBlock),
-		.priority = (osPriority_t) osPriorityLow1, };
+		.priority = (osPriority_t) OSTASK_PRIORITY_MG90S, };
 
 /**
  * Front Servo task rouotine
@@ -33,6 +34,7 @@ static const osThreadAttr_t xFrontServoTa_attributes = {
  */
 void vFrontServo_Start(void* vParameters)
 {
+	loggerI("Starting FrontServo Service task...");
 	char msg[10];
 
 	for (;;) {
@@ -69,7 +71,7 @@ void vFrontServo_Start(void* vParameters)
  * Main setup routine
  * @return
  */
-uint8_t setupFrontServo()
+uint8_t uMg90sServiceInit()
 {
 	/* creation of xFrontServo_task */
 	xFrontServo_taskHandle = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
@@ -83,7 +85,12 @@ uint8_t setupFrontServo()
 		return (EXIT_FAILURE);
 	}
 
-	osThreadSuspend(xFrontServo_taskHandle); /* suspending for now */
+	/* sets to center */
+	htim5.Instance->CCR1 = 75;
+
+	/* suspending for now
+	 * Will resume when motion forward */
+	osThreadSuspend(xFrontServo_taskHandle);
 
 	loggerI("Initializing Front Servo... Success!");
 	return (EXIT_SUCCESS);

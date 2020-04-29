@@ -47,8 +47,9 @@ uint32_t total, free_space;
 uint8_t bufsize(char *buf)
 {
 	int i = 0;
-	while (*buf++ != '\0')
+	while (*buf++ != '\0') {
 		i++;
+	}
 	return i;
 }
 
@@ -97,12 +98,12 @@ void sdcard_check_free_space()
 {
 	f_getfree(NULL, &free_clust, &pfs);
 	total = (uint32_t) ((pfs->n_fatent - 2) * pfs->csize * 0.5);
-	//sprintf(buffer, "SD CARD Total Size: \t%lu", total);
+	/* sprintf(buffer, "SD CARD Total Size: \t%lu", total);*/
 	sprintf(buffer, "SD CARD id: \t%d", pfs->id);
 	loggerI(buffer);
 
-	//sprintf(buffer, "SD CARD sectors size: \t%lu", pfs->csize);
-	//loggerI(buffer);
+	/* sprintf(buffer, "SD CARD sectors size: \t%lu", pfs->csize);
+	loggerI(buffer); */
 
 	bufclear();
 	free_space = (uint32_t) (pfs->free_clst * pfs->csize * 0.5);
@@ -130,7 +131,7 @@ void sdcardTimer_cb()
 /**
  * Main SDCARD Service ionitialization function
  */
-uint8_t sdcardService_initialize()
+uint8_t uSdCardServiceInit()
 {
 	/* make 1ms task to handle SD Card  dedicated timer */
 	osSDTimer1 = osTimerNew(sdcardTimer_cb, osTimerPeriodic, NULL, NULL);
@@ -138,25 +139,29 @@ uint8_t sdcardService_initialize()
 
 	DSTATUS my_status = SD_disk_initialize(0);
 
-	if (my_status == STA_NOINIT)
-	loggerE("error in initializing SD CARD...\n");
+	if (my_status == STA_NOINIT) {
+		loggerE("error in initializing SD CARD...\n");
+	}
 
-	if (my_status == STA_NODISK)
-	loggerE("No medium in the drive...\n");
+	if (my_status == STA_NODISK) {
+		loggerE("No medium in the drive...\n");
+	}
 
-	if (my_status == STA_PROTECT)
-	loggerE(" Write protected...\n");
+	if (my_status == STA_PROTECT) {
+		loggerE(" Write protected...\n");
+	}
 
 	fresult = f_mount(&fs, "", 0);
-	if (fresult != FR_OK)
+	if (fresult != FR_OK) {
 		loggerE("error in mounting SD CARD");
-	else
-	loggerI("SD CARD mounted succesfully...");
+	} else {
+		loggerI("SD CARD mounted succesfully...");
+	}
 
 	sdcard_check_free_space();
-	//sdcard_write_test();
+	/* sdcard_write_test(); */
 
-	// todo: error handler here if task is used
+	/* todo: error handler here if task is used */
 	return (EXIT_SUCCESS);
 }
 

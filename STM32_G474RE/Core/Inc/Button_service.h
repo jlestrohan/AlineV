@@ -5,8 +5,8 @@
  * @brief   Button handler service header file
  ******************************************************************************
  */
-#ifndef INC_BUTTON_HANDLER_H_
-#define INC_BUTTON_HANDLER_H_
+#ifndef INC_BUTTON_SERVICE_H_
+#define INC_BUTTON_SERVICE_H_
 
 #include "cmsis_os2.h"
 
@@ -14,6 +14,6 @@
 
 osEventFlagsId_t evt_usrbtn_id;
 
-uint8_t buttonService_initialize();
+uint8_t uButtonServiceInit();
 
-#endif /* INC_BUTTON_HANDLER_H_ */
+#endif /* INC_BUTTON_SERVICE_H_ */

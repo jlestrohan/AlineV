@@ -2,14 +2,15 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-27 14:04:17
- * @ Description:
+ * @ Modified time: 2020-04-29 02:14:56
+ * @ Description: Parse any command received from  a consumer and take the appropriate action
  *******************************************************************************************/
 
 #include "command_parser.h"
 #include "remoteDebug_service.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "buzzer_service.h"
 
 xTaskHandle xCommandParserTask_hnd = NULL;
 extern QueueHandle_t xQueueCommandParse;
@@ -26,13 +27,15 @@ void vCommandParserTaskCode(void *pvParameters)
     for (;;)
     {
         xQueueReceive(xQueueCommandParse, &buffer, portMAX_DELAY);
-        debugI("%s", buffer);
         /* we process the command here ... */
         /* TODO: process the command */
+        debugI("%s", buffer);
+        Serial.println(buffer);
+        //commandReceivedTune();
 
         vTaskDelay(10);
     }
-    vTaskDelete(NULL);
+    vTaskDelete(xCommandParserTask_hnd);
 }
 
 /**

@@ -96,7 +96,7 @@ typedef struct
 	int16_t Gyroscope_Z; /*!< Gyroscope value Z axis */
 	float Temperature; /*!< Temperature in degrees */
 } MPU6050;
-static MPU6050 mpu1; /* Main data structs holding the constantly updated data */
+
 
 /**
  * @brief  Interrupts union and structure
@@ -126,7 +126,7 @@ typedef union
  * Initialize the whole service, tasks and stuff
  * @return
  */
-MPU6050_Result MPU6050_Service_Initialize();
+MPU6050_Result uMpu6050ServiceInit();
 
 /**
  * @brief  Initializes MPU6050 and I2C peripheral

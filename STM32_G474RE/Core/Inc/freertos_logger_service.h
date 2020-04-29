@@ -48,6 +48,6 @@ char* decodeLogPriority(LogPriority priority);
  * Initializes the logger service - must be called prior to anything!
  *
  */
-uint8_t log_initialize(UART_HandleTypeDef *huart);
+uint8_t uLoggerServiceInitialize(UART_HandleTypeDef *huart);
 
 #endif /** end INC_FREERTOS_LOGGER_SERVICE_H */

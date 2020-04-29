@@ -13,7 +13,7 @@
 /**
  * @param current I2C Handler
  */
-uint8_t timeofflight_initialize(I2C_HandleTypeDef *hi2cx);
+uint8_t uVl53l0xServiceInit(I2C_HandleTypeDef *hi2cx);
 
 /**
  * Set Reset (XSDN) state of a given "id" device

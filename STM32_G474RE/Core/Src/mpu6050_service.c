@@ -12,8 +12,8 @@
 
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
+#include <LCD_service.h>
 #include <MPU6050_service.h>
-#include "lcd_service.h"
 #include "i2c.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,6 +73,7 @@
 #define MPU6050_ACCE_SENS_16		((float) 2048)
 
 typedef StaticTask_t osStaticThreadDef_t;
+static MPU6050 mpu1; /* Main data structs holding the constantly updated data */
 
 /**
  * set both below accordingly
@@ -135,7 +136,7 @@ static void StartMPU6050ServiceTask(void *argument)
  * Initialize the whole service, tasks and stuff
  * @return
  */
-MPU6050_Result MPU6050_Service_Initialize(I2C_HandleTypeDef *i2cxHandler)
+MPU6050_Result uMpu6050ServiceInit(I2C_HandleTypeDef *i2cxHandler)
 {
 	MPU6050_Result result;
 	_i2cxHandler = i2cxHandler;

@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-uint8_t setupFrontServo();
+uint8_t uMg90sServiceInit();
 
 
 #endif /* INC_MG90S_SERVICE_H_ */

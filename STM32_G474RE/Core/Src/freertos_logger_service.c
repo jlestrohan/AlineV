@@ -6,6 +6,7 @@
  ******************************************************************************
  */
 #include <freertos_logger_service.h>
+#include "configuration.h"
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -48,7 +49,7 @@ static logServiceStatus logStatus = logServiceNotInit;
 /**
  * Definitions for LoggerServiceTask
  */
-static osThreadId_t LoggerServiceTaHandle;
+static osThreadId_t xLoggerServiceTaHandle;
 static osStaticThreadDef_t LoggerTaControlBlock;
 static uint32_t LoggerTaBuffer[256];
 static const osThreadAttr_t LoggerServiceTa_attributes = {
@@ -57,7 +58,7 @@ static const osThreadAttr_t LoggerServiceTa_attributes = {
 		.stack_size = sizeof(LoggerTaBuffer),
 		.cb_mem = &LoggerTaControlBlock,
 		.cb_size = sizeof(LoggerTaControlBlock),
-		.priority = (osPriority_t) osPriorityLow, };
+		.priority = (osPriority_t) OSTASK_PRIORITY_LOGGER, };
 
 /**
  * main logger service task
@@ -98,7 +99,7 @@ void StartLoggerServiceTask(void *argument)
  * Initialize log service - must be called once at the start of the program
  * @param huart
  */
-uint8_t log_initialize(UART_HandleTypeDef *huart)
+uint8_t uLoggerServiceInitialize(UART_HandleTypeDef *huart)
 {
 	_huart = huart;
 
@@ -110,8 +111,8 @@ uint8_t log_initialize(UART_HandleTypeDef *huart)
 	logStatus = logServiceinitOK;
 
 	/* creation of LoggerServiceTask */
-	LoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL, &LoggerServiceTa_attributes);
-	if (!LoggerServiceTaHandle) {
+	xLoggerServiceTaHandle = osThreadNew(StartLoggerServiceTask, NULL, &LoggerServiceTa_attributes);
+	if (!xLoggerServiceTaHandle) {
 		return (EXIT_FAILURE);
 	}
 

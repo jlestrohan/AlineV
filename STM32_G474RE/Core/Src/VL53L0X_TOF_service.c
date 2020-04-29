@@ -223,7 +223,7 @@ void detectSensors(int SetDisplay)
 /**
  *
  */
-uint8_t timeofflight_initialize(I2C_HandleTypeDef *hi2cx)
+uint8_t uVl53l0xServiceInit(I2C_HandleTypeDef *hi2cx)
 {
 	_hi2cx = hi2cx;
 
