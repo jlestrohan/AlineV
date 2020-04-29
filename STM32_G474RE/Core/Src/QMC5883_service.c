@@ -24,18 +24,21 @@
  */
 
 #include <stdlib.h>
+#include "configuration.h"
 #include <FreeRTOS.h>
 #include <QMC5883_service.h>
 #include "freertos_logger_service.h"
 #include "cmsis_os2.h"
 #include <stdbool.h>
 #include <stdio.h>
-#include "math.h"
+#include <math.h>
+#include "printf.h"
 
 static I2C_HandleTypeDef *_hi2cxHandler;
+//static QMC5883 qmc1; /* Main data structs holding the constantly updated data */
 
 typedef StaticTask_t osStaticThreadDef_t;
-static osThreadId_t QMC5883_taskHandle;
+static osThreadId_t xQmc5883TaskHandle;
 static osStaticThreadDef_t QMC5883TaControlBlock;
 static uint32_t QMC5883TaBuffer[512];
 static const osThreadAttr_t QMC5883Ta_attributes = {
@@ -44,257 +47,231 @@ static const osThreadAttr_t QMC5883Ta_attributes = {
 		.stack_size = sizeof(QMC5883TaBuffer),
 		.cb_mem = &QMC5883TaControlBlock,
 		.cb_size = sizeof(QMC5883TaControlBlock),
-		.priority = (osPriority_t) osPriorityLow1, };
+		.priority = (osPriority_t) OSTASK_PRIORITY_QMC5883, };
 
+static float Xmin,Xmax,Ymin,Ymax;
+static int16_t X, Y, Z;
 
 /**
  *	QMC5883 Main task
  * @param argument
  */
-static void QMC5883lTask_Start(void *argument)
+static void vQmc5883lTaskStart(void *argument)
 {
 	char msg[60];
-	osPriority_t prior = osThreadGetPriority(QMC5883_taskHandle);
-	sprintf(msg, "Starting QMC5883 service task with priority: %d",  prior);
-	loggerI(msg);
+	loggerI("Starting QMC5883l Service task...");
 
-	QMC5883_Result result;
+	//QMC5883_Result res;
 
 	for (;;) {
 
-		result = QMC5883l_ReadData(&qmc1);
+		QMC5883L_Read_Data(&X, &Y, &Z);
 
-		/*sprintf(msg, "x: %d - y: %d - z: %d - temp: %d - HDG: %d°",
-				qmc1.DataX, qmc1.DataY, qmc1.DataZ,  qmc1.DataTemperature,
-				(uint8_t)QMC5883l_Azimuth(qmc1.DataX, qmc1.DataY));*/
-		//loggerI(msg);
+		sprintf(msg, "x: %d - y: %d - z: %d - temp: %d - HDG: %d",
+				X, Y, Z,
+				QMC5883L_Read_Temperature(),
+				QMC5883L_Heading(X, Y));
+		loggerI(msg);
 
-		osDelay(200);
+		osDelay(500);
 	}
 }
 
 /**
- * Main QMC5883_Initialize
- * @param hi2cx
- * @return
+ * Main Initialization routine
  */
-QMC5883_Result QMC5883l_Initialize(I2C_HandleTypeDef *hi2cx)
+uint8_t uQmc5883lServiceInit(I2C_HandleTypeDef *hi2cx)
 {
 	_hi2cxHandler = hi2cx;
 
 	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, QMC5883l_I2C_ADDRESS, 2, 5) != HAL_OK) {
 		loggerE("QMC5883 Device not ready");
-		return (QMC5883l_Result_DeviceNotConnected);
+		return (EXIT_FAILURE);
 	}
+
+	QMC5883L_Configure(MODE_CONTROL_CONTINUOUS, OUTPUT_DATA_RATE_50HZ, FULL_SCALE_2G, OVER_SAMPLE_RATIO_512);
 
 	/* creation of QMC5883Sensor_task */
-	QMC5883_taskHandle = osThreadNew(QMC5883lTask_Start, NULL, &QMC5883Ta_attributes);
-	if (!QMC5883_taskHandle) {
+	xQmc5883TaskHandle = osThreadNew(vQmc5883lTaskStart, NULL, &QMC5883Ta_attributes);
+	if (!xQmc5883TaskHandle) {
 		loggerE("QMC5883 Task Initialization Failed");
-		return (QMC5883l_Result_Cannot_Init_Task);
+		return (EXIT_FAILURE);
 	}
 
-	/* default QHM5883 settings */
-	if (QCM5883l_Init() != QMC5883l_Result_Ok) {
-		loggerE("QMC5883 Init procedure Failed");
-		return (QMC5883l_Result_Initialization_Error);
-	}
 
-	loggerI("Initializing QMC5883 Service... Success!");
-	return (QMC5883l_Result_Ok);
+	return EXIT_SUCCESS;
 }
 
 /**
- * Sensor main initialization function
+ * Initializes the sensor parameters
+ * @param MODE
+ * @param ODR
+ * @param RNGE
+ * @param OSR
+ */
+void QMC5883L_Configure(_qmc5883l_MODE MODE, _qmc5883l_ODR ODR, _qmc5883l_RNG RNGE, _qmc5883l_OSR OSR)
+{
+	QMC5883L_Reset();
+	QMC5883L_Write_Reg(QMC5883L_CONFIG_1, MODE | ODR | RNGE | OSR);
+}
+
+/**
+ * Writes to I2C channel
+ * @param reg
+ * @param data
+ */
+void QMC5883L_Write_Reg(uint8_t reg, uint8_t data)
+{
+	uint8_t Buffer[2]={reg,data};
+	HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, Buffer, 2, 10);
+}
+
+/**
+ * Reads I2C register
+ * @param reg
  * @return
  */
-QMC5883_Result QCM5883l_Init()
+uint8_t QMC5883L_Read_Reg(uint8_t reg)
 {
-	uint8_t temp = 0;
+	uint8_t Buffer[1];
+	HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_I2C_ADDRESS, reg, 1, Buffer, 1, 10);
+	return Buffer[0];
+}
 
-	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, QMC5883l_I2C_ADDRESS, 2, 5) != HAL_OK) {
-		return (QMC5883l_Result_DeviceNotConnected);
-	}
-
-	/* Receive multiple byte */
-	if (HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_I2C_ADDRESS, &temp, 1, 1000) != HAL_OK) {
-		return (QMC5883l_Result_Error);
-	}
-
-	/* sets modes */
-	if (QMC5883l_SetMode(QMC5883l_MODE_CONTINUOUS, QMC5883l_ODR_200Hz, QMC5883l_RNG_8G, QMC5883l_OSR_512) != QMC5883l_Result_Ok) {
-		return (QMC5883l_Result_Error_Cannot_Set_Mode);
-	}
-
-	/* disables interrupts */
-	if (QMC5883l_SetInterrupt(false) != QMC5883l_Result_Ok) {
-		return (QMC5883l_Result_Error_Cannot_Set_Interrupt);
-	}
-
-	/* set reset period as per recommended in the DSHT */
-	if (QMC5883l_SetResetPeriod() != QMC5883l_Result_Ok) {
-		return (QMC5883l_Result_Error_Cannot_Set_ResetPeriod);
-	}
-
-	return QMC5883l_Result_Ok;
+/**
+ * Reads data from sensor
+ * @param MagX
+ * @param MagY
+ * @param MagZ
+ */
+void QMC5883L_Read_Data(int16_t *MagX,int16_t *MagY,int16_t *MagZ) /* (-32768 / +32768) */
+{
+	*MagX=((int16_t)QMC5883L_Read_Reg(QMC5883L_DATA_READ_X_LSB) | (((int16_t)QMC5883L_Read_Reg(QMC5883L_DATA_READ_X_MSB))<<8));
+	*MagY=((int16_t)QMC5883L_Read_Reg(QMC5883L_DATA_READ_Y_LSB) | (((int16_t)QMC5883L_Read_Reg(QMC5883L_DATA_READ_Y_MSB))<<8));
+	*MagZ=((int16_t)QMC5883L_Read_Reg(QMC5883L_DATA_READ_Z_LSB) | (((int16_t)QMC5883L_Read_Reg(QMC5883L_DATA_READ_Z_MSB))<<8));
 }
 
 
 /**
- * Update all magnetometer data
- * @param DataStruct
+ * Returns the current heading
+ * @param Xraw
+ * @param Yraw
+ * @param Zraw
  * @return
  */
-QMC5883_Result QMC5883l_ReadData(QMC5883 *DataStruct)
+uint8_t QMC5883L_Heading(int16_t Xraw, int16_t Yraw)
 {
-	uint8_t data[6];
+	int16_t X = Xraw, Y = Yraw;
+	uint8_t Heading;
 
-	/* check status register, 1 = ready */
-	/*if ( HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_ADDRESS, QMC5883l_STATUS_REG_ADD, I2C_MEMADD_SIZE_8BIT, data, 1, HAL_MAX_DELAY)) {
-		return (QHM5883_Result_Error);
-	}*/
-
-	//DataStruct->DataAvailable = data[0];
-
-	/*if (data[0] != 0) {*/
-	//data[0] = QMC5883l_DATA_OUTPUT_X_LSB_REG;
-
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, 0x00, 1, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
+	if(X < Xmin) {
+		Xmin = X;
+	} else if(X > Xmax) {
+		Xmax = X;
 	}
 
-	/* receives 6 bits of data X Y Z */
-	if ( HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data, 6, HAL_MAX_DELAY)) {
-		return (QMC5883l_Result_Error);
+	if (Y < Ymin) {
+		Ymin = Y;
+	} else if (Y > Ymax) {
+		Ymax = Y;
 	}
 
-	DataStruct->DataX = data[0] | data[1] << 8;
-	DataStruct->DataY = data[2] | data[3] << 8;
-	DataStruct->DataZ = data[4] | data[5] << 8;
+	/* Bail out if not enough data is available. */
+	if (Xmin == Xmax || Ymin == Ymax) {
+		return 0.0;
+	}
 
-	data[0] = QMC5883l_TEMP_OUTPUT_16REG;
-	/* Try to transmit via I2C */
-	/*if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_ADDRESS, data, 1, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
-	}*/
+	/* Recenter the measurement by subtracting the average */
+	X -= (Xmax + Xmin)/2;
+	Y -= (Ymax + Ymin)/2;
 
-	/* receives 2 bytes of data temp LSB temp MSB */
-	/*if ( HAL_I2C_Master_Receive(_hi2cxHandler, QMC5883l_ADDRESS, data, 2, HAL_MAX_DELAY)) {
-		return (QMC5883l_Result_Error);
-	}*/
-	HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_I2C_ADDRESS, QMC5883l_TEMP_OUTPUT_16REG, I2C_MEMADD_SIZE_8BIT, data, 2, HAL_MAX_DELAY);
-	DataStruct->DataTemperature = data[0] | data[1] << 8 ;
+	 /* Rescale the measurement to the range observed. */
+	float fx = (float)X/(Xmax - Xmin);
+	float fy = (float)Y/(Ymax - Ymin);
 
-	//}
+	/*X = X/(Xmax - Xmin);
+	Y = Y/(Ymax - Ymin);*/
 
-	return QMC5883l_Result_Ok;
+	Heading = 180.0*atan2(fy,fx)/M_PI;
+	if (Heading <= 0) {
+		Heading += 360;
+	}
+
+	//EAST
+	Heading += QMC5883L_DECLINATION_ANGLE;
+	//WEST
+	//Heading -= QMC5883L_DECLINATION_ANGLE;
+
+	/*if(Heading <0)
+	{Heading += 2*M_PI;}
+	else if(Heading > 2*M_PI)
+	{Heading -= 2*M_PI;}*/
+
+	return Heading;
 }
 
 /**
- * Sets the device in standby mode
+ * returns the temperature
  * @return
  */
-QMC5883_Result QMC5883l_StandBy()
+int16_t QMC5883L_Read_Temperature()
 {
-	uint8_t data[2];
-	data[0] = QMC5883l_CNTRL_REG_1_ADD;
-	data[1] = QMC5883l_MODE_STANDBY;
-
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
-	}
-	return (QMC5883l_Result_Ok);
+	return (((int16_t)QMC5883L_Read_Reg(QMC5883L_TEMP_READ_LSB)) | (((int16_t)QMC5883L_Read_Reg(QMC5883L_TEMP_READ_MSB))<<8))/100;
 }
 
 /**
- * Soft Resets the Device
- * @return
+ * Resets the Unit
  */
-QMC5883_Result QMC5883l_SoftReset()
+void QMC5883L_Reset()
 {
-	uint8_t data[2];
-	data[0] = QMC5883l_CNTRL_REG2_ADD;
-	data[1] = QCM5883l_SOFT_RST;
-
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
-	}
-	return (QMC5883l_Result_Ok);
+	QMC5883L_Write_Reg(QMC5883_CONFIG_RESET, 0x01);
 }
 
-/**
- * Sets device modes
- * See .h
- * @param mode
- * @param odr
- * @param rng
- * @param osr
- * @return
- */
-QMC5883_Result QMC5883l_SetMode(QMC5883l_MODE_t mode, QMC5881l_ODR_t odr, QMC5883l_RNG_t rng, QMC5883l_OSR_t osr)
+void QMC5883L_InterruptConfig(_qmc5883l_INT INT)
 {
-	uint8_t data[2];
-	data[0] = QMC5883l_CNTRL_REG_1_ADD;
-	data[1] = mode | odr | rng | osr;
-
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
+	if (INT==INTERRUPT_ENABLE) {
+		QMC5883L_Write_Reg(QMC5883L_CONFIG_2, 0x00);
+	} else {
+		QMC5883L_Write_Reg(QMC5883L_CONFIG_2, 0x01);
 	}
-	return (QMC5883l_Result_Ok);
 }
 
-/**
- * returns azimuth
- * @param x
- * @param y
- * @return
- */
-uint8_t QMC5883l_Azimuth(uint16_t *x, uint16_t *y)
+
+_qmc5883l_status QMC5883L_DataIsReady()
 {
-	float azimuth = (uint8_t)(atan2((int)*y,(int)*x) * 180.0/M_PI);
-	return (azimuth < 0?360 + azimuth:azimuth);
+	uint8_t Buffer=QMC5883L_Read_Reg(QMC5883L_STATUS);
+	if((Buffer&0x00)==0x00)	  {return NO_NEW_DATA;}
+	else if((Buffer&0x01)==0X01){return NEW_DATA_IS_READY;}
+	return NORMAL;
 }
 
-/**
- * Enables/disable interrupt flag
- * @param flag
- * @return
- */
-QMC5883_Result QMC5883l_SetInterrupt(uint8_t flag) /* true/false */
+_qmc5883l_status QMC5883L_DataIsSkipped()
 {
-	uint8_t data[2];
-	data[0] = QMC5883l_CNTRL_REG2_ADD;
-	uint8_t rcvdt = 0;
-
-	HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data[0], I2C_MEMADD_SIZE_8BIT, &rcvdt, 1, HAL_MAX_DELAY);
-
-	data[1] = flag ? rcvdt | QCM5883l_INT_ENB : rcvdt;
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
-	}
-
-	return (QMC5883l_Result_Ok);
+	uint8_t Buffer=QMC5883L_Read_Reg(QMC5883L_STATUS);
+	if((Buffer&0x00)==0X00)	  {return NORMAL;}
+	else if((Buffer&0x04)==0X04){return DATA_SKIPPED_FOR_READING;}
+		return NORMAL;
 }
 
-/**
- * Set/Reset Period (recommended 0x01)
- * @return
- */
-QMC5883_Result QMC5883l_SetResetPeriod()
+_qmc5883l_status QMC5883L_DataIsOverflow()
 {
-	uint8_t data[2];
-	data[0] = QMC5883l_SET_RESET_PERIOD_REG;
-	data[1] = 0x01;
+	uint8_t Buffer=QMC5883L_Read_Reg(QMC5883L_STATUS);
+	if((Buffer&0x00)==0X00)	  {return NORMAL;}
+	else if((Buffer&0x02)==0X02){return DATA_OVERFLOW;}
+		return NORMAL;
+}
 
-	/* Try to transmit via I2C */
-	if (HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, data, 2, HAL_MAX_DELAY) != HAL_OK) {
-		return (QMC5883l_Result_Error);
-	}
-	return (QMC5883l_Result_Ok);
+
+void QMC5883L_ResetCalibration()
+{
+	Xmin=Xmax=Ymin=Ymax=0;
+}
+
+void QMC5883L_Scale(int16_t *X,int16_t *Y,int16_t *Z)
+{
+	*X*=QMC5883L_SCALE_FACTOR;
+	*Y*=QMC5883L_SCALE_FACTOR;
+	*Z*=QMC5883L_SCALE_FACTOR;
 }
 
 
