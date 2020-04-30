@@ -2,22 +2,12 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-30 00:12:26
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-30 16:30:37
+ * @ Modified time: 2020-04-30 18:13:46
  * @ Description:
  *******************************************************************************************/
 
 #ifndef _IC_JSON_SERVICE_H
 #define _IC_JSON_SERVICE_H
-
-typedef enum
-{
-
-}
-
-typedef struct
-{
-    uint8_t
-}
 
 // todo: check json xchange between stm32 and ESP32
 // use unions inside struct
