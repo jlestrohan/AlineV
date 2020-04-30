@@ -12,6 +12,7 @@
 #include "gpio.h"
 #include "tim.h"
 #include "freertos_logger_service.h"
+#include "MG90S_service.h"
 
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t MotorsControl_taskHandle;
@@ -183,4 +184,7 @@ void motorsSetIdle()
 {
 	htim16.Instance->CCR1 = 0;
 	htim17.Instance->CCR1 = 0;
+
+	/* deactivate front servo */
+	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
 }

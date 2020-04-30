@@ -15,6 +15,11 @@
 #include <stdlib.h>
 #include "tim.h"
 #include "freertos_logger_service.h"
+#include "LCD_service.h"
+
+/* flag to track activity of the servo */
+
+osEventFlagsId_t evt_Mg90sIsActive;
 
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xFrontServo_taskHandle;
@@ -28,6 +33,11 @@ static const osThreadAttr_t xFrontServoTa_attributes = {
 		.cb_size = sizeof(xFrontServoTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_MG90S, };
 
+typedef enum {
+	SERVO_LEFT,
+	SERVO_RIGHT
+} ServoDirection_t;
+
 /**
  * Front Servo task rouotine
  * @param vParameters
@@ -36,33 +46,33 @@ void vFrontServo_Start(void* vParameters)
 {
 	loggerI("Starting FrontServo Service task...");
 	char msg[10];
+	uint8_t pos = 75; /* center for a start */
+	ServoDirection_t dir; /* 0 to left, 1 to right */
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(vParameters);
 
-		/* 0° = Pulse 1ms */
-		/* 90° = Pulse 1.5ms */
-		/* 180° = Pulse 2ms */
+		if (osEventFlagsGet(evt_Mg90sIsActive) && FLG_MG90S_ACTIVE) {
+			htim5.Instance->CCR1 = pos; /* 0 to 100 */
+			switch (pos) {
+			case 50:
+				pos = 75; dir = SERVO_RIGHT; break;
+			case 75:
+				pos=(dir == SERVO_RIGHT ? 100 : 50); break;
+			case 100:
+				pos = 75; dir = SERVO_LEFT; break;
+			default:
+				pos = 75; dir = SERVO_LEFT;
+			}
+			osDelay(1000);
 
-		htim5.Instance->CCR1 = 50; /* 0 to 100 */
-		sprintf(msg, "i= %d", 50);
-		loggerI(msg);
-		osDelay(1000);
-		htim5.Instance->CCR1 = 75; /* 0 to 100 */
-		sprintf(msg, "i= %d", 75);
-		loggerI(msg);
-		osDelay(1000);
-		htim5.Instance->CCR1 = 100; /* 0 to 100 */
-		sprintf(msg, "i= %d", 100);
-		loggerI(msg);
-		osDelay(1000);
-		htim5.Instance->CCR1 = 75; /* 0 to 100 */
-		sprintf(msg, "i= %d", 75);
-		loggerI(msg);
-		osDelay(1000);
+		} else {
+			/* sets to center */
+			htim5.Instance->CCR1 = 75;
+		}
 
-		//osDelay(100);
+		osDelay(10);
 	}
 	osThreadTerminate(NULL);
 }
@@ -73,6 +83,12 @@ void vFrontServo_Start(void* vParameters)
  */
 uint8_t uMg90sServiceInit()
 {
+	evt_Mg90sIsActive = osEventFlagsNew(NULL);
+	if (evt_Mg90sIsActive == NULL) {
+		loggerE("Front Servo Event Flag Initialization Failed");
+		return (EXIT_FAILURE);
+	}
+
 	/* creation of xFrontServo_task */
 	xFrontServo_taskHandle = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
 	if (!xFrontServo_taskHandle) {
@@ -90,7 +106,7 @@ uint8_t uMg90sServiceInit()
 
 	/* suspending for now
 	 * Will resume when motion forward */
-	osThreadSuspend(xFrontServo_taskHandle);
+	//osThreadSuspend(xFrontServo_taskHandle);
 
 	loggerI("Initializing Front Servo... Success!");
 	return (EXIT_SUCCESS);
