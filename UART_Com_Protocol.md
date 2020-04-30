@@ -20,6 +20,10 @@ TELNET allows to send orders directly to the ESP8266 as well as having a serial 
 Any UART communication sent from the STM32 that is not encapsulated in the special tags is considered as debug console messages and directly derived to the telnet service of the ESP8266.
 On the other way, anything that is sent to the STM32 that is not related to datas or commands is just ignored.
 
+
+OBSOLETE using SLIP now
+SEE https://tools.ietf.org/pdf/rfc1055.pdf Implementation instead (to be edited)
+
 #### Special Flags
 
 HashMD5 is a md5 hash of the content of the data transmitted between the tags. It's worth nothing to recall that it is absolutely mandatory to include a timestamp in any communication message, thus making every md5 checksum hash absolutely unique...
