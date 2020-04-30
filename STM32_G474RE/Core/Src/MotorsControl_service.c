@@ -12,6 +12,7 @@
 #include "gpio.h"
 #include "tim.h"
 #include "freertos_logger_service.h"
+#include "MG90S_service.h"
 
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t MotorsControl_taskHandle;
@@ -119,17 +120,10 @@ void MotorDescelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange
  */
 void MotorSetSpeed(uint8_t speed)
 {
+	//TODO:
+	// Deactivate at speed 0;
 	htim16.Instance->CCR1 = speed;
 	htim17.Instance->CCR1 = speed;
-}
-
-/**
- * Stop the targetted motor(s) using motionchange rate
- * @param motionchange
- */
-void MotorStop(MotorsMotionChangeRate_t motionchange)
-{
-
 }
 
 /**
@@ -141,6 +135,9 @@ void motorSetForward()
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
+
+	/* activates front servo */
+	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
 }
 
 /**
@@ -152,6 +149,9 @@ void motorSetBackward()
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
+
+	/* deactivate front servo */
+	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
 }
 
 /**
@@ -183,4 +183,7 @@ void motorsSetIdle()
 {
 	htim16.Instance->CCR1 = 0;
 	htim17.Instance->CCR1 = 0;
+
+	/* deactivate front servo */
+	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
 }

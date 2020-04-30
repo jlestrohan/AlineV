@@ -21,6 +21,9 @@
 #include "usart.h"
 #include <string.h>
 
+//temp
+#include "MG90S_service.h"
+
 static uint32_t lastPressedTick = 0;
 static uint32_t btnflags;
 
@@ -57,6 +60,7 @@ static const osThreadAttr_t buttonServiceTask_attributes = {
 static void vBbuttonServiceTask(void *argument)
 {
 	loggerI("Starting Button Service task...");
+	char msg[50];
 
 	for (;;)
 	{
@@ -65,8 +69,17 @@ static void vBbuttonServiceTask(void *argument)
 			lastPressedTick = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
+			//FIXME:
+			// Test to see if servo is receving the active/inactive flag
+			if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
+				strcpy(msg, "[MSG]STM32 - Starting Servo[/MSG]\n");
+				osEventFlagsSet(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+			} else {
+				strcpy(msg, "[MSG]STM32 - Stopping Servo[/MSG]\n");
+				osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+			}
+
 			/* TODO: remove this, it's just for debugging purposes */
-			char *msg="[MSG]button pressed on STM32[/MSG]\n";
 			HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 		}
 		osDelay(100);

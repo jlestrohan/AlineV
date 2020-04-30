@@ -71,7 +71,7 @@ static void vQmc5883lTaskStart(void *argument)
 				X, Y, Z,
 				QMC5883L_Read_Temperature(),
 				QMC5883L_Heading(X, Y));
-		loggerI(msg);
+		//loggerI(msg);
 
 		osDelay(500);
 	}

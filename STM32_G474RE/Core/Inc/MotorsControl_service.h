@@ -37,14 +37,10 @@ typedef enum {
  * Motor speed
  */
 typedef enum {
-	MOTOR_AHEAD_FULL,
-	MOTOR_AHEAD_HALF,
-	MOTOR_AHEAD_SLOW,
 	MOTOR_STOP,
-	MOTOR_ASTERN_SLOW,
-	MOTOR_ASTERN_HALF,
-	MOTOR_ASTERN_FULL,
-} MotorsPace_t;
+	MOTOR_FORWARD,
+	MOTOR_BACKWARD,
+} MotorsMotion_t;
 
 /**
  * Acceleration/Desceleration Rate
@@ -65,8 +61,7 @@ typedef enum {
  */
 typedef struct {
 	MotorsDef_t motorNumber;
-	MotorsPace_t currentSetPace;
-	uint8_t sensorDirection;
+	MotorsMotion_t motorMotion;
 	uint8_t sensorSpeed;
 } MotorData_t;
 
@@ -81,26 +76,26 @@ MOTORS_Result_t MotorsControl_Service_Initialize();
  * @param pace
  * @param motionchange
  */
-void MotorAccelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange);
+void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange);
 
 /**
  * Descelerate motor(s) to the target pace using motionchange rate
  * @param pace
  * @param motionchange
  */
-void MotorDescelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange);
+void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange);
 
 /**
  * sets motor(s) speed to the target pace using motionchange rate
  * @param pace
  */
-void MotorSetSpeed(MotorsPace_t pace);
+void MotorSetSpeed(MotorData_t *data);
 
 /**
  * Stop the targetted motor(s) using motionchange rate
  * @param motionchange
  */
-void MotorStop(MotorsMotionChangeRate_t motionchange);
+void MotorStop(MotorData_t *data, MotorsMotionChangeRate_t motionchange);
 
 void motorSetForward();
 void motorSetBackward();
