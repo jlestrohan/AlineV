@@ -5,7 +5,7 @@
  *      Author: jack
  */
 
-#include <Button_service.h>
+#include "Button_service.h"
 #include "main.h"
 #include "usart.h"
 #include "freertos_logger_service.h"
@@ -27,7 +27,7 @@ char msg[50];
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	//char msg[30];
+	char msg[30];
 
 	switch (GPIO_Pin)
 	{
@@ -50,15 +50,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	/**
 	 * HR04 Sensors
 	 */
-	//case HR04_1_ECHO_Pin:
-	/* we received an event from the echo trigger */
-	//loggerI("event received");
-	//sprintf(msg, "event received");
-	//HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
-	//osEventFlagsSet(evt_hr04_sensor, EVENT_HR04_ECHO_SENSOR_1);
-	//break;
+	case USER_BTN2_Pin:
+		strcpy(msg, "Hello I am Button 2");
+		HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+		break;
 	case B1_Pin:
-		osEventFlagsSet(evt_usrbtn_id, BTN_PRESSED_FLAG);
+		osEventFlagsSet(xEventOnBoardButton, BTN_PRESSED_FLAG);
 		break;
 	default:
 		break;

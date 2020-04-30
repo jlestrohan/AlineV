@@ -12,7 +12,7 @@
 
 #define BTN_PRESSED_FLAG		0x0002AU
 
-osEventFlagsId_t evt_usrbtn_id;
+extern osEventFlagsId_t xEventOnBoardButton;
 
 uint8_t uButtonServiceInit();
 

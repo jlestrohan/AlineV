@@ -80,6 +80,7 @@
 #define OSTASK_PRIORITY_HCSR04		osPriorityNormal
 #define OSTASK_PRIORITY_MG90S		osPriorityBelowNormal5
 #define OSTASK_PRIORITY_QMC5883		osPriorityBelowNormal2
+#define OSTASK_PRIORITY_MPU6050		osPriorityLow5
 
 
 #endif /* INC_CONFIGURATION_H_ */

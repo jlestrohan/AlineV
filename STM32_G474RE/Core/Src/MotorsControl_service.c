@@ -39,7 +39,7 @@ static void MotorsControlTask_Start(void *vParameters)
 
 	/* TEST DRIVE */
 	// 1 - set motors motion forward
-	osDelay(2000);
+	/*osDelay(2000);
 	motorSetForward();
 	MotorSetSpeed(20);
 	osDelay(2000);
@@ -59,7 +59,7 @@ static void MotorsControlTask_Start(void *vParameters)
 	MotorSetSpeed(20);
 	osDelay(2000);
 	motorSetForward();
-	MotorSetSpeed(0);
+	MotorSetSpeed(0);*/
 
 	osDelay(5000);
 
@@ -99,7 +99,7 @@ MOTORS_Result_t MotorsControl_Service_Initialize()
  * @param pace
  * @param motionchange
  */
-void MotorAccelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange)
+void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange)
 {
 
 }
@@ -109,7 +109,7 @@ void MotorAccelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange)
  * @param pace
  * @param motionchange
  */
-void MotorDescelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange)
+void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange)
 {
 
 }
@@ -118,7 +118,7 @@ void MotorDescelerateTo(MotorsPace_t pace, MotorsMotionChangeRate_t motionchange
  * sets motor(s) speed to the target pace using motionchange rate
  * @param speed (0-100)
  */
-void MotorSetSpeed(uint8_t speed)
+void MotorSetSpeed(MotorData_t *data, uint8_t speed)
 {
 	//TODO:
 	// Deactivate at speed 0;

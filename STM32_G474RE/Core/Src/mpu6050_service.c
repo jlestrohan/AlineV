@@ -11,6 +11,7 @@
  */
 
 #include "cmsis_os2.h"
+#include "configuration.h"
 #include <FreeRTOS.h>
 #include <LCD_service.h>
 #include <MPU6050_service.h>
@@ -92,7 +93,7 @@ static const osThreadAttr_t mpu6050ServiceTa_attributes = {
 		.stack_size = sizeof(mpu6050ServiceTaBuffer),
 		.cb_mem = &mpu6050ServiceTaControlBlock,
 		.cb_size = sizeof(mpu6050ServiceTaControlBlock),
-		.priority = (osPriority_t) osPriorityLow, };
+		.priority = (osPriority_t) OSTASK_PRIORITY_MPU6050, };
 
 /**
  * Service Main task
@@ -149,17 +150,18 @@ MPU6050_Result uMpu6050ServiceInit(I2C_HandleTypeDef *i2cxHandler)
 	/* creation of LoggerServiceTask */
 	mpu6050ServiceTaHandle = osThreadNew(StartMPU6050ServiceTask, NULL, &mpu6050ServiceTa_attributes);
 	if (!mpu6050ServiceTaHandle) {
-		return (MPU6050_Result_ErrorHandlerNotInitialized);
+		return (EXIT_FAILURE);
 		loggerI("MPU6050 Initialization failed...");
 	}
 
 	result = MPU6050_Init(&mpu1, MPU6050_Device_0, MPU6050_Accelerometer_2G, MPU6050_Gyroscope_250s);
 	if (result != MPU6050_Result_Ok) {
 		loggerI("MPU6050 Initialization failed");
+		return EXIT_FAILURE;
 	}
 
 	loggerI("Initializing MPU6050 Service... Success!");
-	return (MPU6050_Result_Ok);
+	return (EXIT_SUCCESS);
 }
 
 /**

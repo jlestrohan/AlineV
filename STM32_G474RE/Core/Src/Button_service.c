@@ -3,6 +3,8 @@
  * @file    button_handler.c
  * @author  Jack Lestrohan
  * @brief   Button handler service file
+ *
+ * 	Pinout:		PC5 -> USER_BTN2_Pin
  ******************************************************************************
  */
 #include <Button_service.h>
@@ -24,8 +26,9 @@
 //temp
 #include "MG90S_service.h"
 
-static uint32_t lastPressedTick = 0;
+static uint32_t uOnboardBtnLastPressedTick = 0;
 static uint32_t btnflags;
+osEventFlagsId_t xEventOnBoardButton;
 
 typedef StaticTask_t osStaticThreadDef_t;
 
@@ -42,31 +45,31 @@ static uint8_t buttonDebounce(uint32_t tick)
 /**
  * Definitions for LoggerServiceTask
  */
-static osThreadId_t xButtonServiceTaskHandle;
-static uint32_t buttonServiceTaBuffer[256];
-static osStaticThreadDef_t buttonServiceTaControlBlock;
-static const osThreadAttr_t buttonServiceTask_attributes = {
-		.stack_mem = &buttonServiceTaBuffer[0],
+static osThreadId_t xOnboardButtonServiceTaskHandle;
+static uint32_t ulOnboardButtonServiceTaBuffer[256];
+static osStaticThreadDef_t xOnboardButtonServiceTaControlBlock;
+static const osThreadAttr_t xOnBoardButtonServiceTask_attributes = {
+		.stack_mem = &ulOnboardButtonServiceTaBuffer[0],
 		.name = "buttonServiceTask",
 		.priority = (osPriority_t) OSTASK_PRIORITY_BUTTON,
-		.cb_mem = &buttonServiceTaControlBlock,
-		.cb_size = sizeof(buttonServiceTaControlBlock),
+		.cb_mem = &xOnboardButtonServiceTaControlBlock,
+		.cb_size = sizeof(xOnboardButtonServiceTaControlBlock),
 		.stack_size = 256 };
 
 /**
  * Button service main task
  * @param argument
  */
-static void vBbuttonServiceTask(void *argument)
+static void vOnBoardButtonServiceTask(void *argument)
 {
 	loggerI("Starting Button Service task...");
 	char msg[50];
 
 	for (;;)
 	{
-		btnflags = osEventFlagsWait(evt_usrbtn_id, BTN_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
-		if (buttonDebounce(lastPressedTick) || lastPressedTick == 0) {
-			lastPressedTick = HAL_GetTick();
+		btnflags = osEventFlagsWait(xEventOnBoardButton, BTN_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
+		if (buttonDebounce(uOnboardBtnLastPressedTick) || uOnboardBtnLastPressedTick == 0) {
+			uOnboardBtnLastPressedTick = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
 			//FIXME:
@@ -91,14 +94,14 @@ static void vBbuttonServiceTask(void *argument)
  */
 uint8_t uButtonServiceInit()
 {
-	evt_usrbtn_id = osEventFlagsNew(NULL);
-	if (evt_usrbtn_id == NULL) {
+	xEventOnBoardButton = osEventFlagsNew(NULL);
+	if (xEventOnBoardButton == NULL) {
 		loggerE("Button Service Event Flags object not created!");
 		return EXIT_FAILURE;
 	}
 
-	xButtonServiceTaskHandle = osThreadNew(vBbuttonServiceTask, NULL, &buttonServiceTask_attributes);
-	if (xButtonServiceTaskHandle == NULL) {
+	xOnboardButtonServiceTaskHandle = osThreadNew(vOnBoardButtonServiceTask, NULL, &xOnBoardButtonServiceTask_attributes);
+	if (xOnboardButtonServiceTaskHandle == NULL) {
 		loggerE("Button Service Task not created");
 		return EXIT_FAILURE;
 	}

@@ -89,7 +89,7 @@ void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange
  * sets motor(s) speed to the target pace using motionchange rate
  * @param pace
  */
-void MotorSetSpeed(MotorData_t *data);
+void MotorSetSpeed(MotorData_t *data, uint8_t speed);
 
 /**
  * Stop the targetted motor(s) using motionchange rate

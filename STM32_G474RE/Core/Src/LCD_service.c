@@ -23,6 +23,8 @@
 #define SLAVE_ADDRESS_LCD 	0x27 << 1 	/* have to shift 7bits arduino address to the left for 8 bits compat */
 #define MAX_LINE_CHAR		0x0A		/* max chars per line */
 
+osSemaphoreId_t sem_lcdService;
+
 static I2C_HandleTypeDef *_hi2cxHandler;
 typedef StaticQueue_t osStaticMessageQDef_t;
 static osStatus_t osStatus;
