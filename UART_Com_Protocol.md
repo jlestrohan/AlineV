@@ -17,40 +17,21 @@ This is a real two way communication and every unit can handle RX/TX according t
 
 TELNET allows to send orders directly to the ESP8266 as well as having a serial console equivalent for debug or other stuff.
 
-Any UART communication sent from the STM32 that is not encapsulated in the special tags is considered as debug console messages and directly derived to the telnet service of the ESP8266.
-On the other way, anything that is sent to the STM32 that is not related to datas or commands is just ignored.
+The protocol encapsulates a binary json encoded frame inside the following packets structure:
 
-
-OBSOLETE using SLIP now
-SEE https://tools.ietf.org/pdf/rfc1055.pdf Implementation instead (to be edited)
-
-#### Special Flags
-
-HashMD5 is a md5 hash of the content of the data transmitted between the tags. It's worth nothing to recall that it is absolutely mandatory to include a timestamp in any communication message, thus making every md5 checksum hash absolutely unique...
-
-
-
-- [CMD:(hashmd5)]CMD[/CMD] = Command with md5 hash, implying an ACK response from the receiver
-- [DTA:(hashmd5)]DATA[/DTA] = Data to be sent over (ie MQTT or whatever), can accept JSON formatted string
-- [MSG]one message[/MSG] = sends a message to be displayed on the debug console of the ESP32
-- [SYN] = First emitted by the sender to check if the other controller is in listen mode. It will reply by an [ACK] if applicable or an [ERR] flag if the communication is not possible
-- [ACK:(hashmd5)] = Acknowledge flag (md5 hash is optional) is sent back in response to any message containing the same hashcode or just the last SYN if no hash
-- [RST] = Clears any ongoing communication process that could not be over and sets the status of the communication to Ready!
-- [ERR:(hashmd5)]CODE[/ERR] = An error occured concerning the hashmd5 message..
-  - 001: Last transmission failed
-  - 002: Unknown command
-  - 003: Missing closing tag
-  - 004: Invalid hashcode (response given does not correspond to any known hash)
-  - 005: Unable to execute command
-  - 006: malformed command
-
-
-
-#### Commands:
-
-All commands are encapsuled between [XXX] and [/XXX] tags, which means that any opened command must be terminated by a closing [/xxx] tag to be taken in account. 
-
-A checksum hash number must be associated to the command code separated by a colon in order to offer a handshake check capability to the communication.
-
-So a [CMD:md5_hash]{data}[/CMD] combination emitted by the sender may eventually require the receiver to send back an [ACK:md5_hash] single unclosed response so the sender can verify that the message has been fully received. Thus the sender can verify the good reception of any data packet sent in any order and close the transaction.
-
+    -   3 start bytes pattern that indicate the start of a packet. This is the trigger telling the UART on the other side that a packet is incoming
+    - -[0xFE][0xFF][0xFE]
+    -   ID byte identifying the emmiting unit
+    -   - [0xnn]
+    -   16 bits encoded command ID that will identify the type of data. It is used to further decode the right type of data
+    - -[0xmsb][0xlsb]
+    -   the data itself, which is a binary serialization of a JSON document
+    -   - [..................]
+    -   16 bits size of the encoded json document that will make the first level of validation that we received the right packet
+    -   - [0xmsb][0xlsb]
+    -   32 bits (4 bytes) SHA256 of the json encoded document to avoid any corruption. 
+    -   [0xnn][0xnn][0xnn][0xnn]
+    -   termination pattern that indicates the end of the constructed packet
+    -   - [0xEE][0xEF][0xEE]
+    
+    
