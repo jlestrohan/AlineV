@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-29 00:47:49
+ * @ Modified time: 2020-04-30 18:30:42
  * @ Description:
  *******************************************************************************************/
 
@@ -13,9 +13,10 @@
 // https://forum.arduino.cc/index.php?topic=576983.0
 
 #include <Arduino.h>
+#include "autoconnect_service.h"
+#include "ota_service.h"
 #include "configuration_esp32.h"
 #include <FreeRTOS.h>
-#include "autoconnect_service.h"
 #include "buzzer_service.h"
 #include "serial_service.h"
 #include "ntp_service.h"
@@ -24,6 +25,10 @@
 #include "buzzer_service.h"
 #include "command_parser.h"
 #include "bluetooth_serial.h"
+
+/* reemoving brownout detector */
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 #define GET_CHIPID() (ESP.getCpuFreqMHz())
 
@@ -46,6 +51,8 @@ void loop()
  */
 void setup()
 {
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+
   Serial.begin(115200);
 
   setupBuzzer();
@@ -56,6 +63,7 @@ void setup()
   setupNTPService();
   setupUARTListener();
   setupOLED();
+  setupOTA();
 
   debugI("Ready.");
   //Serial.println(GET_CHIPID());
