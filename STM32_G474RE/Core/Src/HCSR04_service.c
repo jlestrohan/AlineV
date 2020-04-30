@@ -10,9 +10,9 @@
  *
  *		Sonar				Timer	PWM Channel		Echo Channels		Trig Pin	Echo Pin
  *		---------------------------------------------------------------------------------------------
- *		HC_SR04_SONAR_1		TIM1 	3				Dir1, Ind2			PC2			PC0
- *		HC_SR04_SONAR_2		TIM2	3				Dir1, Ind2			PB10		PA0
- *		HC_SR04_SONAR_3		TIM3	3				Dir1, Ind2			PB0			PA6
+ *		HC_SR04_SONAR_1		TIM1 	3				Dir1, Ind2			PC2			PC0		REAR
+ *		HC_SR04_SONAR_2		TIM2	3				Dir1, Ind2			PB10		PA0		FRONT
+ *		HC_SR04_SONAR_3		TIM3	3				Dir1, Ind2			PB0			PA6		BOTTOM
  *
  ****************************************************************************************************
  */
