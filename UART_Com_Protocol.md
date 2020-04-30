@@ -17,6 +17,7 @@ This is a real two way communication and every unit can handle RX/TX according t
 
 TELNET allows to send orders directly to the ESP8266 as well as having a serial console equivalent for debug or other stuff.
 
+#### Protocol definition
 The protocol encapsulates a binary json encoded frame inside the following packets structure:
 
     -   3 start bytes pattern that indicate the start of a packet. This is the trigger telling the UART on the other side that a packet is incoming
@@ -31,7 +32,29 @@ The protocol encapsulates a binary json encoded frame inside the following packe
     -   - [0xmsb][0xlsb]
     -   32 bits (4 bytes) SHA256 of the json encoded document to avoid any corruption. 
     -   [0xnn][0xnn][0xnn][0xnn]
+    -   timeout expected by the sending unit for the acknowledgement. This int16 (2 bytes) is included so the receiving unit knows how much time it has been given within which he must respond to 
+        the sending unit. Past this timeout, the receiver unit should respond with a "packet timeout error" special message
+    -   - [0xmsb][0xlsb]
     -   termination pattern that indicates the end of the constructed packet
     -   - [0xEE][0xEF][0xEE]
     
+    Example of a final constructed packet would be:
+    [0xFE][0xFF][0xFE][ID][datatype1]datatype2][binary serialized json][SIZEmsb][SIZElsb][SHA256_1][SHA256_2]
+[SHA256_3][SHA256_4][timeout][0xEE][0xEF][0xEE]     
+
+#### Protocol Handshaking
+Any received packet should be acknowledged by the receiving unit as follows:
+    
+    -   3 start bytes pattern that indicate the start of a packet. This is the trigger telling the UART on the other side that a packet is incoming
+    - -[0xFE][0xFF][0xFE]
+    -   ID byte identifying the emitting unit
+    -   - [0xnn]
+    -   16 bits encoded special command ID (ACK = 30300) or (ERR = 31311) that will identify the type of response
+    - - [0xmsb][0xlsb]
+    -   at this point the receiving parser should expect to receive a 32 bits (4 bytes) encoded SHA256 of the previous message to identify what message the acknowledgement/error relates to.
+    -   - [0xnn][0xnn][0xnn][0xnn]
+    termination pattern that indicates the end of the constructed packet
+    -   - [0xEE][0xEF][0xEE]
+    
+    Once the acknowledgement has been received the sending unit may trash any trace of the sent message (or handle it the way it suits it best) or handle the error.
     
