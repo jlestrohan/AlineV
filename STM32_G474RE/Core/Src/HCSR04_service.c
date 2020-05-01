@@ -71,9 +71,10 @@ static void vHr04SensorTaskStart(void *argument)
 		status = osMessageQueueGet(queue_HC_SR04Handle, &data, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
 			if (data.sonarNum == HR04_SONAR_2) {
-			sprintf(msg, "%d - %0*dcm", data.sonarNum, 3,data.distance);
+			sprintf(msg, "%d - %0*dcm       ", data.sonarNum, 3,data.distance);
 
 			osSemaphoreAcquire(sem_lcdService, osWaitForever);
+			lcd_put_cur(0,0);
 			lcd_send_string(msg);
 			osSemaphoreRelease(sem_lcdService);
 			//loggerI(msg);

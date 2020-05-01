@@ -4,7 +4,11 @@
  * @author  Jack Lestrohan
  * @brief   Button handler service file
  *
- * 	Pinout:		PC5 -> USER_BTN2_Pin
+ * 	Pinout:		PC5 -> 	USER_BTN2_Pin
+ * 				PA5 ->	ONBOARD BTN
+ *
+ * 				ONBOARD FUNCTION = 	Navigate Thru Menu (LCD)
+ * 				B2 FUNCTION		 =	Select current option
  ******************************************************************************
  */
 #include "Button_service.h"

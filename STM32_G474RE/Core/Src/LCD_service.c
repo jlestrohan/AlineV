@@ -25,7 +25,7 @@
 
 osSemaphoreId_t sem_lcdService;
 
-static I2C_HandleTypeDef *_hi2cxHandler;
+I2C_HandleTypeDef hi2c1;
 typedef StaticQueue_t osStaticMessageQDef_t;
 static osStatus_t osStatus;
 
@@ -56,29 +56,29 @@ static void lcd_prepare()
 {
 	/* LCD INITIALIZATION */
 	/* 4 bit initialisation */
-	HAL_Delay(50);
+	osDelay(50);
 	; /* wait for >40ms */
 	lcd_send_cmd(0x30);
-	HAL_Delay(5);
+	osDelay(5);
 	; /* wait for >4.1ms */
 	lcd_send_cmd(0x30);
-	HAL_Delay(1); /* wait for >100us */
+	osDelay(1); /* wait for >100us */
 	lcd_send_cmd(0x30);
-	HAL_Delay(10);
+	osDelay(10);
 	lcd_send_cmd(0x20); /* 4bit mode */
-	HAL_Delay(10);
+	osDelay(10);
 
 	/* dislay initialization */
 	lcd_send_cmd(0x28); /* Function set --> DL=0 (4 bit mode), N = 1 (2 line display) F = 0 (5x8 characters) */
-	HAL_Delay(1);
+	osDelay(1);
 	lcd_send_cmd(0x08); /* Display on/off control --> D=0,C=0, B=0  ---> display off */
-	HAL_Delay(1);
+	osDelay(1);
 	lcd_send_cmd(0x01); /* clear display */
-	HAL_Delay(2);
+	osDelay(2);
 	lcd_send_cmd(0x06); /* Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift) */
-	HAL_Delay(1);
+	osDelay(1);
 	lcd_send_cmd(0x0C); /* Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits) */
-	HAL_Delay(5);
+	osDelay(5);
 	lcd_send_cmd(0x80);
 }
 
@@ -88,6 +88,7 @@ static void lcd_prepare()
  */
 void vLcdServiceTask(void *argument)
 {
+	lcd_prepare();
 	loggerI("Starting LCD Service task...");
 
 	for (;;) {
@@ -108,12 +109,10 @@ void vLcdServiceTask(void *argument)
  * @param hi2cx
  * @return
  */
-uint8_t uLcdServiceInit(I2C_HandleTypeDef *hi2cx)
+uint8_t uLcdServiceInit()
 {
-	_hi2cxHandler = hi2cx;
-
 	/** is device ready and responding ? */
-	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, SLAVE_ADDRESS_LCD, 2, 5) != HAL_OK) {
+	if (HAL_I2C_IsDeviceReady(&hi2c1, SLAVE_ADDRESS_LCD, 2, 5) != HAL_OK) {
 		loggerE("LCD Device not ready");
 		return (EXIT_FAILURE);
 	}
@@ -123,7 +122,6 @@ uint8_t uLcdServiceInit(I2C_HandleTypeDef *hi2cx)
 		return (EXIT_FAILURE);
 	}
 
-	lcd_prepare();
 
 	osSemaphoreId_t sem_lcdService = osSemaphoreNew(01U, 01U, NULL);
 	 if (sem_lcdService == NULL) {
@@ -158,7 +156,8 @@ void lcd_send_cmd(char cmd)
 		*(data_t + 1) = data_u | 0x08; /* en=0, rs=0 */
 		*(data_t + 2) = data_l | 0x0C; /* en=1, rs=0 */
 		*(data_t + 3) = data_l | 0x08; /* en=0, rs=0 */
-		HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+		HAL_I2C_Master_Transmit(&hi2c1, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+
 		osSemaphoreRelease(sem_I2C1);
 	}
 }
@@ -180,7 +179,7 @@ void lcd_send_data(char data)
 		*(data_t + 1) = data_u | 0x09; /* en=0, rs=0 */
 		*(data_t + 2) = data_l | 0x0D; /* en=1, rs=0 */
 		*(data_t + 3) = data_l | 0x09; /* en=0, rs=0 */
-		HAL_I2C_Master_Transmit(_hi2cxHandler, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
+		HAL_I2C_Master_Transmit(&hi2c1, SLAVE_ADDRESS_LCD, (uint8_t*) data_t, 4, 100);
 		osSemaphoreRelease(sem_I2C1);
 	}
 }

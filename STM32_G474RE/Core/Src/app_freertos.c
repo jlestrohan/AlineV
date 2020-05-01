@@ -113,7 +113,7 @@ void MX_FREERTOS_Init(void) {
 		ServicesSuccessFlags |= SERVICE_LOGGER_COMPLETE;
 	}
 
-	if (uLcdServiceInit(&hi2c1) == EXIT_FAILURE) {
+	if (uLcdServiceInit() == EXIT_FAILURE) {
 		loggerE("Error Initializing LCD Service");
 		Error_Handler();
 	} else { ServicesSuccessFlags |= SERVICE_LCD_COMPLETE; }

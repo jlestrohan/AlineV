@@ -19,12 +19,14 @@
 #include <stdbool.h>
 #include "i2c.h"
 
+extern osSemaphoreId_t sem_lcdService;
+
 /**
  * Initialize lcd
  * @return
  */
-uint8_t uLcdServiceInit(I2C_HandleTypeDef *hi2cx);
-extern osSemaphoreId_t sem_lcdService;
+uint8_t uLcdServiceInit();
+
 
 void lcd_send_string(char *str);
 
