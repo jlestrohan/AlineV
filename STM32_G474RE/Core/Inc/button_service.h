@@ -10,9 +10,12 @@
 
 #include "cmsis_os2.h"
 
-#define BTN_PRESSED_FLAG		0x0002AU
+#define B1_PRESSED_FLAG		0x01U
+#define B2_PRESSED_FLAG		0x02U
 
-extern osEventFlagsId_t xEventOnBoardButton;
+#define BTN_DEBOUNCE_MS			150 /*  ms */
+
+extern osEventFlagsId_t xEventOnBoardButton,xEventButton2;
 
 uint8_t uButtonServiceInit();
 

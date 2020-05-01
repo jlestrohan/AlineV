@@ -72,10 +72,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = USER_BTN2_Pin;
+  GPIO_InitStruct.Pin = B2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(USER_BTN2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(B2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = MOTOR2_IN3_Pin;

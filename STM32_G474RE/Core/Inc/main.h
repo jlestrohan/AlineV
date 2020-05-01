@@ -78,9 +78,9 @@ void Error_Handler(void);
 #define MOTOR2_PWM_GPIO_Port GPIOA
 #define mpu6050_SCL_Pin GPIO_PIN_4
 #define mpu6050_SCL_GPIO_Port GPIOC
-#define USER_BTN2_Pin GPIO_PIN_5
-#define USER_BTN2_GPIO_Port GPIOC
-#define USER_BTN2_EXTI_IRQn EXTI9_5_IRQn
+#define B2_Pin GPIO_PIN_5
+#define B2_GPIO_Port GPIOC
+#define B2_EXTI_IRQn EXTI9_5_IRQn
 #define HR04_3_TRIG_Pin GPIO_PIN_0
 #define HR04_3_TRIG_GPIO_Port GPIOB
 #define MG90S_PWM_Pin GPIO_PIN_2

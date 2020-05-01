@@ -1,23 +1,27 @@
-/*
+/*******************************************************************
  * IRQ_Handler.c
  *
  *  Created on: Feb 26, 2020
- *      Author: jack
- */
+ *      Author: Jack Lestrohan
+ *
+ *******************************************************************/
 
-#include "Button_service.h"
+
+#include <stdio.h>
+#include <FreeRTOS.h>
+#include <string.h>
+#include <stdbool.h>
+
+#include "button_service.h"
 #include "main.h"
 #include "usart.h"
 #include "freertos_logger_service.h"
 #include "cmsis_os2.h"
-#include <FreeRTOS.h>
-#include <HCSR04_service.h>
-#include <string.h>
+#include "HCSR04_service.h"
 #include "gpio.h"
 #include "tim.h"
-#include <stdio.h>
 #include "sensor_speed_service.h"
-#include <stdbool.h>
+
 
 char msg[50];
 
@@ -50,13 +54,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	/**
 	 * HR04 Sensors
 	 */
-	case USER_BTN2_Pin:
-		strcpy(msg, "Hello I am Button 2");
-		HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
-		break;
 	case B1_Pin:
-		osEventFlagsSet(xEventOnBoardButton, BTN_PRESSED_FLAG);
+		osEventFlagsSet(xEventOnBoardButton, B1_PRESSED_FLAG);
 		break;
+	case B2_Pin:
+			osEventFlagsSet(xEventButton2, B2_PRESSED_FLAG);
+			break;
 	default:
 		break;
 	}

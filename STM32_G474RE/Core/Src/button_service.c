@@ -7,13 +7,12 @@
  * 	Pinout:		PC5 -> USER_BTN2_Pin
  ******************************************************************************
  */
-#include <Button_service.h>
+#include "Button_service.h"
 #include "configuration.h"
 #include "cmsis_os2.h"
 #include "ServicesSupervisorFlags.h"
 #include <FreeRTOS.h>
 #include <LCD_service.h>
-#include "button_handler_config.h"
 #include "freertos_logger_service.h"
 #include <stdlib.h>
 #include "stdint.h"
@@ -26,9 +25,8 @@
 //temp
 #include "MG90S_service.h"
 
-static uint32_t uOnboardBtnLastPressedTick = 0;
 static uint32_t btnflags;
-osEventFlagsId_t xEventOnBoardButton;
+osEventFlagsId_t xEventOnBoardButton,xEventButton2;
 
 typedef StaticTask_t osStaticThreadDef_t;
 
@@ -37,13 +35,13 @@ typedef StaticTask_t osStaticThreadDef_t;
  * @param tick
  * @return
  */
-static uint8_t buttonDebounce(uint32_t tick)
+static uint8_t uButtonDebounce(uint32_t tick)
 {
 	return (HAL_GetTick() - tick > BTN_DEBOUNCE_MS ? true : false);
 }
 
 /**
- * Definitions for LoggerServiceTask
+ * Definitions for the onBoard button B1
  */
 static osThreadId_t xOnboardButtonServiceTaskHandle;
 static uint32_t ulOnboardButtonServiceTaBuffer[256];
@@ -51,24 +49,41 @@ static osStaticThreadDef_t xOnboardButtonServiceTaControlBlock;
 static const osThreadAttr_t xOnBoardButtonServiceTask_attributes = {
 		.stack_mem = &ulOnboardButtonServiceTaBuffer[0],
 		.name = "buttonServiceTask",
-		.priority = (osPriority_t) OSTASK_PRIORITY_BUTTON,
+		.priority = (osPriority_t) OSTASK_PRIORITY_BUTTON_ONBOARD,
 		.cb_mem = &xOnboardButtonServiceTaControlBlock,
 		.cb_size = sizeof(xOnboardButtonServiceTaControlBlock),
 		.stack_size = 256 };
 
 /**
- * Button service main task
+ * Definitions for the Additional button B2
+ */
+static osThreadId_t xButton2ServiceTaskHandle;
+static uint32_t ulButton2ServiceTaBuffer[256];
+static osStaticThreadDef_t xButton2ServiceTaControlBlock;
+static const osThreadAttr_t xButton2ServiceTask_attributes = {
+		.stack_mem = &ulButton2ServiceTaBuffer[0],
+		.name = "button2ServiceTask",
+		.priority = (osPriority_t) OSTASK_PRIORITY_BUTTON_ADD,
+		.cb_mem = &xButton2ServiceTaControlBlock,
+		.cb_size = sizeof(xButton2ServiceTaControlBlock),
+		.stack_size = 256 };
+
+/**
+ * OnBoard Button service main task
  * @param argument
  */
 static void vOnBoardButtonServiceTask(void *argument)
 {
+	uint32_t uOnboardBtnLastPressedTick = 0;
 	loggerI("Starting Button Service task...");
 	char msg[50];
 
 	for (;;)
 	{
-		btnflags = osEventFlagsWait(xEventOnBoardButton, BTN_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
-		if (buttonDebounce(uOnboardBtnLastPressedTick) || uOnboardBtnLastPressedTick == 0) {
+		btnflags = osEventFlagsWait(xEventOnBoardButton,B1_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
+
+		if (uButtonDebounce(uOnboardBtnLastPressedTick) || uOnboardBtnLastPressedTick == 0) {
+
 			uOnboardBtnLastPressedTick = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
@@ -85,6 +100,32 @@ static void vOnBoardButtonServiceTask(void *argument)
 			/* TODO: remove this, it's just for debugging purposes */
 			HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 		}
+	}
+	osDelay(100);
+}
+
+
+/**
+ * Additional Button service main task B2
+ * @param argument
+ */
+static void vButton2ServiceTask(void *argument)
+{
+	uint32_t uBtn2LastPressedTick = 0;
+	loggerI("Starting Button Service task...");
+	char msg[50];
+
+	for (;;)
+	{
+		btnflags = osEventFlagsWait(xEventButton2,B2_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
+
+		if (uButtonDebounce(uBtn2LastPressedTick) || uBtn2LastPressedTick == 0) {
+			uBtn2LastPressedTick = HAL_GetTick();
+
+			strcpy(msg, "[MSG]B2 has been pressed[/MSG]\n");
+			HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+		}
+
 		osDelay(100);
 	}
 }
@@ -99,10 +140,21 @@ uint8_t uButtonServiceInit()
 		loggerE("Button Service Event Flags object not created!");
 		return EXIT_FAILURE;
 	}
+	xEventButton2 = osEventFlagsNew(NULL);
+		if (xEventButton2 == NULL) {
+			loggerE("Button 2 Service Event Flags object not created!");
+			return EXIT_FAILURE;
+		}
 
 	xOnboardButtonServiceTaskHandle = osThreadNew(vOnBoardButtonServiceTask, NULL, &xOnBoardButtonServiceTask_attributes);
 	if (xOnboardButtonServiceTaskHandle == NULL) {
 		loggerE("Button Service Task not created");
+		return EXIT_FAILURE;
+	}
+
+	xButton2ServiceTaskHandle = osThreadNew(vButton2ServiceTask, NULL, &xButton2ServiceTask_attributes);
+	if (xButton2ServiceTaskHandle == NULL) {
+		loggerE("Button 2 Service Task not created");
 		return EXIT_FAILURE;
 	}
 
