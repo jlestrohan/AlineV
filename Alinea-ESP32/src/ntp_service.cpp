@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 23:19:45
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-22 23:29:11
+ * @ Modified time: 2020-05-01 08:30:29
  * @ Description:
  *******************************************************************************************/
 
@@ -62,4 +62,14 @@ void ntpService_task(void *parameter)
         vTaskDelay(600);
     }
     vTaskDelete(NULL);
+}
+
+/**
+ * @brief  returns epoch time
+ * @note   
+ * @retval 
+ */
+uint32_t ulGetEpochTime()
+{
+    return timeClient.getEpochTime();
 }
