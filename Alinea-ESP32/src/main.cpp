@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-30 18:30:42
+ * @ Modified time: 2020-05-01 16:49:07
  * @ Description:
  *******************************************************************************************/
 
@@ -60,7 +60,7 @@ void setup()
   //setupBTSerial();
   setupAutoConnect();
   setupRemoteDebug();
-  setupNTPService();
+  uSetupNTPService();
   setupUARTListener();
   setupOLED();
   setupOTA();

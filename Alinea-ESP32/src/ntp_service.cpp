@@ -23,7 +23,7 @@ NTPClient timeClient(ntpUDP);
  * @note   
  * @retval None
  */
-void setupNTPService()
+uint8_t uSetupNTPService()
 {
     // Initialize a NTPClient to get time
     timeClient.begin();
