@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-30 18:20:06
+ * @ Modified time: 2020-05-02 15:07:18
  * @ Description:
  *******************************************************************************************/
 
@@ -49,7 +49,6 @@ void setupOTA()
         ESP.restart();
     });
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-        debugI("Progress: %u%%\r", (progress / (total / 100)));
         Serial.println("Progress: " + (progress / (total / 100)));
     });
     ArduinoOTA.onError([](ota_error_t error) {
