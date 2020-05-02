@@ -11,6 +11,9 @@
 #include "configuration_esp32.h"
 
 void remoteDebug_task(void *parameter);
+void vProcessCmdRemoteDebug();
+
+xTaskHandle xRemoteDebuggerTask_hnd = NULL;
 
 /**
  * @brief  Remote Debug setup routine
@@ -23,12 +26,19 @@ uint8_t uSetupRemoteDebug()
 
     /** FREERTOS Debug Task */
     xTaskCreate(
-        remoteDebug_task,   /* Task function. */
-        "remoteDebug_task", /* String with name of task. */
-        10000,              /* Stack size in words. */
-        NULL,               /* Parameter passed as input of the task */
-        5,                  /* Priority of the task. */
-        NULL);              /* Task handle. */
+        remoteDebug_task,          /* Task function. */
+        "remoteDebug_task",        /* String with name of task. */
+        10000,                     /* Stack size in words. */
+        NULL,                      /* Parameter passed as input of the task */
+        5,                         /* Priority of the task. */
+        &xRemoteDebuggerTask_hnd); /* Task handle. */
+
+    if (&xRemoteDebuggerTask_hnd == NULL)
+    {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -41,7 +51,8 @@ void remoteDebug_task(void *parameter)
     for (;;)
     {
         Debug.handle();
+
         vTaskDelay(10);
     }
-    vTaskDelete(NULL);
+    vTaskDelete(&xRemoteDebuggerTask_hnd);
 }
