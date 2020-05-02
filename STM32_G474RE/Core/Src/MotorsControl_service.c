@@ -26,6 +26,10 @@ static const osThreadAttr_t MotorsControlTa_attributes = {
 		.cb_size = sizeof(MotorsControlTaControlBlock),
 		.priority = (osPriority_t) osPriorityLow1, };
 
+osEventFlagsId_t xEventMotorsForward;
+
+MotorData_t MotorData = {Motor_Stop, Motor_Stop, 0,0};
+
 /**
  * Motors Control main task
  * @param argument
@@ -33,35 +37,19 @@ static const osThreadAttr_t MotorsControlTa_attributes = {
 static void MotorsControlTask_Start(void *vParameters)
 {
 
-
 	/* prevent compilation warning */
 	UNUSED(vParameters);
 
-	/* TEST DRIVE */
-	// 1 - set motors motion forward
-	/*osDelay(2000);
-	motorSetForward();
-	MotorSetSpeed(20);
-	osDelay(2000);
-	motorsSetIdle();
-	osDelay(2000);
-	motorSetBackward();
-	MotorSetSpeed(20);
-	osDelay(2000);
-	motorsSetIdle();
-	osDelay(2000);
-	motorSetTurnLeft();
-	MotorSetSpeed(20);
-	osDelay(2000);
-	motorsSetIdle();
-	osDelay(2000);
-	motorSetTurnRight();
-	MotorSetSpeed(20);
-	osDelay(2000);
-	motorSetForward();
-	MotorSetSpeed(0);*/
-
-	osDelay(5000);
+	for (;;)
+	{
+		if (osEventFlagsGet(xEventMotorsForward) && MOTORS_FORWARD_ACTIVE) {
+			MotorSetSpeed(&MotorData, 15, 15);
+			motorSetForward();
+		} else {
+			motorsSetIdle();
+		}
+		osDelay(50);
+	}
 
 	osThreadSuspend(NULL);
 }
@@ -72,26 +60,28 @@ static void MotorsControlTask_Start(void *vParameters)
  */
 MOTORS_Result_t MotorsControl_Service_Initialize()
 {
+
+	xEventMotorsForward = osEventFlagsNew(NULL);
+	if (xEventMotorsForward == NULL) {
+		loggerE("Motors Event Flag Initialization Failed");
+		return (EXIT_FAILURE);
+	}
+
 	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
 
-	/* initializes PWM duties to 0 for now (idle)
+	/* initializes PWM duties to 0 for now (idle) */
 	htim16.Instance->CCR1 = 0;
-		htim17.Instance->CCR1 = 0;
+	htim17.Instance->CCR1 = 0;
 
-	/* creation of HR04Sensor1_task */
+	/* creation of the MotorsControl_task */
 	MotorsControl_taskHandle = osThreadNew(MotorsControlTask_Start, NULL, &MotorsControlTa_attributes);
 	if (!MotorsControl_taskHandle) {
-		//todo: improve error check routines here */
 		loggerE("MotorsControl Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 
-
-
-	//loggerI("motors control called");
-
-	return (MOTORS_Result_Ok);
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -118,12 +108,30 @@ void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange
  * sets motor(s) speed to the target pace using motionchange rate
  * @param speed (0-100)
  */
-void MotorSetSpeed(MotorData_t *data, uint8_t speed)
+void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 {
-	//TODO:
-	// Deactivate at speed 0;
-	htim16.Instance->CCR1 = speed;
-	htim17.Instance->CCR1 = speed;
+	/* let's clamp the values to avoid overflow */
+	speed_left = speed_left > 100 ? 100 : speed_left;
+	speed_right = speed_right > 100 ? 100 : speed_right;
+
+	/* if speed <= 0 we deactivate the PWM timers to save energy, motor after motor */
+	if (speed_left <= 0) {
+		HAL_TIM_PWM_Stop(&htim16, TIM_CHANNEL_1);
+	} else {
+		HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+		htim16.Instance->CCR1 = speed_left;
+	}
+
+	if (speed_right <= 0)  {
+		HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+	} else {
+		HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+		htim17.Instance->CCR1 = speed_right;
+	}
+
+	/* save the current values into the data struct */
+	data->currentSpeedLeft = speed_left;
+	data->currentSpeedRight = speed_right;
 }
 
 /**
@@ -137,7 +145,7 @@ void motorSetForward()
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
 
 	/* activates front servo */
-	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+	osEventFlagsSet(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
 }
 
 /**

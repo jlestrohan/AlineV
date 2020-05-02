@@ -26,7 +26,7 @@
 #include <string.h>
 
 //temp
-#include "MG90S_service.h"
+#include "MotorsControl_service.h"
 
 static uint32_t btnflags;
 osEventFlagsId_t xEventOnBoardButton,xEventButton2;
@@ -93,11 +93,11 @@ static void vOnBoardButtonServiceTask(void *argument)
 			//FIXME:
 			// Test to see if servo is receving the active/inactive flag
 			if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
-				strcpy(msg, "[MSG]STM32 - Starting Servo[/MSG]\n");
-				osEventFlagsSet(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+				strcpy(msg, "[MSG]STM32 - Starting Motors[/MSG]\n");
+				osEventFlagsSet(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
 			} else {
-				strcpy(msg, "[MSG]STM32 - Stopping Servo[/MSG]\n");
-				osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+				strcpy(msg, "[MSG]STM32 - Stopping Motors[/MSG]\n");
+				osEventFlagsClear(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
 			}
 
 			/* TODO: remove this, it's just for debugging purposes */

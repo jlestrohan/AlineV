@@ -14,6 +14,42 @@
 #define INC_MOTORSCONTROL_SERVICE_H_
 
 #include <stdint.h>
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
+
+#define MOTORS_FORWARD_ACTIVE	(1 << 0)
+
+#ifndef bool
+typedef enum {
+    false,
+    true
+} bool;
+#endif
+
+/**
+ * Motor speed
+ */
+typedef enum {
+	Motor_Stop,
+	Motor_Forward,
+	Motor_Backward,
+} MotorsMotion_t;
+
+/**
+ * Main datastructure for motors control
+ */
+typedef struct {
+	MotorsMotion_t motorMotion_Left;		/* stop, forward, backward */
+	MotorsMotion_t motorMotion_Right;
+	uint8_t currentSpeedLeft;				/* 0 - 100 */
+	uint8_t currentSpeedRight;				/* 0 - 100 */
+} MotorData_t;
+
+extern osEventFlagsId_t xEventMotorsForward;
+/**
+ * Main DataStruct accessible from everywhere
+ */
+extern MotorData_t MotorData;
 
 /**
  * @brief  MPU6050 result enumeration
@@ -34,36 +70,20 @@ typedef enum {
 } MotorsDef_t;
 
 /**
- * Motor speed
- */
-typedef enum {
-	MOTOR_STOP,
-	MOTOR_FORWARD,
-	MOTOR_BACKWARD,
-} MotorsMotion_t;
-
-/**
  * Acceleration/Desceleration Rate
  */
 typedef enum {
-	MOTOR_MOTIONCHANGE_VERY_SLOW,//!< MOTOR_ACCEL_VERY_SLOW
-	MOTOR_MOTIONCHANGE_SLOW,     //!< MOTOR_ACCEL_SLOW
-	MOTOR_MOTIONCHANGE_NORMAL,   //!< MOTOR_ACCEL_NORMAL
-	MOTOR_MOTIONCHANGE_FAST,     //!< MOTOR_ACCEL_FAST
-	MOTOR_MOTIONCHANGE_VERY_FAST,//!< MOTOR_ACCEL_VERY_FAST
-	MOTOR_MOTIONCHANGE_SLOWER,   //!< MOTOR_ACCEL_SLOWER
-	MOTOR_MOTIONCHANGE_FASTER,    //!< MOTOR_ACCEL_FASTER
-	MOTOR_MOTIONCHANGE_IMMEDIATE
+	TransitionPace_Very_Slow,
+	TransitionPace_Below_Slow,
+	TransitionPace_Slow,
+	TransitionPace_Above_Slow,
+	TransitionPace_Normal,
+	TransitionPace_Below_Fast,
+	TransitionPace_Fast,
+	TransitionPace_Above_Fast,
+	TransitionPace_Very_Fast,
+	TransitionPace_Immediate
 } MotorsMotionChangeRate_t;
-
-/**
- * Main datastructure for motors control
- */
-typedef struct {
-	MotorsDef_t motorNumber;
-	MotorsMotion_t motorMotion;
-	uint8_t sensorSpeed;
-} MotorData_t;
 
 /**
  * Initialize the whole service, tasks and stuff
@@ -76,26 +96,26 @@ MOTORS_Result_t MotorsControl_Service_Initialize();
  * @param pace
  * @param motionchange
  */
-void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange);
+void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
 
 /**
  * Descelerate motor(s) to the target pace using motionchange rate
  * @param pace
  * @param motionchange
  */
-void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange);
+void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
 
 /**
  * sets motor(s) speed to the target pace using motionchange rate
  * @param pace
  */
-void MotorSetSpeed(MotorData_t *data, uint8_t speed);
+void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
 
 /**
  * Stop the targetted motor(s) using motionchange rate
  * @param motionchange
  */
-void MotorStop(MotorData_t *data, MotorsMotionChangeRate_t motionchange);
+void MotorStop(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
 
 void motorSetForward();
 void motorSetBackward();

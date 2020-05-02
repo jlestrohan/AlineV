@@ -163,7 +163,7 @@ void MX_FREERTOS_Init(void) {
 		ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE;
 	}*/
 
-	/*MotorsControl_Service_Initialize();*/
+	MotorsControl_Service_Initialize();
 
 	/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
 	lcd_send_string("Init Complete");
