@@ -10,6 +10,7 @@
 #define INC_LCDMENU_SERVICE_H_
 
 #include <stdint.h>
+#include "lcd_i2c.h"
 
 /**
  * Menu Related Defines

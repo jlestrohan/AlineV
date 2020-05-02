@@ -12,7 +12,6 @@
 #include "freertos_logger_service.h"
 #include "configuration.h"
 #include <FreeRTOS.h>
-#include <lcd_i2c.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +27,9 @@
 
 
 
-MENUITEMS_t MenuItem_Home = {"Alinea v0.35",1,0,"Initializing...",0,2};
+MENUITEMS_t MenuItem_Init = {"Alinea v0.35",1,0,"Initializing...",0,2};
+MENUITEMS_t MenuItem_InitComplete = {"Alinea v0.35",1,0,"Complete!",3,2};
+MENUITEMS_t MenuItem_Ready = {"Alinea v0.35  >",1,0,"02/05/20 08:50",0,2};
 
 osMessageQueueId_t xLcdMenuServiceQueue;
 
@@ -57,8 +58,12 @@ void vLcdMenuServiceTask(void *argument)
 	loggerI("Starting LCD Menu Service task...");
 
 	lcdInit(&hi2c1, (uint8_t)LCD_I2C_ADDRESS, (uint8_t)LCD_NB_ROW, (uint8_t)LCD_NB_COL);
-
-	vPrepareLCDText(&MenuItem_Home);
+	vPrepareLCDText(&MenuItem_Init);
+	osDelay(5000);
+	lcdDisplayClear();
+	vPrepareLCDText(&MenuItem_InitComplete);
+	osDelay(2000);
+	vPrepareLCDText(&MenuItem_Ready);
 
 	for (;;) {
 

@@ -7,12 +7,14 @@
  *******************************************************************/
 
 #include <lcd_i2c.h>
+#include "cmsis_os2.h"
 #include "stdlib.h"
 #include "string.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
 uint8_t lcdCommandBuffer[6] = {0x00};
+osSemaphoreId_t xSemaphoreLcd;
 
 static LCDParams lcdParams;
 
@@ -34,6 +36,8 @@ bool lcdInit(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t lines, uint8_t co
     TickType_t xLastWakeTime;
 
     uint8_t lcdData = LCD_BIT_5x8DOTS;
+
+    xSemaphoreLcd = osSemaphoreNew(1U, 1U, NULL);
 
     lcdParams.hi2c      = hi2c;
     lcdParams.address   = address << 1;
@@ -326,7 +330,11 @@ bool lcdLoadCustomChar(uint8_t cell, uint8_t * charMap) {
  * @param  data     Pointer to byte to send
  * @return          true if success
  */
-static bool lcdWriteByte(uint8_t rsRwBits, uint8_t * data) {
+static bool lcdWriteByte(uint8_t rsRwBits, uint8_t * data)
+{
+	osStatus_t val;
+
+	val = osSemaphoreAcquire(xSemaphoreLcd, osWaitForever);
 
     /* Higher 4 bits*/
     lcdCommandBuffer[0] = rsRwBits | LCD_BIT_E | lcdParams.backlight | (*data & 0xF0);  /* Send data and set strobe */
@@ -346,6 +354,8 @@ static bool lcdWriteByte(uint8_t rsRwBits, uint8_t * data) {
     while (HAL_I2C_GetState(lcdParams.hi2c) != HAL_I2C_STATE_READY) {
         vTaskDelay(1);
     }
+
+    osSemaphoreRelease(xSemaphoreLcd);
 
     return true;
 }
