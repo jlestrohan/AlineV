@@ -43,19 +43,19 @@ uint32_t last_sent;
  */
 void min_application_handler(uint8_t min_id, uint8_t *min_payload, uint8_t len_payload, uint8_t port)
 {
-  /* In this simple example application we just echo the frame back when we get one, with the MIN ID
+	/* In this simple example application we just echo the frame back when we get one, with the MIN ID
    one more than the incoming frame.
 
    We ignore the port because we have one context, but we could use it to index an array of
    contexts in a bigger application. */
-  //Serial.print("MIN frame with ID ");
-  //Serial.print(min_id);
-  //Serial.print(" received at ");
-  //Serial.println(millis());
-  //min_id++;
-  // The frame echoed back doesn't go through the transport protocol: it's send back directly
-  // as a datagram (and could be lost if there were noise on the serial line).
-  //min_send_frame(&min_ctx, min_id, min_payload, len_payload);
+	//Serial.print("MIN frame with ID ");
+	//Serial.print(min_id);
+	//Serial.print(" received at ");
+	//Serial.println(millis());
+	//min_id++;
+	// The frame echoed back doesn't go through the transport protocol: it's send back directly
+	// as a datagram (and could be lost if there were noise on the serial line).
+	//min_send_frame(&min_ctx, min_id, min_payload, len_payload);
 }
 
 /**
@@ -64,7 +64,7 @@ void min_application_handler(uint8_t min_id, uint8_t *min_payload, uint8_t len_p
  */
 uint32_t min_time_ms(void)
 {
-  return osKernelGetTickCount();
+	return osKernelGetTickCount();
 }
 
 typedef StaticTask_t osStaticThreadDef_t;
@@ -114,18 +114,23 @@ void min_tx_finished(uint8_t port) {
 // inside MIN to decide whether to bother sending a frame or not.
 uint16_t min_tx_space(uint8_t port)
 {
-  // Ignore 'port' because we have just one context. But in a bigger application
-  // with multiple ports we could make an array indexed by port to select the serial
-  // port we need to use.
-  //uint16_t n = SerialUSB.availableForWrite();
+	// Ignore 'port' because we have just one context. But in a bigger application
+	// with multiple ports we could make an array indexed by port to select the serial
+	// port we need to use.
+	//uint16_t n = SerialUSB.availableForWrite();
 
-  return 512;
+	return 512;
 }
 
-// Send a character on the designated port.
+/**
+ * @brief 	CALLBACK Sends a single byte to the selected port
+ * 			Polling in the RX task allows that to be non blocking
+ * @param port
+ * @param byte
+ */
 void min_tx_byte(uint8_t port, uint8_t byte)
 {
-  HAL_UART_Transmit(&huart3, &byte, sizeof(uint8_t), HAL_MAX_DELAY);
+	HAL_UART_Transmit(&huart3, &byte, sizeof(uint8_t), HAL_MAX_DELAY);
 }
 
 /**
@@ -135,18 +140,16 @@ void min_tx_byte(uint8_t port, uint8_t byte)
 void vEsp32TXSerialService_Start(void* vParameter)
 {
 	char buffer[8] = "alinea12";
-	char buf[32];
-	size_t buf_len = 0;
 
 	for (;;)
 	{
 
 		if(!min_queue_frame(&min_ctx, 0x33U, (uint8_t *)buffer, strlen(buffer))) {
-		      // The queue has overflowed for some reason
-		      loggerE("Can't queue at time ");
+			/* The queue has overflowed for some reason */
+			loggerE("Can't queue at time ");
 		}
 
-		min_poll(&min_ctx, (uint8_t *)buf, (uint8_t)buf_len);
+
 
 		osDelay(2000);
 	}
@@ -159,11 +162,16 @@ void vEsp32TXSerialService_Start(void* vParameter)
  */
 void vEsp32RXSerialService_Start(void* vParameter)
 {
+	char buf[32];
+	size_t buf_len = 0;
+
 	for (;;)
 	{
 		/* TODO: implement a queue here that will be triggered by a DMA reception of any UART activity
 		 * see IRQ_handler
 		 */
+		/* we periodically poll the serial buffer */
+		min_poll(&min_ctx, (uint8_t *)buf, (uint8_t)buf_len);
 
 		// after queue treatment call min_application_handler azs per https://github.com/min-protocol/min/blob/master/target/sketch_example1/sketch_example1.ino
 

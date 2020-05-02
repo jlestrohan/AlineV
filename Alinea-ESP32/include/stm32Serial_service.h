@@ -17,6 +17,6 @@
 #define RXD2 16
 #define TXD2 17
 
-uint8_t setupUARTListener();
+uint8_t uSetupSTM32SerialService();
 
 #endif /* _IC_SERIAL_SERVICE_H */
