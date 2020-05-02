@@ -59,7 +59,7 @@ void setup()
   uSetupCmdParser();
   //setupBTSerial();
   setupAutoConnect();
-  setupRemoteDebug();
+  uSetupRemoteDebug();
   uSetupNTPService();
   setupUARTListener();
   setupOLED();

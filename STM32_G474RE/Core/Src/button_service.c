@@ -94,10 +94,10 @@ static void vOnBoardButtonServiceTask(void *argument)
 			// Test to see if servo is receving the active/inactive flag
 			if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
 				strcpy(msg, "[MSG]STM32 - Starting Motors[/MSG]\n");
-				osEventFlagsSet(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
+				//osEventFlagsSet(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
 			} else {
 				strcpy(msg, "[MSG]STM32 - Stopping Motors[/MSG]\n");
-				osEventFlagsClear(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
+				//osEventFlagsClear(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
 			}
 
 			/* TODO: remove this, it's just for debugging purposes */
