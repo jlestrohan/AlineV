@@ -74,14 +74,14 @@
   osPriorityRealtime7     = 48+7,       ///< Priority: realtime + 7
  */
 /* tasks priorities here */
-#define OSTASK_PRIORITY_LOGGER				osPriorityLow4
-#define OSTASK_PRIORITY_LCD					osPriorityBelowNormal
+#define OSTASK_PRIORITY_LOGGER				osPriorityHigh
 #define OSTASK_PRIORITY_BUTTON_ONBOARD		osPriorityLow3
 #define OSTASK_PRIORITY_BUTTON_ADD			osPriorityLow2
 #define OSTASK_PRIORITY_HCSR04				osPriorityNormal
 #define OSTASK_PRIORITY_MG90S				osPriorityBelowNormal5
 #define OSTASK_PRIORITY_QMC5883				osPriorityBelowNormal2
 #define OSTASK_PRIORITY_MPU6050				osPriorityLow5
+#define OSTASK_PRIORITY_LCDMENU				osPriorityAboveNormal
 
 
 #endif /* INC_CONFIGURATION_H_ */

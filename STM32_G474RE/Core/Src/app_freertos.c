@@ -36,7 +36,7 @@
 #include "Button_service.h"
 #include "sdcard_service.h"
 #include "IRQ_Handler.h"
-#include "lcd_service.h"
+#include "lcdMenu_service.h"
 #include "QMC5883_service.h"
 #include "BMP280_service.h"
 #include "HCSR04_service.h"
@@ -113,10 +113,10 @@ void MX_FREERTOS_Init(void) {
 		ServicesSuccessFlags |= SERVICE_LOGGER_COMPLETE;
 	}
 
-	if (uLcdServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing LCD Service");
+	if (uLcdMenuServiceInit() == EXIT_FAILURE) {
+		loggerE("Error Initializing LCD Menu Service");
 		Error_Handler();
-	} else { ServicesSuccessFlags |= SERVICE_LCD_COMPLETE; }
+	}
 
 	if (uButtonServiceInit() == EXIT_FAILURE) {
 		loggerE("Error Initializing Button Service");
@@ -201,21 +201,23 @@ void MX_FREERTOS_Init(void) {
 
 /* USER CODE BEGIN Header_StartSupervisorTask */
 /**
-  * @brief  Function implementing the supervisorTask thread.
-  * @param  argument: Not used 
-  * @retval None
-  */
+ * @brief  Function implementing the supervisorTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
 /* USER CODE END Header_StartSupervisorTask */
 void StartSupervisorTask(void *argument)
 {
   /* USER CODE BEGIN StartSupervisorTask */
+	/* USER CODE BEGIN StartDefaultTask */
+	osDelay(5000);
 
+	/* Infinite loop */
+	for(;;)
+	{
 
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(100);
-  }
+		osDelay(100);
+	}
   /* USER CODE END StartSupervisorTask */
 }
 

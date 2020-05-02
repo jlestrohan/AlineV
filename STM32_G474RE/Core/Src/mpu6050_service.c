@@ -13,7 +13,6 @@
 #include "cmsis_os2.h"
 #include "configuration.h"
 #include <FreeRTOS.h>
-#include <LCD_service.h>
 #include <MPU6050_service.h>
 #include "i2c.h"
 #include <stdio.h>

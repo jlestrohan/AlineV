@@ -16,7 +16,6 @@
 #include "cmsis_os2.h"
 #include "ServicesSupervisorFlags.h"
 #include <FreeRTOS.h>
-#include <LCD_service.h>
 #include "freertos_logger_service.h"
 #include <stdlib.h>
 #include "stdint.h"

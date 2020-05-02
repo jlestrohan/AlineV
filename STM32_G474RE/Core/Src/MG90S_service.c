@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include "tim.h"
 #include "freertos_logger_service.h"
-#include "LCD_service.h"
 
 /* flag to track activity of the servo */
 

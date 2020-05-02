@@ -24,7 +24,6 @@
 #include "gpio.h"
 #include <FreeRTOS.h>
 #include <HCSR04_service.h>
-#include <LCD_service.h>
 #include "tim.h"
 #include "freertos_logger_service.h"
 #include <string.h>
@@ -73,10 +72,10 @@ static void vHr04SensorTaskStart(void *argument)
 			if (data.sonarNum == HR04_SONAR_2) {
 			sprintf(msg, "%d - %0*dcm       ", data.sonarNum, 3,data.distance);
 
-			osSemaphoreAcquire(sem_lcdService, osWaitForever);
+			/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
 			lcd_put_cur(0,0);
 			lcd_send_string(msg);
-			osSemaphoreRelease(sem_lcdService);
+			osSemaphoreRelease(sem_lcdService);*/
 			//loggerI(msg);
 			}
 		}
