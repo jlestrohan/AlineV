@@ -33,6 +33,7 @@ static const osThreadAttr_t xFrontServoTa_attributes = {
 		.priority = (osPriority_t) OSTASK_PRIORITY_MG90S, };
 
 typedef enum {
+	SERVO_IDLE,
 	SERVO_LEFT,
 	SERVO_RIGHT
 } ServoDirection_t;
@@ -44,9 +45,8 @@ typedef enum {
 void vFrontServo_Start(void* vParameters)
 {
 	loggerI("Starting FrontServo Service task...");
-	char msg[10];
 	uint8_t pos = 75; /* center for a start */
-	ServoDirection_t dir; /* 0 to left, 1 to right */
+	ServoDirection_t dir = SERVO_IDLE;
 
 	for (;;) {
 		/* prevent compilation warning */
@@ -68,6 +68,7 @@ void vFrontServo_Start(void* vParameters)
 
 		} else {
 			/* sets to center */
+			dir = SERVO_IDLE;
 			htim5.Instance->CCR1 = 75;
 		}
 
