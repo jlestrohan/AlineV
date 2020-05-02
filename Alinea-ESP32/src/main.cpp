@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 15:05:52
+ * @ Modified time: 2020-05-02 20:16:00
  * @ Description:
  *******************************************************************************************/
 
@@ -56,7 +56,7 @@ void setup()
   Serial.begin(115200);
 
   setupBuzzer();
-  setupCmdParser();
+  uSetupCmdParser();
   //setupBTSerial();
   setupAutoConnect();
   setupRemoteDebug();

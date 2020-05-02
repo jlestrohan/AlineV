@@ -43,7 +43,7 @@ void vCommandParserTaskCode(void *pvParameters)
  * @note   
  * @retval None
  */
-uint8_t setupCmdParser()
+uint8_t uSetupCmdParser()
 {
     /* we first initialize the queue that will handle all the incoming messages */
     xQueueCommandParse = xQueueCreate(10, sizeof(char) * CMD_TAG_MSG_MAX_LGTH);
