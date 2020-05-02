@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 20:16:00
+ * @ Modified time: 2020-05-02 23:51:42
  * @ Description:
  *******************************************************************************************/
 
@@ -18,7 +18,7 @@
 #include "configuration_esp32.h"
 #include <FreeRTOS.h>
 #include "buzzer_service.h"
-#include "serial_service.h"
+#include "stm32Serial_service.h"
 #include "ntp_service.h"
 #include "oled_service.h"
 #include "remoteDebug_service.h"
@@ -61,7 +61,7 @@ void setup()
   setupAutoConnect();
   uSetupRemoteDebug();
   uSetupNTPService();
-  setupUARTListener();
+  uSetupSTM32SerialService();
   setupOLED();
   setupOTA();
 
