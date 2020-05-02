@@ -15,6 +15,15 @@
 #ifndef INC_ESP32_SERIAL_H_
 #define INC_ESP32_SERIAL_H_
 
+#include <stdint.h>
+
+/**
+ * Main Initialization function
+ * @return
+ */
+uint8_t uEsp32SerialServiceInit();
+
+uint8_t uEsp32Serial_SendMSG(const char *msg);
 
 
 #endif /* INC_ESP32_SERIAL_H_ */

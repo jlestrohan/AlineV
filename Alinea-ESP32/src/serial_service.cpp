@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-29 00:59:37
+ * @ Modified time: 2020-05-02 20:19:03
  * @ Description:
  *******************************************************************************************/
 
@@ -127,7 +127,7 @@ void vSerial0ListenerTaskCode(void *pvParameters)
 uint8_t setupUARTListener()
 {
   /* setup UART communications to and from STM32 on UART2 port */
-  Serial2.begin(460800, SERIAL_8N1, RXD2, TXD2);
+  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
 
   /* we attempt to create the serial listener task */
   xTaskCreate(

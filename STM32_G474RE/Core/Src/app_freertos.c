@@ -142,6 +142,10 @@ void MX_FREERTOS_Init(void) {
 		ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE;
 	}
 
+	if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
+		loggerE("Error Initializing ESP32 Serial TX/RX Service");
+	}
+
 	/*if (uVl53l0xServiceInit(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
 	} else { ServicesSuccessFlags |= SERVICE_V53L0X_COMPLETE; }*/
