@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-01 16:49:07
+ * @ Modified time: 2020-05-02 15:05:52
  * @ Description:
  *******************************************************************************************/
 
@@ -66,7 +66,7 @@ void setup()
   setupOTA();
 
   debugI("Ready.");
-  //Serial.println(GET_CHIPID());
+  debugI("%ul", GET_CHIPID());
 
   Serial.println("Ready UART");
   commandReadyTune();

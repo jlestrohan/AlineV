@@ -15,6 +15,14 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
+typedef enum {
+	ServoDirection_Left = 	0x32U,
+	ServoDirection_Center = 0x04BU,
+	ServoDirection_Right = 	0x64U
+} xServoPosition_t;
+
+extern xServoPosition_t xServoPosition;
+
 /* event flag to activate the servo */
 #define FLG_MG90S_ACTIVE	(1 << 0)
 extern osEventFlagsId_t evt_Mg90sIsActive;

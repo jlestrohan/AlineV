@@ -30,17 +30,17 @@ typedef enum {
  * Motor speed
  */
 typedef enum {
-	Motor_Stop,
-	Motor_Forward,
-	Motor_Backward,
-} MotorsMotion_t;
+	MotorMotion_Stop,
+	MotorMotion_Forward,
+	MotorMotion_Backward,
+} MotorMotion_t;
 
 /**
  * Main datastructure for motors control
  */
 typedef struct {
-	MotorsMotion_t motorMotion_Left;		/* stop, forward, backward */
-	MotorsMotion_t motorMotion_Right;
+	MotorMotion_t motorMotion_Left;		/* stop, forward, backward */
+	MotorMotion_t motorMotion_Right;
 	uint8_t currentSpeedLeft;				/* 0 - 100 */
 	uint8_t currentSpeedRight;				/* 0 - 100 */
 } MotorData_t;
@@ -89,21 +89,21 @@ typedef enum {
  * Initialize the whole service, tasks and stuff
  * @return
  */
-MOTORS_Result_t MotorsControl_Service_Initialize();
+uint8_t uMotorsControlServiceInit();
 
 /**
  * Accelerate motor(s) to the target pace using motionchange rate
  * @param pace
  * @param motionchange
  */
-void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
+void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace, uint8_t targetSpeed);
 
 /**
  * Descelerate motor(s) to the target pace using motionchange rate
  * @param pace
  * @param motionchange
  */
-void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
+void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace, uint8_t targetSpeed);
 
 /**
  * sets motor(s) speed to the target pace using motionchange rate
@@ -111,18 +111,39 @@ void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
  */
 void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
 
+
 /**
- * Stop the targetted motor(s) using motionchange rate
- * @param motionchange
+ * Sets LN298 GPIO controls for forward motion
  */
-void MotorStop(MotorData_t *data, MotorsMotionChangeRate_t motionPace);
+void motorSetMotionForward(MotorData_t *data);
 
-void motorSetForward();
-void motorSetBackward();
-void motorSetTurnLeft();
-void motorSetTurnRight();
+/**
+ * Sets LN298 GPIO controls for backward motion
+ */
+void motorSetMotionBackward(MotorData_t *data);
 
-void motorsSetIdle();
+/**
+ * Sets LN298 GPIO controls for left turn motion
+ * @param data
+ */
+void motorSetMotionTurnLeft(MotorData_t *data);
+
+/**
+ * Sets LN298 GPIO controls for right turn motion
+ * @param data
+ */
+void motorSetMotionTurnRight(MotorData_t *data);
+
+/**
+ * Sets motors power to 0 but does not change the recorded motion
+ */
+void motorsSetMotorsIdle(MotorData_t *data);
+
+/**
+ * Completely stops the motors
+ */
+void motorsSetMotionStop(MotorData_t *data);
+
 
 #endif /* INC_MOTORSCONTROL_SERVICE_H_ */
 

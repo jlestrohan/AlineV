@@ -76,6 +76,7 @@
 /* tasks priorities here */
 #define OSTASK_PRIORITY_LOGGER				osPriorityHigh
 #define OSTASK_PRIORITY_BUTTON_ONBOARD		osPriorityLow3
+#define OSTASK_PRIORITY_NAVCONTROL			osPriorityNormal
 #define OSTASK_PRIORITY_BUTTON_ADD			osPriorityLow2
 #define OSTASK_PRIORITY_HCSR04				osPriorityNormal
 #define OSTASK_PRIORITY_MG90S				osPriorityBelowNormal5

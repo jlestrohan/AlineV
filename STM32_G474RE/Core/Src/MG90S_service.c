@@ -20,6 +20,8 @@
 
 osEventFlagsId_t evt_Mg90sIsActive;
 
+xServoPosition_t xServoPosition = ServoDirection_Center; /* center for a start */
+
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xFrontServo_taskHandle;
 static osStaticThreadDef_t xFrontServoTaControlBlock;
@@ -32,12 +34,6 @@ static const osThreadAttr_t xFrontServoTa_attributes = {
 		.cb_size = sizeof(xFrontServoTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_MG90S, };
 
-typedef enum {
-	SERVO_IDLE,
-	SERVO_LEFT,
-	SERVO_RIGHT
-} ServoDirection_t;
-
 /**
  * Front Servo task rouotine
  * @param vParameters
@@ -45,30 +41,28 @@ typedef enum {
 void vFrontServo_Start(void* vParameters)
 {
 	loggerI("Starting FrontServo Service task...");
-	uint8_t pos = 75; /* center for a start */
-	ServoDirection_t dir = SERVO_IDLE;
+
+	xServoPosition_t direction = ServoDirection_Center;
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(vParameters);
 
 		if (osEventFlagsGet(evt_Mg90sIsActive) && FLG_MG90S_ACTIVE) {
-			htim5.Instance->CCR1 = pos; /* 0 to 100 */
-			switch (pos) {
-			case 50:
-				pos = 75; dir = SERVO_RIGHT; break;
-			case 75:
-				pos=(dir == SERVO_RIGHT ? 100 : 50); break;
-			case 100:
-				pos = 75; dir = SERVO_LEFT; break;
-			default:
-				pos = 75; dir = SERVO_LEFT;
+			htim5.Instance->CCR1 = xServoPosition; /* 0 to 100 */
+			switch (xServoPosition) {
+			case ServoDirection_Left:
+				xServoPosition = ServoDirection_Center; direction = ServoDirection_Right; break;
+			case ServoDirection_Center:
+				xServoPosition=(direction == ServoDirection_Right ? ServoDirection_Right : ServoDirection_Left); break;
+			case ServoDirection_Right: default:
+				xServoPosition = ServoDirection_Center; direction = ServoDirection_Left; break;
 			}
 			osDelay(1000);
 
 		} else {
 			/* sets to center */
-			dir = SERVO_IDLE;
+			direction = ServoDirection_Center;
 			htim5.Instance->CCR1 = 75;
 		}
 

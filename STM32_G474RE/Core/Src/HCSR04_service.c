@@ -29,6 +29,8 @@
 #include <string.h>
 #include <stdio.h>
 
+HR04_SensorsData_t HR04_SensorsData;
+
 typedef enum
 {
 	HC_SR04_Result_Ok = 0x00, /*!< Everything OK */
@@ -58,25 +60,19 @@ HC_SR04_Result HC_SR04_StartupTimers();
  */
 static void vHr04SensorTaskStart(void *argument)
 {
-	char msg[30];
+	//char msg[30];
 	loggerI("Starting HCSR_04 Service task...");
-	HR04_SensorsData_t data;
+
 	osStatus_t status = -1;
 
 	for (;;) {
 		/* prevent compilation warning */
 		UNUSED(argument);
 
-		status = osMessageQueueGet(queue_HC_SR04Handle, &data, NULL, osWaitForever); /* wait for message */
+		status = osMessageQueueGet(queue_HC_SR04Handle, &HR04_SensorsData, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
-			if (data.sonarNum == HR04_SONAR_2) {
-			sprintf(msg, "%d - %0*dcm       ", data.sonarNum, 3,data.distance);
-
-			/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
-			lcd_put_cur(0,0);
-			lcd_send_string(msg);
-			osSemaphoreRelease(sem_lcdService);*/
-			//loggerI(msg);
+			if (HR04_SensorsData.sonarNum == HR04_SONAR_2) {
+				//sprintf(msg, "%d - %0*dcm       ", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
 			}
 		}
 

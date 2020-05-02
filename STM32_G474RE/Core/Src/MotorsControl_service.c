@@ -28,7 +28,7 @@ static const osThreadAttr_t MotorsControlTa_attributes = {
 
 osEventFlagsId_t xEventMotorsForward;
 
-MotorData_t MotorData = {Motor_Stop, Motor_Stop, 0,0};
+MotorData_t MotorData = {MotorMotion_Stop, MotorMotion_Stop, 0,0};
 
 /**
  * Motors Control main task
@@ -42,25 +42,25 @@ static void MotorsControlTask_Start(void *vParameters)
 
 	for (;;)
 	{
+		/* event flag motors active, if set we start a motion, if not we idle */
 		if (osEventFlagsGet(xEventMotorsForward) && MOTORS_FORWARD_ACTIVE) {
 			MotorSetSpeed(&MotorData, 15, 15);
-			motorSetForward();
+			motorSetMotionForward(&MotorData);
 		} else {
-			motorsSetIdle();
+			motorsSetMotorsIdle(&MotorData);
 		}
 		osDelay(50);
 	}
 
-	osThreadSuspend(NULL);
+	osThreadTerminate(MotorsControl_taskHandle);
 }
 
 /**
  * Initialize the whole service, tasks and stuff
  * @return
  */
-MOTORS_Result_t MotorsControl_Service_Initialize()
+uint8_t uMotorsControlServiceInit()
 {
-
 	xEventMotorsForward = osEventFlagsNew(NULL);
 	if (xEventMotorsForward == NULL) {
 		loggerE("Motors Event Flag Initialization Failed");
@@ -89,7 +89,7 @@ MOTORS_Result_t MotorsControl_Service_Initialize()
  * @param pace
  * @param motionchange
  */
-void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange)
+void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace, uint8_t targetSpeed)
 {
 
 }
@@ -99,7 +99,7 @@ void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange)
  * @param pace
  * @param motionchange
  */
-void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionchange)
+void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace, uint8_t targetSpeed)
 {
 
 }
@@ -137,61 +137,82 @@ void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 /**
  * Sets LN298 GPIO controls for forward motion
  */
-void motorSetForward()
+void motorSetMotionForward(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
 
-	/* activates front servo */
-	osEventFlagsSet(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+	/* now we set the right values into the main motors control struct */
+	data->motorMotion_Left = MotorMotion_Forward;
+	data->motorMotion_Right = MotorMotion_Forward;
 }
 
 /**
  * Sets LN298 GPIO controls for backward motion
  */
-void motorSetBackward()
+void motorSetMotionBackward(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
 
-	/* deactivate front servo */
-	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+	/* now we set the right values into the main motors control struct */
+	data->motorMotion_Left = MotorMotion_Backward;
+	data->motorMotion_Right = MotorMotion_Backward;
 }
 
 /**
  * Sets LN298 GPIO controls for left turn motion
  */
-void motorSetTurnLeft()
+void motorSetMotionTurnLeft(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
+
+	/* now we set the right values into the main motors control struct */
+	data->motorMotion_Left = MotorMotion_Backward;
+	data->motorMotion_Right = MotorMotion_Forward;
 }
 
 /**
  * Sets LN298 GPIO controls for right turn motion
  */
-void motorSetTurnRight()
+void motorSetMotionTurnRight(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
+
+	/* now we set the right values into the main motors control struct */
+	data->motorMotion_Left = MotorMotion_Forward;
+	data->motorMotion_Right = MotorMotion_Backward;
 }
 
 /**
- * Sets motors power to 0
+ * Sets motors power to 0 but does not change the recorded motion
  */
-void motorsSetIdle()
+void motorsSetMotorsIdle(MotorData_t *data)
 {
 	htim16.Instance->CCR1 = 0;
 	htim17.Instance->CCR1 = 0;
-
-	/* deactivate front servo */
-	osEventFlagsClear(evt_Mg90sIsActive, FLG_MG90S_ACTIVE);
+	data->currentSpeedLeft = 0;
+	data->currentSpeedRight = 0;
 }
+
+/**
+ * Completely stops the motors
+ */
+void motorsSetMotionStop(MotorData_t *data)
+{
+	motorsSetMotorsIdle(data);
+	data->motorMotion_Left = MotorMotion_Stop;
+	data->motorMotion_Right = MotorMotion_Stop;
+
+}
+
