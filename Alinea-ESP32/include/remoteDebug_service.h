@@ -13,6 +13,6 @@
 
 extern RemoteDebug Debug;
 
-void setupRemoteDebug();
+uint8_t uSetupRemoteDebug();
 
 #endif /* _IC_REMOTEDEBUG_SERVICE_H */

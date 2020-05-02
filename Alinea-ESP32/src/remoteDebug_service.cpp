@@ -17,7 +17,7 @@ void remoteDebug_task(void *parameter);
  * @note   
  * @retval None
  */
-void setupRemoteDebug()
+uint8_t uSetupRemoteDebug()
 {
     Debug.begin(THINGNAME); // Initialize the WiFi server
 
