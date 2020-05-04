@@ -68,6 +68,8 @@ void Error_Handler(void);
 #define HR04_1_TRIG_GPIO_Port GPIOC
 #define HR04_2_ECHO_Pin GPIO_PIN_0
 #define HR04_2_ECHO_GPIO_Port GPIOA
+#define LD3_Pin GPIO_PIN_1
+#define LD3_GPIO_Port GPIOA
 #define SDCS_Pin GPIO_PIN_4
 #define SDCS_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5

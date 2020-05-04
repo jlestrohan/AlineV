@@ -50,7 +50,8 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SDCS_Pin|LD2_Pin|MOTOR1_IN2_Pin|MOTOR1_IN1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD3_Pin|SDCS_Pin|LD2_Pin|MOTOR1_IN2_Pin 
+                          |MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(MOTOR2_IN3_GPIO_Port, MOTOR2_IN3_Pin, GPIO_PIN_RESET);
@@ -64,8 +65,10 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = SDCS_Pin|LD2_Pin|MOTOR1_IN2_Pin|MOTOR1_IN1_Pin;
+  /*Configure GPIO pins : PAPin PAPin PAPin PAPin 
+                           PAPin */
+  GPIO_InitStruct.Pin = LD3_Pin|SDCS_Pin|LD2_Pin|MOTOR1_IN2_Pin 
+                          |MOTOR1_IN1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
