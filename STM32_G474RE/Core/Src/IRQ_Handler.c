@@ -11,7 +11,7 @@
 #include <FreeRTOS.h>
 #include <string.h>
 #include <stdbool.h>
-
+#include "esp32serial_service.h"
 #include "button_service.h"
 #include "main.h"
 #include "usart.h"
@@ -22,8 +22,9 @@
 #include "tim.h"
 #include "sensor_speed_service.h"
 
-
 char msg[50];
+osMessageQueueId_t xQueueStm32RXserial;
+static uint8_t rxData;
 
 /**
  *
@@ -57,8 +58,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		osEventFlagsSet(xEventOnBoardButton, B1_PRESSED_FLAG);
 		break;
 	case B2_Pin:
-			osEventFlagsSet(xEventButton2, B2_PRESSED_FLAG);
-			break;
+		osEventFlagsSet(xEventButton2, B2_PRESSED_FLAG);
+		break;
 	default:
 		break;
 	}
@@ -103,19 +104,28 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
  * @param htim
  * keep as __weak as an instance lies in main.c already (generated code)
  */
-__weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+/*void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	loggerI("period elapsed");
-}
+}*/
 
 /**
- *
- * @param huart
+ * @brief  Rx Transfer completed callback.
+ * @param  huart UART handle.
+ * @retval None
  */
-/* void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) */
-/* { */
-/* HAL_GPIO_TogglePin(GPIOA, LD2_Pin); */
-/* char *msg="char hello"; */
-/* HAL_UART_Transmit_IT(huart, (uint8_t *)msg, strlen(msg)); */
-/* cmd_parse_uart_cb(huart); */
-/* } */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+	if (huart->Instance == USART3) {
+		osMessageQueuePut(xQueueStm32RXserial, &rxData, 0U, 0U);
+		/* relaunch interrupt mode */
+		if (HAL_UART_Receive_DMA(&huart3, (uint8_t *)&rxData, 1) != HAL_OK)
+		{
+			Error_Handler();
+		}
+
+
+	}
+
+}
