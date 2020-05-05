@@ -290,11 +290,10 @@ void USART3_IRQHandler(void)
   /* USER CODE BEGIN USART3_IRQn 0 */
 	//TODO: when regeneratin,g the code we have to do that again
 	Uart_isr(&huart3);
-
-#pragma message ( "Don't forget to comment out the line below after each code generation!")
+	return;
 
   /* USER CODE END USART3_IRQn 0 */
-  //HAL_UART_IRQHandler(&huart3);
+  HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
 
   /* USER CODE END USART3_IRQn 1 */
