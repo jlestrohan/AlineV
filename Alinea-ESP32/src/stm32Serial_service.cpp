@@ -32,8 +32,9 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
 
   for (;;)
   {
+    Serial2.print("Hello i am sending a message to you!...");
 
-    vTaskDelay(10);
+    vTaskDelay(200);
   }
   vTaskDelete(xStm32TXSerialServiceTask_hnd);
 }
