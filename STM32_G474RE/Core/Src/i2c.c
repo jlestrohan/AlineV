@@ -183,14 +183,14 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
   
     /* I2C1 DMA Init */
     /* I2C1_RX Init */
-    hdma_i2c1_rx.Instance = DMA1_Channel5;
+    hdma_i2c1_rx.Instance = DMA1_Channel3;
     hdma_i2c1_rx.Init.Request = DMA_REQUEST_I2C1_RX;
     hdma_i2c1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
     hdma_i2c1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_i2c1_rx.Init.MemInc = DMA_MINC_ENABLE;
     hdma_i2c1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_i2c1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_i2c1_rx.Init.Mode = DMA_NORMAL;
+    hdma_i2c1_rx.Init.Mode = DMA_CIRCULAR;
     hdma_i2c1_rx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_i2c1_rx) != HAL_OK)
     {

@@ -23,8 +23,7 @@
 #include "sensor_speed_service.h"
 
 char msg[50];
-osMessageQueueId_t xQueueStm32RXserial;
-static uint8_t rxData;
+
 
 /**
  *
@@ -35,22 +34,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	switch (GPIO_Pin)
 	{
-	/**
-	 * Speed sensors
-	 */
-	/*case SPDSens1_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_1);
-		break;*/
-	/*case SPDSens2_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_2);
-		break;
-	case SPDSens3_Pin:
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_3);
-		break;
-	case SPDSens4_Pin:*=
-		osEventFlagsSet(evt_speed_sensor, EVENT_SPEED_SENSOR_4);
-		break;*/
-
 	/**
 	 * HR04 Sensors
 	 */
@@ -101,33 +84,5 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
-/**
- * Timers Elapsed
- * @param htim
- * keep as __weak as an instance lies in main.c already (generated code)
- */
-/*void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	loggerI("period elapsed");
-}*/
+extern void Uart_isr (UART_HandleTypeDef *huart);
 
-/**
- * @brief  Rx Transfer completed callback.
- * @param  huart UART handle.
- * @retval None
- */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-
-	if (huart->Instance == USART3) {
-		osMessageQueuePut(xQueueStm32RXserial, &rxData, 0U, 0U);
-		/* relaunch interrupt mode */
-		if (HAL_UART_Receive_DMA(&huart3, (uint8_t *)&rxData, 1) != HAL_OK)
-		{
-			Error_Handler();
-		}
-
-
-	}
-
-}
