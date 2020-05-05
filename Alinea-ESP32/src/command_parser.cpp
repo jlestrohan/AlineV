@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 20:15:35
+ * @ Modified time: 2020-05-05 20:54:26
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  *******************************************************************************************/
 
@@ -30,7 +30,7 @@ void vCommandParserTaskCode(void *pvParameters)
         /* we process the command here ... */
         /* TODO: process the command */
         debugI("%s", buffer);
-        commandReceivedTune();
+        vPlayMelody(MelodyType_CommandReceived);
 
         vTaskDelay(10);
     }

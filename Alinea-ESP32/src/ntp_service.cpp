@@ -7,6 +7,7 @@
  *******************************************************************************************/
 
 #include "ntp_service.h"
+#include "configuration_esp32.h"
 #include <FreeRTOS.h>
 #include <WiFi.h>
 #include <NTPClient.h>

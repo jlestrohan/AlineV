@@ -55,8 +55,8 @@ void setup()
 
   Serial.begin(115200);
 
-  setupBuzzer();
-  uSetupCmdParser();
+  uSetupBuzzer();
+  //uSetupCmdParser();
   //setupBTSerial();
   setupAutoConnect();
   uSetupRemoteDebug();
@@ -68,6 +68,5 @@ void setup()
   debugI("Ready.");
   debugI("%ul", GET_CHIPID());
 
-  Serial.println("Ready UART");
-  commandReadyTune();
+  vPlayMelody(MelodyType_CommandReady);
 }

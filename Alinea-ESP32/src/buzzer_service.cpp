@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 20:40:23
+ * @ Modified time: 2020-05-05 21:04:51
  * @ Description:
  *******************************************************************************************/
 
@@ -117,21 +117,30 @@
 
 #define BUZ_MELODY_MAX_NOTES 20
 
-/* functions definitions */
-void vBuzzerTask(void *pvParameters);
-
 /**
  * @brief  Main melody struct definition
  * @note   
  * @retval None
  */
-typedef struct
+struct buzMelody_t
 {
     double melody[BUZ_MELODY_MAX_NOTES];     /* the melody itself, array of notes limited in number of notes - todo: make that dynamic! */
     uint8_t durations[BUZ_MELODY_MAX_NOTES]; /* array of durations - todo make that dynamic! */
     size_t notesNumber;                      /* number of notes */
     uint8_t tempo;                           /* melody tempo between 0 and 255 BEWARE the littlest the fastest!! */
-} buzMelody_t;
+};
+
+struct buzMelody_t mld_wifiSuccess = {
+    {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5}, {1, 1, 1, 1, 1, 1, 1, 1}, 8, 150};
+struct buzMelody_t mld_cmdReceived = {
+    {note_C5, note_G5, note_C6}, {1, 1, 1}, 3, 80};
+struct buzMelody_t mld_cmdReady = {
+    {note_C5, note_G5, note_E5, note_C6}, {1, 2, 1, 3}, 4, 140};
+
+struct buzMelody_t *melodyPtr;
+
+/* functions definitions */
+void vBuzzerTask(void *pvParameters);
 
 // note, durée
 //onst double melody[][3] = {{note_D5, 1}, {note_E5, 1}, {note_C5, 1}, {note_G4, 1}, {note_G3, 1}, {note_C4, 1}, {note_C5, 1}, {note_G5, 1}};
@@ -149,6 +158,7 @@ QueueHandle_t xBuzzerMelodyQueue = NULL;
  */
 uint8_t uSetupBuzzer()
 {
+    melodyPtr = &mld_cmdReady;       /* starting melody */
     ledcAttachPin(BUZZER_OUTPIN, 0); //broche 18 associée au canal PWM 0
 
     DEBUG_SERIAL("xBuzzerMelodyQueue ... creating")
@@ -228,31 +238,33 @@ void wifiSuccessTune()
 }
 
 /**
- * @brief  Command received Melody
+ * @brief  Play Melody according to melody_type argument
  * @note   
- * @retval None
+ * @param  melody_type: 
+ * @retval 
  */
-void commandReceivedTune()
+uint8_t vPlayMelody(melodyType_t melody_type)
 {
-    buzMelody_t cmdReceivedMelody = {
-        {note_C5, note_G5, note_C6}, {1, 1, 1}, 3, 80};
-    if (xBuzzerMelodyQueue != NULL)
+    switch (melody_type)
     {
-        xQueueSend(xBuzzerMelodyQueue, &cmdReceivedMelody, portMAX_DELAY);
+    case MelodyType_CommandReady:
+        melodyPtr = &mld_cmdReady;
+        break;
+    case MelodyType_CommandReceived:
+        melodyPtr = &mld_cmdReceived;
+        break;
+    case MelodyType_WifiSuccess:
+        melodyPtr = &mld_wifiSuccess;
+        break;
+    default:
+        break;
     }
-}
 
-/**
- * @brief  Command ready Melody
- * @note   
- * @retval None
- */
-void commandReadyTune()
-{
-    buzMelody_t cmdReadyMelody = {
-        {note_C5, note_G5, note_E5, note_C6}, {1, 2, 1, 3}, 4, 140};
     if (xBuzzerMelodyQueue != NULL)
     {
-        xQueueSend(xBuzzerMelodyQueue, &cmdReadyMelody, portMAX_DELAY);
+        xQueueSend(xBuzzerMelodyQueue, melodyPtr, portMAX_DELAY);
+        return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
 }

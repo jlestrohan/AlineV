@@ -8,6 +8,7 @@
  *******************************************************************************************/
 
 #include "autoconnect_service.h"
+#include "configuration_esp32.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <AutoConnect.h>
@@ -40,6 +41,7 @@ void setupAutoConnect()
     Serial.println("WiFi connected: " + WiFi.localIP().toString());
     Serial.println("Web server started");
     wifiSuccessTune();
+    vPlayMelody(MelodyType_WifiSuccess);
   }
   /** FREERTOS AutoConnect Task */
   xTaskCreate(
