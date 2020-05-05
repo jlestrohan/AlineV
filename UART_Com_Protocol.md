@@ -24,14 +24,12 @@ The protocol encapsulates a binary json encoded frame inside the following packe
     - -[0xFE][0xFF][0xFE]
     -   ID byte identifying the emmiting unit
     -   - [0xnn]
-    -   16 bits encoded command ID that will identify the type of data. It is used to further decode the right type of data
-    - -[0xmsb][0xlsb]
+    -   8 bits encoded command ID that will identify the type of data. It is used to further decode the right type of data
+    - -[0xnn]
     -   the data itself, which is a binary serialization of a JSON document
     -   - [..................]
-    -   16 bits size of the encoded json document that will make the first level of validation that we received the right packet
-    -   - [0xmsb][0xlsb]
-    -   32 bits (4 bytes) SHA256 of the json encoded document to avoid any corruption. 
-    -   [0xnn][0xnn][0xnn][0xnn]
+    -   8 bits size crc
+    -   - [0xnn]
     -   timeout expected by the sending unit for the acknowledgement. This int16 (2 bytes) is included so the receiving unit knows how much time it has been given within which he must respond to 
         the sending unit. Past this timeout, the receiver unit should respond with a "packet timeout error" special message
     -   - [0xmsb][0xlsb]
