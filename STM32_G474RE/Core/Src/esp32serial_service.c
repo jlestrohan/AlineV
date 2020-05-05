@@ -75,17 +75,19 @@ void vEsp32TXSerialService_Start(void* vParameter)
  */
 void vEsp32RXSerialService_Start(void* vParameter)
 {
-	//char msg[5];
+	char msg[2];
 
 	for (;;)
 	{
 		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
 		{
 			int data = Uart_read(); /* read one byte of data */
+			sprintf(msg, "%c", (char)data);
+			HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 			Uart_write(data);
 		}
 
-		osDelay(20);
+		osThreadYield();
 	}
 	osThreadTerminate(xEsp32RXSerialServiceTaskHandle);
 }
