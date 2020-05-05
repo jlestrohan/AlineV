@@ -14,14 +14,16 @@
 #include "remoteDebug_service.h"
 #include "autoconnect_service.h"
 
-void otaLoop_task(void *parameter);
+void vOtaLoopTask(void *parameter);
+
+xTaskHandle xTaskOtaHandle;
 
 /**
  * @brief  
  * @note   
  * @retval None
  */
-void setupOTA()
+uint8_t uSetupOTA()
 {
     // Hostname defaults to esp3232-[MAC]
     ArduinoOTA.setHostname(THINGNAME);
@@ -84,12 +86,15 @@ void setupOTA()
 
     /** FREERTOS OTA Task */
     xTaskCreate(
-        otaLoop_task, /* Task function. */
-        "OTALoop",    /* String with name of task. */
-        10000,        /* Stack size in words. */
-        NULL,         /* Parameter passed as input of the task */
-        1,            /* Priority of the task. */
-        NULL);        /* Task handle. */
+        vOtaLoopTask,     /* Task function. */
+        "vOtaLoopTask",   /* String with name of task. */
+        10000,            /* Stack size in words. */
+        NULL,             /* Parameter passed as input of the task */
+        1,                /* Priority of the task. */
+        &xTaskOtaHandle); /* Task handle. */
+
+    if (xTaskOtaHandle == NULL)
+    {
 }
 
 /**
@@ -97,7 +102,7 @@ void setupOTA()
  * @note   
  * @retval 
  */
-void otaLoop_task(void *parameter)
+void vOtaLoopTask(void *parameter)
 {
     for (;;)
     {

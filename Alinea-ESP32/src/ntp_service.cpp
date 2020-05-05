@@ -2,18 +2,20 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 23:19:45
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-01 08:30:29
+ * @ Modified time: 2020-05-05 20:34:23
  * @ Description:
  *******************************************************************************************/
 
 #include "ntp_service.h"
 #include "configuration_esp32.h"
+#include "remoteDebug_service.h"
 #include <FreeRTOS.h>
 #include <WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-void ntpService_task(void *parameter);
+void vNtpServiceTask(void *parameter);
+xTaskHandle xNtpServiceTaskHandle;
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
@@ -37,12 +39,13 @@ uint8_t uSetupNTPService()
 
     /** FREERTOS NTPService Task */
     xTaskCreate(
-        ntpService_task,   /* Task function. */
-        "ntpService_task", /* String with name of task. */
-        10000,             /* Stack size in words. */
-        NULL,              /* Parameter passed as input of the task */
-        10,                /* Priority of the task. */
-        NULL);             /* Task handle. */
+        vNtpServiceTask,         /* Task function. */
+        "vNtpServiceTask",       /* String with name of task. */
+        10000,                   /* Stack size in words. */
+        NULL,                    /* Parameter passed as input of the task */
+        10,                      /* Priority of the task. */
+        &xNtpServiceTaskHandle); /* Task handle. */
+
 }
 
 /**
@@ -50,7 +53,7 @@ uint8_t uSetupNTPService()
  * @note   
  * @retval 
  */
-void ntpService_task(void *parameter)
+void vNtpServiceTask(void *parameter)
 {
     for (;;)
     {

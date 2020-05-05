@@ -24,11 +24,12 @@
 #include "gpio.h"
 #include "usart.h"
 #include <string.h>
+#include "lcdMenu_service.h"
 
 //temp
 #include "MotorsControl_service.h"
 
-osEventFlagsId_t xEventOnBoardButton,xEventButton2;
+osEventFlagsId_t xEventOnBoardButton,xEventButtonExt;
 
 typedef StaticTask_t osStaticThreadDef_t;
 
@@ -116,19 +117,14 @@ static void vOnBoardButtonServiceTask(void *argument)
 static void vButton2ServiceTask(void *argument)
 {
 	uint32_t uBtn2LastPressedTick = 0;
-	loggerI("Starting Button Service task...");
-	char msg[50];
-	uint32_t btnflags;
+	loggerI("Starting Button EXT Service task...");
 
 	for (;;)
 	{
-		btnflags = osEventFlagsWait(xEventButton2,B2_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
-
+		osEventFlagsWait(xEventButtonExt, B_EXT_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
 		if (uButtonDebounce(uBtn2LastPressedTick) || uBtn2LastPressedTick == 0) {
-			uBtn2LastPressedTick = osKernelGetSysTimerCount();
-
-			strcpy(msg, "[MSG]B2 has been pressed[/MSG]\n");
-			HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
+			uBtn2LastPressedTick = HAL_GetTick();
+			osEventFlagsSet(xEventMenuNavButton, BEXT_PRESSED_EVT);
 		}
 
 		osDelay(100);
@@ -146,8 +142,8 @@ uint8_t uButtonServiceInit()
 		loggerE("Button Service Event Flags object not created!");
 		return EXIT_FAILURE;
 	}
-	xEventButton2 = osEventFlagsNew(NULL);
-		if (xEventButton2 == NULL) {
+	xEventButtonExt = osEventFlagsNew(NULL);
+		if (xEventButtonExt == NULL) {
 			Error_Handler();
 			loggerE("Button 2 Service Event Flags object not created!");
 			return EXIT_FAILURE;

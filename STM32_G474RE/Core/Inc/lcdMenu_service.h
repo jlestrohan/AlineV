@@ -11,6 +11,12 @@
 
 #include <stdint.h>
 #include "lcd_i2c.h"
+#include <FreeRTOS.h>
+#include "cmsis_os2.h"
+
+#define BEXT_PRESSED_EVT	0x01U
+
+extern osEventFlagsId_t xEventMenuNavButton;
 
 /**
  * Menu Related Defines
@@ -27,8 +33,10 @@ typedef struct MENUITEMS_t{
 	//const struct item * next;           /* Pointer to the next */
 } MENUITEMS_t;
 
+
+
 uint8_t uLcdMenuServiceInit();
-void vPrepareLCDText(MENUITEMS_t *items);
+void vShowLCDText();
 
 #endif /* INC_LCDMENU_SERVICE_H_ */
 

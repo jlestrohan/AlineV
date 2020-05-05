@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 23:51:42
+ * @ Modified time: 2020-05-05 20:55:50
  * @ Description:
  *******************************************************************************************/
 
@@ -58,15 +58,15 @@ void setup()
   uSetupBuzzer();
   //uSetupCmdParser();
   //setupBTSerial();
-  setupAutoConnect();
+  uSetupAutoConnect();
   uSetupRemoteDebug();
   uSetupNTPService();
   uSetupSTM32SerialService();
-  setupOLED();
-  setupOTA();
+  //uSetupOLED();
+  uSetupOTA();
 
-  debugI("Ready.");
-  debugI("%ul", GET_CHIPID());
+  //DEBUG_SERIAL("Chip ID: %ul", GET_CHIPID());
+
 
   vPlayMelody(MelodyType_CommandReady);
 }

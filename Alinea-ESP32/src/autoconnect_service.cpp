@@ -2,12 +2,13 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 16:30:10
+ * @ Modified time: 2020-05-05 20:56:14
  * @ Description: https://hieromon.github.io/AutoConnect/otaupdate.html
  * //https://hieromon.github.io/AutoConnect/howtoembed.html
  *******************************************************************************************/
 
 #include "autoconnect_service.h"
+#include "remoteDebug_service.h"
 #include "configuration_esp32.h"
 #include <WiFi.h>
 #include <WebServer.h>
@@ -17,8 +18,8 @@
 WebServer Server;
 AutoConnect Portal(Server);
 
-xTaskHandle xAutoConnectTask_hnd = NULL;
-void autoConnectLoop_task(void *parameter);
+xTaskHandle xAutoConnectServiceTaskHandle = NULL;
+void vAutoConnectServiceTask(void *parameter);
 
 void rootPage()
 {
@@ -31,7 +32,7 @@ void rootPage()
  * @note   
  * @retval None
  */
-void setupAutoConnect()
+uint8_t uSetupAutoConnect()
 {
   Server.on("/", rootPage);
 
@@ -44,26 +45,32 @@ void setupAutoConnect()
     vPlayMelody(MelodyType_WifiSuccess);
   }
   /** FREERTOS AutoConnect Task */
+  DEBUG_SERIAL("vAutoConnectService Task ... Creating");
   xTaskCreate(
-      autoConnectLoop_task,   /* Task function. */
-      "autoConnectLoop_task", /* String with name of task. */
-      10000,                  /* Stack size in words. */
-      NULL,                   /* Parameter passed as input of the task */
-      1,                      /* Priority of the task. */
-      &xAutoConnectTask_hnd); /* Task handle. */
-}
+      vAutoConnectServiceTask,         /* Task function. */
+      "xAutoConnectServiceTask",       /* String with name of task. */
+      10000,                           /* Stack size in words. */
+      NULL,                            /* Parameter passed as input of the task */
+      1,                               /* Priority of the task. */
+      &xAutoConnectServiceTaskHandle); /* Task handle. */
+
+  if (xAutoConnectServiceTaskHandle == NULL)
+  {
+    DEBUG_SERIAL("vAutoConnectService Task ... Error!");
+    return EXIT_FAILURE;
+  }
 
 /**
  * @brief  OTA Task, handles OTA + Webserver + Debug routines
  * @note   
  * @retval 
  */
-void autoConnectLoop_task(void *parameter)
+void vAutoConnectServiceTask(void *parameter)
 {
   for (;;)
   {
     Portal.handleClient();
     vTaskDelay(10);
   }
-  vTaskDelete(xAutoConnectTask_hnd);
+  vTaskDelete(xAutoConnectServiceTaskHandle);
 }

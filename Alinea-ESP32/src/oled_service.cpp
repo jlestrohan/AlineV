@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 11:10:56
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-23 11:58:31
+ * @ Modified time: 2020-05-05 15:37:09
  * @ Description:
  *******************************************************************************************/
 
@@ -50,7 +50,7 @@ void testdrawstyles(void);
  * @note   
  * @retval None
  */
-void setupOLED()
+uint8_t uSetupOLED()
 {
     // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))

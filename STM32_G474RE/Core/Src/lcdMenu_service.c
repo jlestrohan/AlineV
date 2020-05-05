@@ -120,7 +120,7 @@ uint8_t uLcdMenuServiceInit()
  * Sets the whole LCD content
  * @param items
  */
-void vPrepareLCDText(MENUITEMS_t *items)
+void vShowLCDText()
 {
 	lcdSetCursorPosition(items->first_line_col, items->first_line_row);
 	lcdPrintStr((uint8_t*)items->first_line_text, strlen(items->first_line_text));

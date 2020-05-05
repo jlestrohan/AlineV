@@ -55,10 +55,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	 * HR04 Sensors
 	 */
 	case B1_Pin:
-		osEventFlagsSet(xEventOnBoardButton, B1_PRESSED_FLAG);
+		osEventFlagsSet(xEventOnBoardButton, B_ONBOARD_PRESSED_FLAG);
 		break;
 	case B2_Pin:
-		osEventFlagsSet(xEventButton2, B2_PRESSED_FLAG);
+		/* menu navigation button. We need to pass it to the button service first to debounce */
+		/* no direct flag raise to the menu switching task because of that */
+		osEventFlagsSet(xEventButtonExt, B_EXT_PRESSED_FLAG);
 		break;
 	default:
 		break;
