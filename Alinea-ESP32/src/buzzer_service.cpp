@@ -2,11 +2,12 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-04-26 13:10:49
+ * @ Modified time: 2020-05-05 20:40:23
  * @ Description:
  *******************************************************************************************/
 
 #include <Arduino.h>
+#include "configuration_esp32.h"
 #include "buzzer_service.h"
 #include "remoteDebug_service.h"
 
@@ -116,9 +117,8 @@
 
 #define BUZ_MELODY_MAX_NOTES 20
 
-
 /* functions definitions */
-void buzzer_task(void *pvParameters);
+void vBuzzerTask(void *pvParameters);
 
 /**
  * @brief  Main melody struct definition
@@ -147,26 +147,35 @@ QueueHandle_t xBuzzerMelodyQueue = NULL;
  * @note   
  * @retval None
  */
-void setupBuzzer()
+uint8_t uSetupBuzzer()
 {
     ledcAttachPin(BUZZER_OUTPIN, 0); //broche 18 associée au canal PWM 0
 
+    DEBUG_SERIAL("xBuzzerMelodyQueue ... creating")
     xBuzzerMelodyQueue = xQueueCreate(10, sizeof(buzMelody_t));
     if (xBuzzerMelodyQueue == NULL)
     {
-        debugE("error creatring the buzzer melody queue");
+        DEBUG_SERIAL("xBuzzerMelodyQueue ... Error");
     }
-    else
+    DEBUG_SERIAL("xBuzzerMelodyQueue ... Success!");
+
+    /* creates buzzer update task */
+    xTaskCreate(
+        vBuzzerTask,          /* Task function. */
+        "vBuzzerTask",        /* String with name of task. */
+        10000,                /* Stack size in words. */
+        NULL,                 /* Parameter passed as input of the task */
+        1,                    /* Priority of the task. */
+        &xBuzzerTask_handle); /* Task handle. */
+
+    if (xBuzzerTask_handle == NULL)
     {
-        /* creates buzzer update task */
-        xTaskCreate(
-            buzzer_task,          /* Task function. */
-            "buzzer_task",        /* String with name of task. */
-            10000,                /* Stack size in words. */
-            NULL,                 /* Parameter passed as input of the task */
-            1,                    /* Priority of the task. */
-            &xBuzzerTask_handle); /* Task handle. */
+        DEBUG_SERIAL("xBuzzerMelodyQueue ... Success!");
+        return EXIT_FAILURE;
     }
+
+    DEBUG_SERIAL("BuzzerService created and running..");
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -175,7 +184,7 @@ void setupBuzzer()
  * @param  *pvParameters: 
  * @retval None
  */
-void buzzer_task(void *pvParameters)
+void vBuzzerTask(void *pvParameters)
 {
     uint8_t idx = 0;
     int frequency;
@@ -211,8 +220,11 @@ void wifiSuccessTune()
 {
     /* let's setup ou melody here on purpose then we'll pass it to the main task */
     buzMelody_t wifiSuccessMelody = {
-        {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5},{1,1,1,1,1,1,1,1}, 8, 150 };
-    xQueueSend(xBuzzerMelodyQueue, &wifiSuccessMelody, portMAX_DELAY);
+        {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5}, {1, 1, 1, 1, 1, 1, 1, 1}, 8, 150};
+    if (xBuzzerMelodyQueue != NULL)
+    {
+        xQueueSend(xBuzzerMelodyQueue, &wifiSuccessMelody, portMAX_DELAY);
+    }
 }
 
 /**
@@ -223,8 +235,11 @@ void wifiSuccessTune()
 void commandReceivedTune()
 {
     buzMelody_t cmdReceivedMelody = {
-        {note_C5, note_G5, note_C6},{1,1,1}, 3, 80 };
-    xQueueSend(xBuzzerMelodyQueue, &cmdReceivedMelody, portMAX_DELAY);
+        {note_C5, note_G5, note_C6}, {1, 1, 1}, 3, 80};
+    if (xBuzzerMelodyQueue != NULL)
+    {
+        xQueueSend(xBuzzerMelodyQueue, &cmdReceivedMelody, portMAX_DELAY);
+    }
 }
 
 /**
@@ -235,6 +250,9 @@ void commandReceivedTune()
 void commandReadyTune()
 {
     buzMelody_t cmdReadyMelody = {
-        {note_C5, note_G5, note_E5, note_C6},{1,2,1,3}, 4, 140 };
-    xQueueSend(xBuzzerMelodyQueue, &cmdReadyMelody, portMAX_DELAY);
+        {note_C5, note_G5, note_E5, note_C6}, {1, 2, 1, 3}, 4, 140};
+    if (xBuzzerMelodyQueue != NULL)
+    {
+        xQueueSend(xBuzzerMelodyQueue, &cmdReadyMelody, portMAX_DELAY);
+    }
 }
