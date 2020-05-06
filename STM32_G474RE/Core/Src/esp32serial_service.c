@@ -20,13 +20,20 @@
 #include "freertos_logger_service.h"
 #include "usart.h"
 #include "UartRingbuffer.h"
+#include "hdlc_protocol.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-UART_HandleTypeDef huart3;
+#define MAX_HDLC_FRAME_LENGTH 512
 
-osEventFlagsId_t xEventDMA_TX, xEventDMA_RX;
+/* Function to send out byte/char */
+void send_character(uint8_t data);
+
+/* Function to handle a valid HDLC frame */
+void hdlc_frame_handler(const uint8_t *data, uint16_t length);
+
+UART_HandleTypeDef huart3;
 
 typedef StaticTask_t osStaticThreadDef_t;
 
@@ -81,13 +88,17 @@ void vEsp32RXSerialService_Start(void* vParameter)
 	{
 		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
 		{
-			int data = Uart_read(); /* read one byte of data */
-			sprintf(msg, "%c", (char)data);
-			HAL_UART_Transmit(&hlpuart1, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
-			Uart_write(data);
+			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
+
+			char inChar = (char)Uart_read(); /* read one byte of data */
+			//Uart_write(inChar);
+			// Pass all incoming data to hdlc char receiver
+			vCharReceiver(inChar);
+
+			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
 
-		osThreadYield();
+		osDelay(1);
 	}
 	osThreadTerminate(xEsp32RXSerialServiceTaskHandle);
 }
@@ -100,6 +111,12 @@ uint8_t uEsp32SerialServiceInit()
 {
 	/* initializes the ring buffer */
 	Ringbuf_init();
+
+	/* Initialize Arduhdlc library with three parameters.
+	1. Character send function, to send out HDLC frame one byte at a time.
+	2. HDLC frame handler function for received frame.
+	3. Length of the longest frame used, to allocate buffer in memory */
+	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 	/* creation of TX Serial Task */
 	xEsp32TXSerialServiceTaskHandle = osThreadNew(vEsp32TXSerialService_Start, NULL, &xEsp32TXSerialServiceTa_attributes);
@@ -120,4 +137,21 @@ uint8_t uEsp32SerialServiceInit()
 	return EXIT_SUCCESS;
 }
 
+/**
+ * @brief Function to send out one 8bit character
+ * @param data
+ */
+void send_character(uint8_t data) {
+	Uart_write(data);
+}
 
+
+/**
+ * @brief Frame handler function. What to do with received data?
+ * @param data
+ * @param length
+ */
+void hdlc_frame_handler(const uint8_t *data, uint16_t length)
+{
+	HAL_UART_Transmit(&hlpuart1, (uint8_t *)data, length, HAL_MAX_DELAY);
+}
