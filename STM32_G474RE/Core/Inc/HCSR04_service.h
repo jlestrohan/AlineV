@@ -16,9 +16,10 @@
 #define HC_SR04_SONARS_CNT	   	3 			/* Current number of sonars that are connected to the board */
 #define MICROSECONDS_TO_CM 		29/2 /* have to divide µsec by this number to get distance in cm */
 
-#define HR04_SONAR_1	0x01U
-#define HR04_SONAR_2	0x02U
-#define HR04_SONAR_3	0x03U
+#define HR04_SONAR_REAR			0x01U
+#define HR04_SONAR_FRONT		0x02U
+#define HR04_SONAR_BOTTOM		0x03U
+
 /* event flag to activate the sensors */
 #define FLG_SONAR_REAR_ACTIVE		(1 << 0)
 #define FLG_SONAR_FRONT_ACTIVE		(2 << 0)
@@ -31,7 +32,6 @@ typedef struct {
 
 extern HR04_SensorsData_t HR04_SensorsData;
 extern osEventFlagsId_t xHcrSr04ControlFlag;
-osMessageQueueId_t queue_HC_SR04Handle;
 
 /**
  * Main initialization function

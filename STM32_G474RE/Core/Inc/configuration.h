@@ -79,11 +79,13 @@
 #define OSTASK_PRIORITY_NAVCONTROL			osPriorityNormal
 #define OSTASK_PRIORITY_BUTTON_ADD			osPriorityBelowNormal3
 #define OSTASK_PRIORITY_HCSR04				osPriorityNormal
+#define OSTASK_PRIORITY_HCSR04_CTL			osPriorityLow4
 #define OSTASK_PRIORITY_MG90S				osPriorityBelowNormal5
 #define OSTASK_PRIORITY_QMC5883				osPriorityBelowNormal2
 #define OSTASK_PRIORITY_MPU6050				osPriorityLow5
 #define OSTASK_PRIORITY_LCDMENU				osPriorityAboveNormal
 #define OSTASK_PRIORITY_ESP32_TX			osPriorityNormal
 #define OSTASK_PRIORITY_ESP32_RX			osPriorityNormal
+
 
 #endif /* INC_CONFIGURATION_H_ */

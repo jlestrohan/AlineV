@@ -38,10 +38,10 @@ uint8_t uSetupAutoConnect()
 
   if (Portal.begin())
   {
-    Serial.println();
-    Serial.println("WiFi connected: " + WiFi.localIP().toString());
-    Serial.println("Web server started");
-    wifiSuccessTune();
+
+    debugI("--- WiFi connected: %s ---", WiFi.localIP().toString());
+    Serial.println("--- WiFi connected: " + WiFi.localIP().toString() + " ---");
+    DEBUG_SERIAL("Web server started");
     vPlayMelody(MelodyType_WifiSuccess);
   }
   /** FREERTOS AutoConnect Task */
@@ -59,6 +59,10 @@ uint8_t uSetupAutoConnect()
     DEBUG_SERIAL("vAutoConnectService Task ... Error!");
     return EXIT_FAILURE;
   }
+
+  DEBUG_SERIAL("vAutoConnectService Task ... Success");
+  return EXIT_SUCCESS;
+}
 
 /**
  * @brief  OTA Task, handles OTA + Webserver + Debug routines

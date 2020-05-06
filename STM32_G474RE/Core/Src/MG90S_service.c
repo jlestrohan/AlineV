@@ -14,11 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tim.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 
 /* flag to track activity of the servo */
 
-osEventFlagsId_t evt_Mg90sIsActive;
+extern osEventFlagsId_t evt_Mg90sMotionControlFlag;
 
 xServoPosition_t xServoPosition = ServoDirection_Center; /* center for a start */
 
@@ -40,15 +40,13 @@ static const osThreadAttr_t xFrontServoTa_attributes = {
  */
 void vFrontServo_Start(void* vParameters)
 {
-	loggerI("Starting FrontServo Service task...");
+	dbg_printf("Starting FrontServo Service task...");
 
 	xServoPosition_t direction = ServoDirection_Center;
 
 	for (;;) {
-		/* prevent compilation warning */
-		UNUSED(vParameters);
 
-		if (osEventFlagsGet(evt_Mg90sIsActive) && FLG_MG90S_ACTIVE) {
+		if (osEventFlagsGet(evt_Mg90sMotionControlFlag) && FLG_MG90S_ACTIVE) {
 			htim5.Instance->CCR1 = xServoPosition; /* 0 to 100 */
 			switch (xServoPosition) {
 			case ServoDirection_Left:
@@ -66,9 +64,10 @@ void vFrontServo_Start(void* vParameters)
 			htim5.Instance->CCR1 = 75;
 		}
 
+
 		osDelay(10);
 	}
-	osThreadTerminate(NULL);
+	osThreadTerminate(xFrontServo_taskHandle);
 }
 
 /**
@@ -77,21 +76,24 @@ void vFrontServo_Start(void* vParameters)
  */
 uint8_t uMg90sServiceInit()
 {
-	evt_Mg90sIsActive = osEventFlagsNew(NULL);
-	if (evt_Mg90sIsActive == NULL) {
-		loggerE("Front Servo Event Flag Initialization Failed");
+	evt_Mg90sMotionControlFlag = osEventFlagsNew(NULL);
+	if (evt_Mg90sMotionControlFlag == NULL) {
+		dbg_printf("Front Servo Event Flag Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
 	/* creation of xFrontServo_task */
 	xFrontServo_taskHandle = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
-	if (!xFrontServo_taskHandle) {
-		//todo: improve error check routines here */
-		loggerE("Front Servo Task Initialization Failed");
+	if (xFrontServo_taskHandle == NULL) {
+		dbg_printf("Front Servo Task Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
 	if (HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1) != HAL_OK) {
+		dbg_printf("Cannot start MG90 pwm Timer");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
@@ -102,6 +104,6 @@ uint8_t uMg90sServiceInit()
 	 * Will resume when motion forward */
 	//osThreadSuspend(xFrontServo_taskHandle);
 
-	loggerI("Initializing Front Servo... Success!");
+	dbg_printf("Initializing Front Servo... Success!");
 	return (EXIT_SUCCESS);
 }

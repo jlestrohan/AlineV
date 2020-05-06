@@ -15,7 +15,7 @@
 #include "button_service.h"
 #include "main.h"
 #include "usart.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "cmsis_os2.h"
 #include "HCSR04_service.h"
 #include "gpio.h"
@@ -24,6 +24,7 @@
 
 char msg[50];
 
+osMessageQueueId_t queue_HC_SR04Handle; /* extern */
 
 /**
  *
@@ -38,12 +39,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	 * HR04 Sensors
 	 */
 	case B1_Pin:
-		osEventFlagsSet(xEventOnBoardButton, B_ONBOARD_PRESSED_FLAG);
+		if (xEventOnBoardButton != NULL) {
+			osEventFlagsSet(xEventOnBoardButton, B_ONBOARD_PRESSED_FLAG);
+		}
 		break;
 	case B2_Pin:
 		/* menu navigation button. We need to pass it to the button service first to debounce */
 		/* no direct flag raise to the menu switching task because of that */
-		osEventFlagsSet(xEventButtonExt, B_EXT_PRESSED_FLAG);
+		if (xEventButtonExt != NULL) {
+			osEventFlagsSet(xEventButtonExt, B_EXT_PRESSED_FLAG);
+		}
 		break;
 	default:
 		break;
@@ -64,22 +69,23 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
 			HR04_Sensors.distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			HR04_Sensors.sonarNum = HR04_SONAR_1;
+			HR04_Sensors.sonarNum = HR04_SONAR_REAR;
 			osMessageQueuePut(queue_HC_SR04Handle, &HR04_Sensors, 0U, 0U);
 		}
 	} else if (htim->Instance == TIM2) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
 			HR04_Sensors.distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			HR04_Sensors.sonarNum = HR04_SONAR_2;
+			HR04_Sensors.sonarNum = HR04_SONAR_FRONT;
 			osMessageQueuePut(queue_HC_SR04Handle, &HR04_Sensors, 0x0U, 0U);
 		}
 	} else if (htim->Instance == TIM3) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
 			HR04_Sensors.distance = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			HR04_Sensors.sonarNum = HR04_SONAR_3;
+			HR04_Sensors.sonarNum = HR04_SONAR_BOTTOM;
 			osMessageQueuePut(queue_HC_SR04Handle, &HR04_Sensors, 0U, 0U);
+
 		}
 	}
 }

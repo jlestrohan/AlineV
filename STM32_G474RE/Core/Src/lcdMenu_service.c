@@ -9,9 +9,8 @@
 
 #include "lcdMenu_service.h"
 #include "i2c.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "configuration.h"
-#include <FreeRTOS.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,32 +19,36 @@
 #define LCD_NB_COL			16
 #define LCD_NB_ROW			2
 
-/*void fcn_roverInit()
-{
+void vSetupMenuTopics();
 
-}*/
+MENUITEMS_t *pCurrentItem = NULL;
 
+//void fc_menu_complete() {
+//	pCurrentItem = &MenuItem_Ready;
+//}
 
+void fc_menu_init() {
+	//pCurrentItem = &MenuItem_Complete;
+}
 
-MENUITEMS_t MenuItem_Init = {"Alinea v0.35",1,0,"Initializing...",0,2};
-MENUITEMS_t MenuItem_InitComplete = {"Alinea v0.35",1,0,"Complete!",3,2};
-MENUITEMS_t MenuItem_Ready = {"Alinea v0.35  >",1,0,"02/05/20 08:50",0,2};
+MENUITEMS_t MenuItem_Ready;
+MENUITEMS_t MenuItem_Complete;
+MENUITEMS_t MenuItem_Boot;
 
-osMessageQueueId_t xLcdMenuServiceQueue;
+osEventFlagsId_t xEventMenuNavButton;
 
-typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xLcdMenuServiceTaskHandle;
-static osStaticThreadDef_t xLcdMenuServiceTaControlBlock;
-static uint32_t xLcdMenuServiceTaBuffer[256];
 static const osThreadAttr_t xLcdMenuServiceTa_attributes = {
 		.name = "xLcdMenuServiceTask",
-		.stack_mem = &xLcdMenuServiceTaBuffer[0],
-		.stack_size = sizeof(xLcdMenuServiceTaBuffer),
-		.cb_mem = &xLcdMenuServiceTaControlBlock,
-		.cb_size = sizeof(xLcdMenuServiceTaControlBlock),
+		.stack_size = 512,
 		.priority = (osPriority_t)OSTASK_PRIORITY_LCDMENU
 };
 
+void fc_menu_ready()
+{
+	//pCurrentItem = *(pCurrentItem).next = ...
+	vShowLCDText();
+}
 
 /**
  * LCD Menu main task
@@ -53,23 +56,30 @@ static const osThreadAttr_t xLcdMenuServiceTa_attributes = {
  */
 void vLcdMenuServiceTask(void *argument)
 {
-	MENUITEMS_t MenuItem;
-	osStatus_t osStatus;
-	loggerI("Starting LCD Menu Service task...");
+	dbg_printf("Starting LCD Menu Service task...");
 
+	vSetupMenuTopics();
+	/* sets the starting screen */
 	lcdInit(&hi2c1, (uint8_t)LCD_I2C_ADDRESS, (uint8_t)LCD_NB_ROW, (uint8_t)LCD_NB_COL);
-	vPrepareLCDText(&MenuItem_Init);
+
+	pCurrentItem = &MenuItem_Boot;
+	vShowLCDText();
+
 	osDelay(5000);
-	lcdDisplayClear();
-	vPrepareLCDText(&MenuItem_InitComplete);
+	pCurrentItem = &MenuItem_Ready;
+	vShowLCDText();
+
 	osDelay(2000);
-	vPrepareLCDText(&MenuItem_Ready);
 
 	for (;;) {
 
-		/* receives a full string */
-		osStatus = osMessageQueueGet(xLcdMenuServiceQueue, &MenuItem, NULL, osWaitForever);
-		if (osStatus == osOK) {
+		if (xEventMenuNavButton != NULL) {
+			osEventFlagsWait(xEventMenuNavButton,BEXT_PRESSED_EVT, osFlagsWaitAny, osWaitForever);
+
+			dbg_printf("BUTTON 2 WAS PRESSED");
+			//TODO: implement long press= call prev function
+			//pCurrentItem = (*pCurrentItem).next;
+
 			/* https://stackoverflow.com/questions/43963019/arduino-lcd-generate-a-navigation-menu-by-reading-an-array */
 			/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
 			lcd_send_string(MenuItem.first_line);
@@ -89,19 +99,22 @@ uint8_t uLcdMenuServiceInit()
 {
 	/* first we check if LCD I2C stuff is available */
 	/*if (!lcd_isAvail()) {
-		loggerE("LCD Device not ready");
+		dbg_printf("LCD Device not ready");
 		return (EXIT_FAILURE);
 	}*/
 
-	xLcdMenuServiceQueue = osMessageQueueNew(10, sizeof(MENUITEMS_t), NULL);
-	if (xLcdMenuServiceQueue == NULL) {
-		return (EXIT_FAILURE);
+
+	xEventMenuNavButton = osEventFlagsNew(NULL);
+	if (xEventMenuNavButton == NULL) {
+		Error_Handler();
+		dbg_printf("LCD Menu Service Event Flags object not created!");
+		return EXIT_FAILURE;
 	}
 
 	/* creation of LoggerServiceTask */
 	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, &xLcdMenuServiceTa_attributes);
 	if (xLcdMenuServiceTaskHandle == NULL) {
-		loggerE("Initializing LCD Menu Service - Failed");
+		dbg_printf("Initializing LCD Menu Service - Failed");
 		return (EXIT_FAILURE);
 	}
 
@@ -111,7 +124,7 @@ uint8_t uLcdMenuServiceInit()
 	lcd_send_string(MenuItem_Home.second_line);
 	osSemaphoreRelease(sem_lcdService);*/
 
-	loggerI("Initializing LCD Menu Service - Success!");
+	dbg_printf("Initializing LCD Menu Service - Success!");
 	return (EXIT_SUCCESS);
 
 }
@@ -122,8 +135,42 @@ uint8_t uLcdMenuServiceInit()
  */
 void vShowLCDText()
 {
-	lcdSetCursorPosition(items->first_line_col, items->first_line_row);
-	lcdPrintStr((uint8_t*)items->first_line_text, strlen(items->first_line_text));
-	lcdSetCursorPosition(items->second_line_col, items->second_line_row);
-	lcdPrintStr((uint8_t*)items->second_line_text, strlen(items->second_line_text));
+	lcdSetCursorPosition((*pCurrentItem).first_line_col, (*pCurrentItem).first_line_row);
+	lcdPrintStr((uint8_t*)(*pCurrentItem).first_line_text, strlen((*pCurrentItem).first_line_text));
+	lcdSetCursorPosition((*pCurrentItem).second_line_col, (*pCurrentItem).second_line_row);
+	lcdPrintStr((uint8_t*)(*pCurrentItem).second_line_text, strlen((*pCurrentItem).second_line_text));
 }
+
+/**
+ * Prepare all LCD static screens of the application
+ */
+void vSetupMenuTopics()
+{
+	//MenuItem_Complete = {"Alinea v0.35",1,0,"Complete!",3,2, fc_menu_complete, NULL, &MenuItem_Ready};
+
+	/**
+	 * BOOT SCREEN
+	 */
+	strcpy(MenuItem_Boot.first_line_text, "Alinea v0.35  >");
+	MenuItem_Boot.first_line_col = 1;
+	MenuItem_Boot.first_line_row = 0;
+	strcpy(MenuItem_Boot.second_line_text, "Initializing...");
+	MenuItem_Boot.second_line_col = 0;
+	MenuItem_Boot.second_line_row = 2;
+	MenuItem_Boot.func = fc_menu_init;
+	MenuItem_Boot.prev = NULL;
+	MenuItem_Boot.next = &MenuItem_Ready;
+
+	/**
+	 * BOOT COMPLETE
+	 */
+	strcpy(MenuItem_Ready.first_line_text, "Alinea v0.35  >");
+	MenuItem_Ready.first_line_col = 1;
+	MenuItem_Ready.first_line_row = 0;
+	strcpy(MenuItem_Ready.second_line_text, "02/05/20 08:50");
+	MenuItem_Ready.second_line_col = 0;
+	MenuItem_Ready.second_line_row = 2;
+	MenuItem_Ready.func = fc_menu_ready;
+	MenuItem_Ready.prev = NULL;
+	MenuItem_Ready.next = NULL;
+};

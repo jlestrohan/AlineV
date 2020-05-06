@@ -31,7 +31,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "string.h"
 #include <stdio.h>
 /* USER CODE END Includes */

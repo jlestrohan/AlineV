@@ -27,7 +27,7 @@
 #include "configuration.h"
 #include <FreeRTOS.h>
 #include <QMC5883_service.h>
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "cmsis_os2.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -59,7 +59,7 @@ static int16_t X, Y, Z;
 static void vQmc5883lTaskStart(void *argument)
 {
 	char msg[60];
-	loggerI("Starting QMC5883l Service task...");
+	dbg_printf("Starting QMC5883l Service task...");
 
 	//QMC5883_Result res;
 
@@ -71,7 +71,7 @@ static void vQmc5883lTaskStart(void *argument)
 				X, Y, Z,
 				QMC5883L_Read_Temperature(),
 				QMC5883L_Heading(X, Y));
-		//loggerI(msg);
+		//dbg_printf(msg);
 
 		osDelay(500);
 	}
@@ -85,7 +85,7 @@ uint8_t uQmc5883lServiceInit(I2C_HandleTypeDef *hi2cx)
 	_hi2cxHandler = hi2cx;
 
 	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, QMC5883l_I2C_ADDRESS, 2, 5) != HAL_OK) {
-		loggerE("QMC5883 Device not ready");
+		dbg_printf("QMC5883 Device not ready");
 		return (EXIT_FAILURE);
 	}
 
@@ -94,7 +94,7 @@ uint8_t uQmc5883lServiceInit(I2C_HandleTypeDef *hi2cx)
 	/* creation of QMC5883Sensor_task */
 	xQmc5883TaskHandle = osThreadNew(vQmc5883lTaskStart, NULL, &QMC5883Ta_attributes);
 	if (!xQmc5883TaskHandle) {
-		loggerE("QMC5883 Task Initialization Failed");
+		dbg_printf("QMC5883 Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 

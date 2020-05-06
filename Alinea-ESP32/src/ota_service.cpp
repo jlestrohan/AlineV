@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 15:07:18
+ * @ Modified time: 2020-05-05 18:56:15
  * @ Description:
  *******************************************************************************************/
 
@@ -95,6 +95,12 @@ uint8_t uSetupOTA()
 
     if (xTaskOtaHandle == NULL)
     {
+        DEBUG_SERIAL("Failed to create xTaskOtaHandle");
+        return EXIT_FAILURE;
+    }
+
+    DEBUG_SERIAL("xTaskOtaHandle created succesfully and running...");
+    return EXIT_SUCCESS;
 }
 
 /**

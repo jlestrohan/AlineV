@@ -11,19 +11,13 @@
 #include "MotorsControl_service.h"
 #include "gpio.h"
 #include "tim.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "MG90S_service.h"
 
-typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t MotorsControl_taskHandle;
-static osStaticThreadDef_t MotorsControlTaControlBlock;
-static uint32_t MotorsControlTaBuffer[256];
 static const osThreadAttr_t MotorsControlTa_attributes = {
 		.name = "MotorsControlServiceTask",
-		.stack_mem = &MotorsControlTaBuffer[0],
-		.stack_size = sizeof(MotorsControlTaBuffer),
-		.cb_mem = &MotorsControlTaControlBlock,
-		.cb_size = sizeof(MotorsControlTaControlBlock),
+		.stack_size = 256,
 		.priority = (osPriority_t) osPriorityLow1, };
 
 osEventFlagsId_t xEventMotorsForward;
@@ -43,12 +37,14 @@ static void MotorsControlTask_Start(void *vParameters)
 	for (;;)
 	{
 		/* event flag motors active, if set we start a motion, if not we idle */
+
 		if (osEventFlagsGet(xEventMotorsForward) && MOTORS_FORWARD_ACTIVE) {
 			MotorSetSpeed(&MotorData, 15, 15);
 			motorSetMotionForward(&MotorData);
 		} else {
 			motorsSetMotorsIdle(&MotorData);
 		}
+
 		osDelay(50);
 	}
 
@@ -63,7 +59,8 @@ uint8_t uMotorsControlServiceInit()
 {
 	xEventMotorsForward = osEventFlagsNew(NULL);
 	if (xEventMotorsForward == NULL) {
-		loggerE("Motors Event Flag Initialization Failed");
+		dbg_printf("Motors Event Flag Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
@@ -76,8 +73,9 @@ uint8_t uMotorsControlServiceInit()
 
 	/* creation of the MotorsControl_task */
 	MotorsControl_taskHandle = osThreadNew(MotorsControlTask_Start, NULL, &MotorsControlTa_attributes);
-	if (!MotorsControl_taskHandle) {
-		loggerE("MotorsControl Task Initialization Failed");
+	if (MotorsControl_taskHandle == NULL) {
+		dbg_printf("MotorsControl Task Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 

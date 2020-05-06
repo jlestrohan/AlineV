@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 20:55:50
+ * @ Modified time: 2020-05-06 15:31:59
  * @ Description:
  *******************************************************************************************/
 
@@ -23,7 +23,7 @@
 #include "oled_service.h"
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
-#include "command_parser.h"
+#include "command_service.h"
 #include "bluetooth_serial.h"
 
 /* reemoving brownout detector */
@@ -54,9 +54,10 @@ void setup()
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
 
   Serial.begin(115200);
+  DEBUG_SERIAL("Starting Program...");
 
   uSetupBuzzer();
-  //uSetupCmdParser();
+  uSetupCmdParser();
   //setupBTSerial();
   uSetupAutoConnect();
   uSetupRemoteDebug();
@@ -67,6 +68,7 @@ void setup()
 
   //DEBUG_SERIAL("Chip ID: %ul", GET_CHIPID());
 
+  DEBUG_SERIAL("Ready UART");
 
   vPlayMelody(MelodyType_CommandReady);
 }

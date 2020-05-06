@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 21:04:51
+ * @ Modified time: 2020-05-05 21:23:01
  * @ Description:
  *******************************************************************************************/
 
@@ -175,7 +175,7 @@ uint8_t uSetupBuzzer()
         "vBuzzerTask",        /* String with name of task. */
         10000,                /* Stack size in words. */
         NULL,                 /* Parameter passed as input of the task */
-        1,                    /* Priority of the task. */
+        10,                   /* Priority of the task. */
         &xBuzzerTask_handle); /* Task handle. */
 
     if (xBuzzerTask_handle == NULL)

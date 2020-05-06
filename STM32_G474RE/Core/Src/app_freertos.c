@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <VL53L0X_TOF_service.h>
 #include "string.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "sensor_speed_service.h"
 #include "i2c.h"
 #include "Button_service.h"
@@ -44,6 +44,7 @@
 #include "MG90S_service.h"
 #include "MPU6050_service.h"
 #include "navControl_service.h"
+#include "esp32serial_service.h"
 
 /* USER CODE END Includes */
 
@@ -76,7 +77,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+UART_HandleTypeDef hlpuart1;
 uint16_t ServicesSuccessFlags = 0; /* holds the flags of succesfully running services */
 
 /* USER CODE END Variables */
@@ -108,43 +109,41 @@ void MX_FREERTOS_Init(void) {
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 
-	if (uLoggerServiceInitialize(&hlpuart1) == EXIT_FAILURE) {
-		char *msg2 = "Failed Initializing Logger Service.. cannot continue sorry...\n\r";
-		HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg2, strlen(msg2), 0xFFFF);
-		Error_Handler(); /* blocking fault, cannot continue */
-	} else {
-		ServicesSuccessFlags |= SERVICE_LOGGER_COMPLETE;
-	}
-
 	if (uLcdMenuServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing LCD Menu Service");
+		dbg_printf("Error Initializing LCD Menu Service");
 		Error_Handler();
 	}
 
 	if (uButtonServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing Button Service");
+		dbg_printf("Error Initializing Button Service");
 		Error_Handler();
-	} else { ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE; }
-
-	if (uHcsr04ServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing HR-SC04 Distance Sensors Service");
-		Error_Handler();
-	} else { ServicesSuccessFlags |= SERVICE_HR04_COMPLETE; }
-
-	if (uMg90sServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing Front Servo Service");
+	} else {
+		ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE;
 	}
 
-	if (uQmc5883lServiceInit(&hi2c4) == EXIT_FAILURE) {
+	if (uHcsr04ServiceInit() == EXIT_FAILURE) {
+		dbg_printf("Error Initializing HR-SC04 Distance Sensors Service");
+		Error_Handler();
+	} else {
+		ServicesSuccessFlags |= SERVICE_HR04_COMPLETE;
+	}
+
+	if (uMg90sServiceInit() == EXIT_FAILURE) {
+		dbg_printf("Error Initializing Front Servo Service");
+		Error_Handler();
+	}
+
+	/*if (uQmc5883lServiceInit(&hi2c4) == EXIT_FAILURE) {
 		loggerE("Error Initializing QCM5883 Magnetometer Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE;
-	}
+	}*/
 
-	if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
+	/*if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
 		loggerE("Error Initializing ESP32 Serial TX/RX Service");
-	}
+		Error_Handler();
+	}*/
 
 	/*if (uVl53l0xServiceInit(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
@@ -171,18 +170,21 @@ void MX_FREERTOS_Init(void) {
 	}*/
 
 	if (uMotorsControlServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing Motors Control Service");
+		dbg_printf("Error Initializing Motors Control Service");
+		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_MOTORSCONTROL_COMPLETE;
 	}
 
+
 	if (uNavControlServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing Nav Control Service");
+		dbg_printf("Error Initializing Nav Control Service");
+		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_NAVCONTROL_COMPLETE;
 	}
 
-	loggerI("Init sequence complete....");
+	//dbg_printf("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */
 
   /* USER CODE END Init */

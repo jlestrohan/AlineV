@@ -2,18 +2,18 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 20:54:26
+ * @ Modified time: 2020-05-06 15:27:13
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  *******************************************************************************************/
 
-#include "command_parser.h"
+#include "command_service.h"
 #include "remoteDebug_service.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "buzzer_service.h"
 
 xTaskHandle xCommandParserTask_hnd = NULL;
-extern QueueHandle_t xQueueCommandParse;
+//extern QueueHandle_t xQueueCommandParse;
 
 /**
  * @brief  Receives some UART string and decides if it's trash or a real TAG message
@@ -23,14 +23,14 @@ extern QueueHandle_t xQueueCommandParse;
  */
 void vCommandParserTaskCode(void *pvParameters)
 {
-    char buffer[CMD_TAG_MSG_MAX_LGTH];
+    // cmdPackage_t commandPack;
     for (;;)
     {
-        xQueueReceive(xQueueCommandParse, &buffer, portMAX_DELAY);
+        // xQueueReceive(xQueueCommandParse, &commandPack, portMAX_DELAY);
         /* we process the command here ... */
         /* TODO: process the command */
-        debugI("%s", buffer);
-        vPlayMelody(MelodyType_CommandReceived);
+        // debugI("%s", commandPack.txtCommand);
+        //vPlayMelody(MelodyType_CommandReceived);
 
         vTaskDelay(10);
     }
@@ -45,12 +45,12 @@ void vCommandParserTaskCode(void *pvParameters)
 uint8_t uSetupCmdParser()
 {
     /* we first initialize the queue that will handle all the incoming messages */
-    xQueueCommandParse = xQueueCreate(10, sizeof(char) * CMD_TAG_MSG_MAX_LGTH);
-    if (xQueueCommandParse == NULL)
-    {
-        debugE("error creating the xQueueCommandParse queue");
-        return EXIT_FAILURE;
-    }
+    // xQueueCommandParse = xQueueCreate(20, sizeof(cmdPackage_t));
+    // if (xQueueCommandParse == NULL)
+    // {
+    //     debugE("error creating the xQueueCommandParse queue");
+    //     return EXIT_FAILURE;
+    // }
 
     /* let's create the parser task first */
     xTaskCreate(
@@ -65,7 +65,7 @@ uint8_t uSetupCmdParser()
     {
         debugE("Error creating serial parser task!");
         /* cannot create task, remove all created stuff and exit failure */
-        vQueueDelete(xQueueCommandParse);
+        //vQueueDelete(xQueueCommandParse);
         return EXIT_FAILURE;
     }
 

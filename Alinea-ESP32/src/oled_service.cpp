@@ -41,7 +41,6 @@ static const unsigned char PROGMEM logo_bmp[] =
      B01110000, B01110000,
      B00000000, B00110000};
 
-
 void testdrawchar(); // Draw characters of the default font
 void testdrawstyles(void);
 
@@ -56,7 +55,6 @@ uint8_t uSetupOLED()
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
     {
         Serial.println(F("SSD1306 allocation failed"));
-        
     }
 
     // Show initial display buffer contents on the screen --
@@ -89,9 +87,8 @@ uint8_t uSetupOLED()
     testdrawtriangle(); // Draw triangles (outlines)
     testfilltriangle(); // Draw triangles (filled)*/
     testdrawchar(); // Draw characters of the default font
-   // testdrawstyles(); // Draw 'stylized' characters*/
-   // testscrolltext(); // Draw scrolling text
-
+                    // testdrawstyles(); // Draw 'stylized' characters*/
+                    // testscrolltext(); // Draw scrolling text
 
     // Invert and restore display, pausing in-between
     display.invertDisplay(true);
@@ -99,7 +96,8 @@ uint8_t uSetupOLED()
     display.invertDisplay(false);
     delay(1000);
 
-   // testanimate(logo_bmp, LOGO_WIDTH, LOGO_HEIGHT); // Animate bitmaps
+    return EXIT_SUCCESS;
+    // testanimate(logo_bmp, LOGO_WIDTH, LOGO_HEIGHT); // Animate bitmaps
 }
 
 void testdrawchar(void)
@@ -145,4 +143,3 @@ void testdrawstyles(void)
     display.display();
     delay(2000);
 }
-

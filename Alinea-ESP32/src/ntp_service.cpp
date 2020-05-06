@@ -38,6 +38,7 @@ uint8_t uSetupNTPService()
     timeClient.setTimeOffset(3600 * 2);
 
     /** FREERTOS NTPService Task */
+    DEBUG_SERIAL("vAutoConnectService Task ... Creating!");
     xTaskCreate(
         vNtpServiceTask,         /* Task function. */
         "vNtpServiceTask",       /* String with name of task. */
@@ -46,6 +47,14 @@ uint8_t uSetupNTPService()
         10,                      /* Priority of the task. */
         &xNtpServiceTaskHandle); /* Task handle. */
 
+    if (xNtpServiceTaskHandle == NULL)
+    {
+        DEBUG_SERIAL("vAutoConnectService Task ... Error!");
+        return EXIT_FAILURE;
+    }
+
+    DEBUG_SERIAL("vAutoConnectService Task ... Success!");
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -60,7 +69,15 @@ void vNtpServiceTask(void *parameter)
         /** by defaut updated every 60 seconds but we can force an update here */
         while (!timeClient.update())
         {
-            timeClient.forceUpdate();
+            DEBUG_SERIAL("Updating NTP...");
+            if (timeClient.forceUpdate())
+            {
+                DEBUG_SERIAL("NTP updated succesfully!");
+            }
+            else
+            {
+                debugE("Error updating NTP time!");
+            }
         }
 
         vTaskDelay(600);

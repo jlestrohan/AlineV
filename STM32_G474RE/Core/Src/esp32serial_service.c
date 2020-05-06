@@ -1,5 +1,5 @@
 /*******************************************************************
- * esp32_serial.c
+ * esp32serial_service.c
  *
  *  Created on: Apr 28, 2020
  *      Author: Jack Lestrohan
@@ -17,7 +17,8 @@
 
 #include "esp32serial_service.h"
 #include "configuration.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
+#include "command.service.h"
 #include "usart.h"
 #include "UartRingbuffer.h"
 #include "hdlc_protocol.h"
@@ -26,6 +27,12 @@
 #include <string.h>
 
 #define MAX_HDLC_FRAME_LENGTH 512
+
+//extern osMessageQueueId_t xQueueEspSerialTX;
+
+//typedef struct {
+	//char pLoadString[64];// = "serialized json here";
+//} //PayLoad_t;
 
 /* Function to send out byte/char */
 void send_character(uint8_t data);
@@ -42,7 +49,7 @@ static osStaticThreadDef_t xEsp32TXSerialServiceTaControlBlock;
 static uint32_t xEsp32TXSerialServiceTaBuffer[256];
 static const osThreadAttr_t xEsp32TXSerialServiceTa_attributes = {
 		.name = "xEsp32TXSerialServiceTask",
-		.stack_mem = &xEsp32TXSerialServiceTaBuffer[0],
+		.stack_mem = &xEsp32TXSerialServiceTaBuffer[256],
 		.stack_size = sizeof(xEsp32TXSerialServiceTaBuffer),
 		.cb_mem = &xEsp32TXSerialServiceTaControlBlock,
 		.cb_size = sizeof(xEsp32TXSerialServiceTaControlBlock),
@@ -54,12 +61,13 @@ static osStaticThreadDef_t xEsp32RXSerialServiceTaControlBlock;
 static uint32_t xEsp32RXSerialServiceTaBuffer[256];
 static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
 		.name = "xEsp32RXSerialServiceTask",
-		.stack_mem = &xEsp32RXSerialServiceTaBuffer[0],
+		.stack_mem = &xEsp32RXSerialServiceTaBuffer[256],
 		.stack_size = sizeof(xEsp32RXSerialServiceTaBuffer),
 		.cb_mem = &xEsp32RXSerialServiceTaControlBlock,
 		.cb_size = sizeof(xEsp32RXSerialServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_ESP32_RX
 };
+
 
 /**
  * Main SERIAL TX Task
@@ -67,12 +75,21 @@ static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
  */
 void vEsp32TXSerialService_Start(void* vParameter)
 {
+	dbg_printf("Starting vEsp32TXSerial Service task...");
+	//PayLoad_t payload;// = "serialized json here";
+	//osStatus_t status;
 
 	for (;;)
 	{
-
-		osDelay(50);
+		/* TODO: add queue here, that will send payload on request. */
+		/*status = osMessageQueueGet(xQueueEspSerialTX, &payload, NULL, osWaitForever); /* wait for message */
+		/*if (status == osOK) {
+			vSendFrame((uint8_t *)payload.pLoadString , strlen(payload.pLoadString));
+		}*/
+		osDelay(20); /* every 5 seconds we send a test command */
 	}
+
+
 	osThreadTerminate(xEsp32TXSerialServiceTaskHandle);
 }
 
@@ -82,20 +99,20 @@ void vEsp32TXSerialService_Start(void* vParameter)
  */
 void vEsp32RXSerialService_Start(void* vParameter)
 {
-	char msg[2];
+	dbg_printf("Starting vEsp32RXSerial Service task...");
 
 	for (;;)
 	{
 		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
 		{
-			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
+			//HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
 
 			char inChar = (char)Uart_read(); /* read one byte of data */
-			//Uart_write(inChar);
+			Uart_write(inChar);
 			// Pass all incoming data to hdlc char receiver
 			vCharReceiver(inChar);
-
-			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
+			//HAL_UART_Transmit(&hlpuart1, (uint8_t *)&inChar, sizeof(char), HAL_MAX_DELAY);
+			//HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
 
 		osDelay(1);
@@ -112,6 +129,12 @@ uint8_t uEsp32SerialServiceInit()
 	/* initializes the ring buffer */
 	Ringbuf_init();
 
+	/*xQueueEspSerialTX = osMessageQueueNew(10, sizeof(PayLoad_t), NULL);
+	if (xQueueEspSerialTX == NULL) {
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}*/
+
 	/* Initialize Arduhdlc library with three parameters.
 	1. Character send function, to send out HDLC frame one byte at a time.
 	2. HDLC frame handler function for received frame.
@@ -122,7 +145,7 @@ uint8_t uEsp32SerialServiceInit()
 	xEsp32TXSerialServiceTaskHandle = osThreadNew(vEsp32TXSerialService_Start, NULL, &xEsp32TXSerialServiceTa_attributes);
 	if (xEsp32TXSerialServiceTaskHandle == NULL) {
 		Error_Handler();
-		loggerE("Front Servo Task TX Initialization Failed");
+		dbg_printf("Front Servo Task TX Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 
@@ -130,7 +153,7 @@ uint8_t uEsp32SerialServiceInit()
 	xEsp32RXSerialServiceTaskHandle = osThreadNew(vEsp32RXSerialService_Start, NULL, &xEsp32RXSerialServiceTa_attributes);
 	if (xEsp32RXSerialServiceTaskHandle == NULL) {
 		Error_Handler();
-		loggerE("Front Servo Task RX Initialization Failed");
+		dbg_printf("Front Servo Task RX Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 
@@ -153,5 +176,6 @@ void send_character(uint8_t data) {
  */
 void hdlc_frame_handler(const uint8_t *data, uint16_t length)
 {
-	HAL_UART_Transmit(&hlpuart1, (uint8_t *)data, length, HAL_MAX_DELAY);
+	//HAL_UART_Transmit(&hlpuart1, (uint8_t *)(char*)data, length, HAL_MAX_DELAY);
+
 }

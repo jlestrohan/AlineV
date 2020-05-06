@@ -11,7 +11,7 @@
  */
 
 #include "sdcard_service.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include "fatfs_sd.h"
 #include "string.h"
 #include <FreeRTOS.h>
@@ -75,7 +75,7 @@ void sdcard_write_test()
 
 	/* closes file */
 	fresult = f_close(&fil);
-	loggerI("file1.txt created and the data is written");
+	dbg_printf("file1.txt created and the data is written");
 
 	/* opens a RO file */
 	fresult = f_open(&fil, "file1.txt", FA_READ);
@@ -83,7 +83,7 @@ void sdcard_write_test()
 	/* reads string from file */
 	f_gets(buffer, sizeof(buffer), &fil);
 
-	loggerI(buffer);
+	dbg_printf(buffer);
 
 	/* closes file */
 	f_close(&fil);
@@ -99,16 +99,13 @@ void sdcard_check_free_space()
 	f_getfree(NULL, &free_clust, &pfs);
 	total = (uint32_t) ((pfs->n_fatent - 2) * pfs->csize * 0.5);
 	/* sprintf(buffer, "SD CARD Total Size: \t%lu", total);*/
-	sprintf(buffer, "SD CARD id: \t%d", pfs->id);
-	loggerI(buffer);
+	dbg_printf(buffer, "SD CARD id: \t%d", pfs->id);
 
-	/* sprintf(buffer, "SD CARD sectors size: \t%lu", pfs->csize);
-	loggerI(buffer); */
+	/* dbg_printf(buffer, "SD CARD sectors size: \t%lu", pfs->csize); */
 
 	bufclear();
 	free_space = (uint32_t) (pfs->free_clst * pfs->csize * 0.5);
-	sprintf(buffer, "SD CARD Free Space: \t%lu", free_space);
-	loggerI(buffer);
+	dbg_printf(buffer, "SD CARD Free Space: \t%lu", free_space);
 }
 
 /**
@@ -140,22 +137,22 @@ uint8_t uSdCardServiceInit()
 	DSTATUS my_status = SD_disk_initialize(0);
 
 	if (my_status == STA_NOINIT) {
-		loggerE("error in initializing SD CARD...\n");
+		dbg_printf("error in initializing SD CARD...\n");
 	}
 
 	if (my_status == STA_NODISK) {
-		loggerE("No medium in the drive...\n");
+		dbg_printf("No medium in the drive...\n");
 	}
 
 	if (my_status == STA_PROTECT) {
-		loggerE(" Write protected...\n");
+		dbg_printf(" Write protected...\n");
 	}
 
 	fresult = f_mount(&fs, "", 0);
 	if (fresult != FR_OK) {
-		loggerE("error in mounting SD CARD");
+		dbg_printf("error in mounting SD CARD");
 	} else {
-		loggerI("SD CARD mounted succesfully...");
+		dbg_printf("SD CARD mounted succesfully...");
 	}
 
 	sdcard_check_free_space();

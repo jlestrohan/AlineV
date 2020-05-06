@@ -25,7 +25,7 @@
 #include <FreeRTOS.h>
 #include <HCSR04_service.h>
 #include "tim.h"
-#include "freertos_logger_service.h"
+#include "debug.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -46,15 +46,16 @@ typedef enum
 } HC_SR04_Result;
 
 typedef StaticTask_t osStaticThreadDef_t;
+
 static osThreadId_t xHr04SensorTaskHandle;
-static osStaticThreadDef_t HR04SensorTaControlBlock;
-static uint32_t HR04SensorTaBuffer[256];
-static const osThreadAttr_t HR04SensorTa_attributes = {
-		.name = "HR04SensorServiceTask",
-		.stack_mem = &HR04SensorTaBuffer[0],
-		.stack_size = sizeof(HR04SensorTaBuffer),
-		.cb_mem = &HR04SensorTaControlBlock,
-		.cb_size = sizeof(HR04SensorTaControlBlock),
+static osStaticThreadDef_t xHr04SensorTaControlBlock;
+static uint32_t xHr04SensorTaBuffer[512];
+static const osThreadAttr_t xHr04SensorTa_attributes = {
+		.stack_mem = &xHr04SensorTaBuffer[0],
+		.stack_size = sizeof(xHr04SensorTaBuffer),
+		.name = "xHr04SensorServiceTask",
+		.cb_size = sizeof(xHr04SensorTaControlBlock),
+		.cb_mem = &xHr04SensorTaControlBlock,
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
 
 static osThreadId_t xHr04ControlTaskHandle;
@@ -109,24 +110,22 @@ static void vHr04ControlTaskStart(void *argument)
  */
 static void vHr04SensorTaskStart(void *argument)
 {
-	//char msg[30];
-	loggerI("Starting HCSR_04 Service task...");
+	dbg_printf("Starting HCSR_04 Service task...");
 
 	osStatus_t status = -1;
 
 	for (;;) {
-		/* prevent compilation warning */
-		UNUSED(argument);
 
 		status = osMessageQueueGet(queue_HC_SR04Handle, &HR04_SensorsData, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
-			if (HR04_SensorsData.sonarNum == HR04_SONAR_2) {
-				//sprintf(msg, "%d - %0*dcm       ", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
+			if (HR04_SensorsData.sonarNum == HR04_SONAR_REAR) {
+				dbg_printf("%d - %0*dcm", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
 			}
 		}
 
-		osDelay(10);
+		osDelay(1);
 	}
+	osThreadTerminate(xHr04SensorTaskHandle);
 }
 
 /**
@@ -137,6 +136,10 @@ uint8_t uHcsr04ServiceInit()
 {
 	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(HR04_SensorsData_t), NULL);
 	if (!queue_HC_SR04Handle) {
+		dbg_printf("HR04 Sensor Queue Initialization Failed");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
 
 	/* definition of evt_HCSR04ControlFlag */
 	xHcrSr04ControlFlag = osEventFlagsNew(NULL);
@@ -147,10 +150,13 @@ uint8_t uHcsr04ServiceInit()
 	}
 
 	/* creation of HR04Sensor1_task */
-	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &HR04SensorTa_attributes); /* &HR04Sensor1_task_attributes); */
-	if (!xHr04SensorTaskHandle) {
-		//todo: improve error check routines here */
-		loggerE("HR04 Sensor Task Initialization Failed");
+	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
+	if (xHr04SensorTaskHandle == NULL) {
+		dbg_printf("HR04 Sensor Task Initialization Failed");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
 	/* creation of HR04Control_task */
 	xHr04ControlTaskHandle = osThreadNew(vHr04ControlTaskStart, NULL, &xHr04ControlTa_attributes);
 	if (xHr04ControlTaskHandle == NULL) {
@@ -159,11 +165,12 @@ uint8_t uHcsr04ServiceInit()
 		return (EXIT_FAILURE);
 	}
 	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
-		loggerE("HC_SR04 Timers Initialization Failed");
+		dbg_printf("HC_SR04 Timers Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
-	loggerI("Initializing HC-SR04 Service... Success!");
+	dbg_printf("Initializing HC-SR04 Service... Success!");
 	return (EXIT_SUCCESS);
 }
 
@@ -178,14 +185,17 @@ HC_SR04_Result HC_SR04_StartupTimers()
 	for ( int i=0; i< HC_SR04_SONARS_CNT; i++) {
 		/* starst up the different channels for Sensor 1 */
 		if (HAL_TIM_PWM_Start(&*(timHandlers+i), TIM_CHANNEL_3) != HAL_OK) {
+			Error_Handler();
 			return (HC_SR04_Result_TimerStart_Failed);
 		}
 
 		if (HAL_TIM_IC_Start(&*(timHandlers+i), TIM_CHANNEL_1) != HAL_OK) {
+			Error_Handler();
 			return (HC_SR04_Result_TimerStart_Failed);
 		}
 
 		if (HAL_TIM_IC_Start_IT(&*(timHandlers+i), TIM_CHANNEL_2) != HAL_OK) {
+			Error_Handler();
 			return (HC_SR04_Result_TimerStart_Failed);
 		}
 	}

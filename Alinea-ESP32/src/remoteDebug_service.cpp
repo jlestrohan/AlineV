@@ -2,14 +2,16 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-02 20:05:15
+ * @ Modified time: 2020-05-06 17:11:56
  * @ Description:
  *******************************************************************************************/
 
+#include "FreeRTOS.h"
 #include "remoteDebug_service.h"
 #include "autoconnect_service.h"
 #include "configuration_esp32.h"
 #include <stdlib.h>
+#include "command_service.h"
 
 WiFiClass WiFi;
 
@@ -17,6 +19,7 @@ void remoteDebug_task(void *parameter);
 void vProcessCmdRemoteDebug();
 
 xTaskHandle xRemoteDebuggerTask_hnd = NULL;
+QueueHandle_t xQueueSerialServiceTX; /* extern */
 
 /**
  * @brief  Remote Debug setup routine
@@ -27,11 +30,13 @@ uint8_t uSetupRemoteDebug()
 {
     Debug.setResetCmdEnabled(true); // Enable the reset command
     Debug.showProfiler(true);       // Profiler (Good to measure times, to optimize codes)
-    Debug.showColors(true);         // Colors
+    Debug.showColors(false);        // Colors
     Debug.begin(THINGNAME);         // Initialize the WiFi server
 
-    String helpCmd = "info wifi - information about the Wifi connexion\n\r";
-    //helpCmd.concat("bench2 - Benchmark 2");
+    String helpCmd = "****\n\rinfo wifi - information about the Wifi connexion\n\r";
+    helpCmd.concat("motors off - stops both motors\n\r");
+
+    helpCmd.concat("****\n\r");
 
     Debug.setHelpProjectsCmds(helpCmd);
     Debug.setCallBackProjectCmds(&vProcessCmdRemoteDebug);
@@ -88,5 +93,22 @@ void vProcessCmdRemoteDebug()
         debugI("RSSI: %d%%", (uint8_t)abs(WiFi.RSSI()));
         debugI("Hostname: %s", WiFi.getHostname());
         debugI("----------------------------------------------------------------");
+    }
+
+    if (lastCmd == "motors off")
+    {
+        cmdPackage_t cmd_pack;
+        cmd_pack.cmd_type = CMD_TYPE_TEXT;
+        strcpy(cmd_pack.txtCommand, lastCmd.c_str());
+
+        if (xQueueSerialServiceTX != NULL)
+        {
+            debugI("Sending command: %s...", lastCmd.c_str());
+            xQueueSend(xQueueSerialServiceTX, &cmd_pack, portMAX_DELAY); /* send directly to the serial TX service, the post office */
+        }
+        else
+        {
+            debugI("Failed sending command: %s...", lastCmd.c_str());
+        }
     }
 }

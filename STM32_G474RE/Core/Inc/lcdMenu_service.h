@@ -21,16 +21,16 @@ extern osEventFlagsId_t xEventMenuNavButton;
 /**
  * Menu Related Defines
  */
-typedef struct MENUITEMS_t{
+typedef struct {
 	char first_line_text[16];
 	uint8_t first_line_col;
 	uint8_t first_line_row;
 	char second_line_text[16];
 	uint8_t second_line_col;
 	uint8_t second_line_row;
-	//void (*func)(void);                 /* Pointer to the item function */
-	//const struct item * prev;           /* Pointer to the previous */
-	//const struct item * next;           /* Pointer to the next */
+	void (*func)(void);                 /* Pointer to the item function */
+	const struct MENUITEMS_t *prev;           /* Pointer to the previous */
+	const struct MENUITEMS_t *next;           /* Pointer to the next */
 } MENUITEMS_t;
 
 
