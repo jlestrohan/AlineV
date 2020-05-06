@@ -9,12 +9,12 @@
  *	Timers and Pinout:
  *
  *		Sonar				Timer	PWM Channel		Echo Channels		Trig Pin	Echo Pin
- *		---------------------------------------------------------------------------------------------
- *		HC_SR04_SONAR_1		TIM1 	3				Dir1, Ind2			PC2			PC0		REAR
- *		HC_SR04_SONAR_2		TIM2	3				Dir1, Ind2			PB10		PA0		FRONT
- *		HC_SR04_SONAR_3		TIM3	3				Dir1, Ind2			PB0			PA6		BOTTOM
+ *		--------------------------------------------------------------------------------------------------
+ *		HC_SR04_SONAR_REAR		TIM1 	3				Dir1, Ind2			PC2			PC0		REAR
+ *		HC_SR04_SONAR_FRONT		TIM2	3				Dir1, Ind2			PB10		PA0		FRONT
+ *		HC_SR04_SONAR_BOTTOM	TIM3	3				Dir1, Ind2			PB0			PA6		BOTTOM
  *
- ****************************************************************************************************
+ *********************************************************************************************************
  */
 
 #include <stdlib.h>
@@ -30,6 +30,11 @@
 #include <stdio.h>
 
 HR04_SensorsData_t HR04_SensorsData;
+
+extern osMessageQueueId_t queue_HC_SR04Handle;
+osEventFlagsId_t xHcrSr04ControlFlag;
+
+/* flag to set any sensors active/inactive according to nav control decisions */
 
 typedef enum
 {
@@ -52,10 +57,54 @@ static const osThreadAttr_t HR04SensorTa_attributes = {
 		.cb_size = sizeof(HR04SensorTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
 
+static osThreadId_t xHr04ControlTaskHandle;
+static osStaticThreadDef_t xHr04ControlTaControlBlock;
+static uint32_t xHr04ControlTaBuffer[512];
+static const osThreadAttr_t xHr04ControlTa_attributes = {
+		.stack_mem = &xHr04ControlTaBuffer[0],
+		.stack_size = sizeof(xHr04ControlTaBuffer),
+		.name = "xHr04ControlServiceTask",
+		.cb_size = sizeof(xHr04ControlTaControlBlock),
+		.cb_mem = &xHr04ControlTaControlBlock,
+		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04_CTL, };
+
 HC_SR04_Result HC_SR04_StartupTimers();
 
 /**
- *	HR04 Sensor 1 Task
+ * HC-SR045 Control Task - This task only controls the activation of the sensors
+ * Usually driven by a cruise control service
+ * @param argument
+ */
+static void vHr04ControlTaskStart(void *argument)
+{
+	dbg_printf("Starting HCSR_04 Control task...");
+
+	for (;;) {
+		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_FRONT_ACTIVE) {
+			HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+		} else {
+			HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
+		}
+
+		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_REAR_ACTIVE) {
+			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+		} else {
+			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+		}
+
+		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_BOTTOM_ACTIVE) {
+			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+		} else {
+			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
+		}
+
+		osDelay(50);
+	}
+	osThreadTerminate(xHr04ControlTaskHandle);
+}
+
+/**
+ *	HR04 Sensors Task
  * @param argument
  */
 static void vHr04SensorTaskStart(void *argument)
@@ -88,6 +137,12 @@ uint8_t uHcsr04ServiceInit()
 {
 	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(HR04_SensorsData_t), NULL);
 	if (!queue_HC_SR04Handle) {
+
+	/* definition of evt_HCSR04ControlFlag */
+	xHcrSr04ControlFlag = osEventFlagsNew(NULL);
+	if (xHcrSr04ControlFlag == NULL) {
+		dbg_printf("HCSR04 Event Flag Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
@@ -96,6 +151,11 @@ uint8_t uHcsr04ServiceInit()
 	if (!xHr04SensorTaskHandle) {
 		//todo: improve error check routines here */
 		loggerE("HR04 Sensor Task Initialization Failed");
+	/* creation of HR04Control_task */
+	xHr04ControlTaskHandle = osThreadNew(vHr04ControlTaskStart, NULL, &xHr04ControlTa_attributes);
+	if (xHr04ControlTaskHandle == NULL) {
+		dbg_printf("HR04 Control Task Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
