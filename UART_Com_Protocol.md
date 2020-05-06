@@ -40,7 +40,9 @@ previously asked by the ESP32.
         FRONT_SENSOR_SERVO      =   1 << 5      /* control & position (pwm value) */
         BMP280_SENSOR           =   1 << 6      /* control (on/off) & pressure information */
         MPU6050_SENSOR          =   1 << 7
-        SDCARD_DEVICE           =   1 << 8      /* read file, status, control */          
+        SDCARD_DEVICE           =   1 << 8      /* read file, status, control */     
+        LED_ONBOARD             =   1 << 9
+        LED_UART_EXTERNAL       =   1 << 10
         
         CORE_SYSTEM_STATUS      =   1 << 14     /* when requested infos are temperature, device uuid, active threads, avg load, uptime, etc etc... */
         CORE_SYSTEM_DEEPSLEEP   =   1 << 15     /* special flag, will take precedence over all the rest, when received the device goes into deepsleep mode!! */
