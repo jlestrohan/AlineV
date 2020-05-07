@@ -82,21 +82,21 @@ static void vHr04ControlTaskStart(void *argument)
 
 	for (;;) {
 		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_FRONT_ACTIVE) {
-			HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+			HAL_TIM_PWM_Start(&htim2,  TIM_CHANNEL_ALL);
 		} else {
-			HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
+			HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_ALL);
 		}
 
 		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_REAR_ACTIVE) {
-			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+			HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_ALL);
 		} else {
-			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_ALL);
 		}
 
 		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_BOTTOM_ACTIVE) {
-			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_ALL);
 		} else {
-			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
+			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_ALL);
 		}
 
 		osDelay(50);
