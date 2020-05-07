@@ -21,7 +21,10 @@ typedef enum {
 	ServoDirection_Right = 	0x64U
 } xServoPosition_t;
 
+/********************************************************/
+/** PUBLIC Structure with general service updated infos */
 extern xServoPosition_t xServoPosition;
+/********************************************************/
 
 /* event flag to activate the servo */
 #define FLG_MG90S_ACTIVE	(1 << 0)

@@ -30,7 +30,11 @@ typedef struct {
 	uint8_t		sonarNum;
 } HR04_SensorsData_t;
 
+/********************************************************/
+/** PUBLIC Structure with general service updated infos */
 extern HR04_SensorsData_t HR04_SensorsData;
+/********************************************************/
+
 extern osEventFlagsId_t xHcrSr04ControlFlag;
 extern osMessageQueueId_t queue_HC_SR04Handle;
 
