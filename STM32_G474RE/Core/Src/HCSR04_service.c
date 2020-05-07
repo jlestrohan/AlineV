@@ -118,9 +118,23 @@ static void vHr04SensorTaskStart(void *argument)
 
 		status = osMessageQueueGet(queue_HC_SR04Handle, &HR04_SensorsData, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
-			if (HR04_SensorsData.sonarNum == HR04_SONAR_REAR) {
-				dbg_printf("%d - %0*dcm", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
+
+#ifdef HCSR04_FRONT_ENABLE
+			if (HR04_SensorsData.sonarNum == HR04_SONAR_FRONT) {
+				dbg_printf("FRONT: %d - %0*dcm", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
 			}
+#endif
+#ifdef HCSR04_BOTTOM_ENABLE
+			if (HR04_SensorsData.sonarNum == HR04_SONAR_BOTTOM) {
+				dbg_printf("BOTTOM: %d - %0*dcm", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
+			}
+#endif
+#ifdef HCSR04_REAR_ENABLE
+			if (HR04_SensorsData.sonarNum == HR04_SONAR_REAR) {
+				dbg_printf("REAR: %d - %0*dcm", HR04_SensorsData.sonarNum, 3,HR04_SensorsData.distance);
+			}
+#endif
+
 		}
 
 		osDelay(1);

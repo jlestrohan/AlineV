@@ -16,6 +16,15 @@
 #include <FreeRTOS.h>
 
 /**
+ * DEBUG CONFIGURATION
+ * Sensors dbg_printf enable/disable
+ */
+//#define HCSR04_FRONT_ENABLE
+//#define HCSR04_BOTTOM_ENABLE
+#define HCSR04_REAR_ENABLE
+
+
+/**
  * BEHAVIOUR CONTROL
  */
  /* on a forward motion, the rover will stop if the US sensor goes above the defined distance */
