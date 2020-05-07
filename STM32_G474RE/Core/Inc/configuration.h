@@ -9,6 +9,9 @@
 #ifndef INC_CONFIGURATION_H_
 #define INC_CONFIGURATION_H_
 
+// IMPORTANT - uncomment this out in production!!!
+//# define NDEBUG
+
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
 

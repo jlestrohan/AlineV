@@ -7,12 +7,14 @@
  *******************************************************************/
 
 #include <FreeRTOS.h>
+#include "configuration.h"
 #include <stdlib.h>
 #include "MotorsControl_service.h"
 #include "gpio.h"
 #include "tim.h"
 #include "debug.h"
 #include "MG90S_service.h"
+#include <assert.h>
 
 static osThreadId_t MotorsControl_taskHandle;
 static const osThreadAttr_t MotorsControlTa_attributes = {
@@ -22,7 +24,20 @@ static const osThreadAttr_t MotorsControlTa_attributes = {
 
 osEventFlagsId_t xEventMotorsForward;
 
-MotorData_t MotorData = {MotorMotion_Stop, MotorMotion_Stop, 0,0};
+/**
+ * Main DataStruct accessible from everywhere
+ */
+extern MotorData_t MotorData;
+MotorData_t MotorData, lastMotorData = {MotorMotion_Idle, MotorMotion_Idle, 0,0};
+
+/* functions definitions */
+static void motorsSetMotorsIdle(MotorData_t *data);
+static void motorSetMotionForward(MotorData_t *data);
+static void motorSetMotionBackward(MotorData_t *data);
+static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
+static void motorSetMotionTurnRight(MotorData_t *data);
+static void motorSetMotionTurnLeft(MotorData_t *data);
+
 
 /**
  * Motors Control main task
@@ -39,7 +54,6 @@ static void MotorsControlTask_Start(void *vParameters)
 		/* event flag motors active, if set we start a motion, if not we idle */
 
 		if (osEventFlagsGet(xEventMotorsForward) && MOTORS_FORWARD_ACTIVE) {
-			MotorSetSpeed(&MotorData, 15, 15);
 			motorSetMotionForward(&MotorData);
 		} else {
 			motorsSetMotorsIdle(&MotorData);
@@ -83,31 +97,14 @@ uint8_t uMotorsControlServiceInit()
 }
 
 /**
- * Accelerate motor(s) to the target pace using motionchange rate
- * @param pace
- * @param motionchange
- */
-void MotorAccelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace, uint8_t targetSpeed)
-{
-
-}
-
-/**
- * Descelerate motor(s) to the target pace using motionchange rate
- * @param pace
- * @param motionchange
- */
-void MotorDescelerateTo(MotorData_t *data, MotorsMotionChangeRate_t motionPace, uint8_t targetSpeed)
-{
-
-}
-
-/**
  * sets motor(s) speed to the target pace using motionchange rate
  * @param speed (0-100)
  */
-void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
+static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 {
+	assert(speed_right > -1);
+	assert(speed_left > -1);
+
 	/* let's clamp the values to avoid overflow */
 	speed_left = speed_left > 100 ? 100 : speed_left;
 	speed_right = speed_right > 100 ? 100 : speed_right;
@@ -128,14 +125,15 @@ void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 	}
 
 	/* save the current values into the data struct */
-	data->currentSpeedLeft = speed_left;
+	data->currentSpeedLeft = speed_left;							/* records the current speed */
 	data->currentSpeedRight = speed_right;
+
 }
 
 /**
  * Sets LN298 GPIO controls for forward motion
  */
-void motorSetMotionForward(MotorData_t *data)
+static void motorSetMotionForward(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
@@ -143,14 +141,17 @@ void motorSetMotionForward(MotorData_t *data)
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
 
 	/* now we set the right values into the main motors control struct */
+	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MotorMotion_Forward;
 	data->motorMotion_Right = MotorMotion_Forward;
+	MotorSetSpeed(data, lastMotorData.currentSpeedLeft > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED,
+			lastMotorData.currentSpeedRight > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED);
 }
 
 /**
  * Sets LN298 GPIO controls for backward motion
  */
-void motorSetMotionBackward(MotorData_t *data)
+static void motorSetMotionBackward(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
@@ -158,14 +159,16 @@ void motorSetMotionBackward(MotorData_t *data)
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
 
 	/* now we set the right values into the main motors control struct */
+	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MotorMotion_Backward;
 	data->motorMotion_Right = MotorMotion_Backward;
+	MotorSetSpeed(data, MOTORS_DEFAULT_BW_SPEED, MOTORS_DEFAULT_BW_SPEED);
 }
 
 /**
  * Sets LN298 GPIO controls for left turn motion
  */
-void motorSetMotionTurnLeft(MotorData_t *data)
+static void motorSetMotionTurnLeft(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
@@ -173,6 +176,7 @@ void motorSetMotionTurnLeft(MotorData_t *data)
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
 
 	/* now we set the right values into the main motors control struct */
+	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MotorMotion_Backward;
 	data->motorMotion_Right = MotorMotion_Forward;
 }
@@ -180,7 +184,7 @@ void motorSetMotionTurnLeft(MotorData_t *data)
 /**
  * Sets LN298 GPIO controls for right turn motion
  */
-void motorSetMotionTurnRight(MotorData_t *data)
+static void motorSetMotionTurnRight(MotorData_t *data)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
@@ -188,6 +192,7 @@ void motorSetMotionTurnRight(MotorData_t *data)
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
 
 	/* now we set the right values into the main motors control struct */
+	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MotorMotion_Forward;
 	data->motorMotion_Right = MotorMotion_Backward;
 }
@@ -195,22 +200,15 @@ void motorSetMotionTurnRight(MotorData_t *data)
 /**
  * Sets motors power to 0 but does not change the recorded motion
  */
-void motorsSetMotorsIdle(MotorData_t *data)
+static void motorsSetMotorsIdle(MotorData_t *data)
 {
 	htim16.Instance->CCR1 = 0;
 	htim17.Instance->CCR1 = 0;
-	data->currentSpeedLeft = 0;
-	data->currentSpeedRight = 0;
+
+	lastMotorData = *data; /* backup the data into the last known values struct */
+	MotorSetSpeed(data, 0, 0);
+	data->motorMotion_Left = MotorMotion_Idle;
+	data->motorMotion_Right = MotorMotion_Idle;
 }
 
-/**
- * Completely stops the motors
- */
-void motorsSetMotionStop(MotorData_t *data)
-{
-	motorsSetMotorsIdle(data);
-	data->motorMotion_Left = MotorMotion_Stop;
-	data->motorMotion_Right = MotorMotion_Stop;
-
-}
 
