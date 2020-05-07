@@ -15,6 +15,15 @@
 #include "debug.h"
 #include "MotorsControl_service.h"
 
+/********************************************************************
+ * Extern variables from the different sensors and devices
+ */
+MotorData_t MotorData;
+xServoPosition_t xServoPosition;
+osEventFlagsId_t evt_Mg90sMotionControlFlag;
+
+/********************************************************************/
+
 /* a few macros */
 #define MC_MOTORS_FORWARD	(((MotorData.motorMotion_Left == MotorMotion_Forward) && (MotorData.motorMotion_Right == MotorMotion_Forward)) && \
 		((MotorData.currentSpeedLeft > 0) && (MotorData.currentSpeedRight > 0)))
@@ -25,15 +34,7 @@
 #define MC_MOTORS_IDLE 		(((MotorData.motorMotion_Left == MotorMotion_Backward) && (MotorData.motorMotion_Right == MotorMotion_Backward)) && \
 		((MotorData.currentSpeedLeft == 0) && (MotorData.currentSpeedRight == 0)))
 
-/********************************************************************
- * Extern variables from the different sensors and devices
- */
-HR04_SensorsData_t HR04_SensorsData;
-MotorData_t MotorData;
-xServoPosition_t xServoPosition;
-osEventFlagsId_t evt_Mg90sMotionControlFlag;
 
-/********************************************************************/
 /**
  * FINITE STATE MACHINE THAT RECORDS THE CURRENT STATUS OF THE ANDROID
  *
@@ -97,19 +98,24 @@ void vNavControlServiceTask(void *vParameters)
 		if (MC_MOTORS_FORWARD) {
 			osEventFlagsSet(xHcrSr04ControlFlag, FLG_SONAR_FRONT_ACTIVE);
 			osEventFlagsSet(xHcrSr04ControlFlag, FLG_SONAR_BOTTOM_ACTIVE);
-		} else {
-			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_FRONT_ACTIVE);
-			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_BOTTOM_ACTIVE);
+			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_REAR_ACTIVE);
 		}
 
 		/* backward motion only activates the rear sensor */
 		if (MC_MOTORS_BACKWARD) {
+			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_FRONT_ACTIVE);
+			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_BOTTOM_ACTIVE);
 			osEventFlagsSet(xHcrSr04ControlFlag, FLG_SONAR_REAR_ACTIVE);
-		} else {
+		}
+
+		/* Idle */
+		if (MC_MOTORS_IDLE) {
+			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_FRONT_ACTIVE);
+			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_BOTTOM_ACTIVE);
 			osEventFlagsClear(xHcrSr04ControlFlag, FLG_SONAR_REAR_ACTIVE);
 		}
 
-		/* no flag for motor idle as we don't need them and they're already deactivated by the two above */
+
 		/**
 		 * * Bottom flag prevents the android to fall to its death, let's handle this */
 		if ((HR04_SensorsData.sonarNum == HR04_SONAR_BOTTOM) && (HR04_SensorsData.distance > 10)) {

@@ -22,8 +22,8 @@
 
 /* event flag to activate the sensors */
 #define FLG_SONAR_REAR_ACTIVE		(1 << 0)
-#define FLG_SONAR_FRONT_ACTIVE		(2 << 0)
-#define FLG_SONAR_BOTTOM_ACTIVE		(3 << 0)
+#define FLG_SONAR_FRONT_ACTIVE		(1 << 1)
+#define FLG_SONAR_BOTTOM_ACTIVE		(1 << 2)
 
 typedef struct {
 	uint8_t		distance;
@@ -32,6 +32,7 @@ typedef struct {
 
 extern HR04_SensorsData_t HR04_SensorsData;
 extern osEventFlagsId_t xHcrSr04ControlFlag;
+extern osMessageQueueId_t queue_HC_SR04Handle;
 
 /**
  * Main initialization function

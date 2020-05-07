@@ -30,9 +30,9 @@
 #include <stdio.h>
 
 HR04_SensorsData_t HR04_SensorsData;
-
-extern osMessageQueueId_t queue_HC_SR04Handle;
 osEventFlagsId_t xHcrSr04ControlFlag;
+osMessageQueueId_t queue_HC_SR04Handle;
+
 
 /* flag to set any sensors active/inactive according to nav control decisions */
 
