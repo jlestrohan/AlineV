@@ -38,7 +38,6 @@
 #include "IRQ_Handler.h"
 #include "lcdMenu_service.h"
 #include "QMC5883_service.h"
-#include "BMP280_service.h"
 #include "HCSR04_service.h"
 #include "MotorsControl_service.h"
 #include "MG90S_service.h"
