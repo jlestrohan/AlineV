@@ -45,6 +45,7 @@
 #include "MPU6050_service.h"
 #include "navControl_service.h"
 #include "esp32serial_service.h"
+#include "SystemInfos.h"
 
 /* USER CODE END Includes */
 
@@ -182,6 +183,11 @@ void MX_FREERTOS_Init(void) {
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_NAVCONTROL_COMPLETE;
+	}
+
+	if (uSystemInfoServiceInit()== EXIT_FAILURE) {
+		dbg_printf("Error Initializing System Info Service");
+		Error_Handler();
 	}
 
 	//dbg_printf("Init sequence complete....");

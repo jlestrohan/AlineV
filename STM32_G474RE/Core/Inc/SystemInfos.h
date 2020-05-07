@@ -16,9 +16,31 @@
 #ifndef INC_SYSTEMINFOS_H_
 #define INC_SYSTEMINFOS_H_
 
-typedef struct {
+#include <stdint.h>
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
-} NUCLEOG474RE_CoreInfo_t;
-NUCLEOG474RE_CoreInfo_t NUCLEOG474RE_CoreInfo;
+typedef struct {
+	uint32_t adc0;
+	uint32_t adc1;
+	uint32_t adc2;
+} DMAInternalSensorsAdcValues_t;
+extern DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues;
+
+extern osMessageQueueId_t xQueueDmaAdcInternalSensors;
+extern uint32_t ADC_BUF[3];
+
+typedef struct {
+	char device_uuid[15];
+	uint8_t	batteryStatus_percent;
+} CoreInfo_t;
+
+/******************************************************/
+/** PUBLIC Structure with general service updated infos
+ */
+extern CoreInfo_t CoreInfo;
+/******************************************************/
+
+uint8_t uSystemInfoServiceInit();
 
 #endif /* INC_SYSTEMINFOS_H_ */

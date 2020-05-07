@@ -21,10 +21,14 @@
 #include "gpio.h"
 #include "tim.h"
 #include "sensor_speed_service.h"
+#include "SystemInfos.h"
 
 char msg[50];
+uint32_t ADC_BUF[3];
 
 osMessageQueueId_t queue_HC_SR04Handle; /* extern */
+osMessageQueueId_t xQueueDmaAdcInternalSensors;
+DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues; /* extern */
 
 /**
  *
@@ -92,3 +96,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 extern void Uart_isr (UART_HandleTypeDef *huart);
 
+/**
+ * ADC Conversion IRQ fb
+ * @param hadc
+ */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+	if (hadc->Instance == ADC5)
+	{
+		DMAInternalSensorsAdcValues.adc0 = ADC_BUF[0];
+		DMAInternalSensorsAdcValues.adc1 = ADC_BUF[1];
+		DMAInternalSensorsAdcValues.adc2 = ADC_BUF[2];
+		osMessageQueuePut(xQueueDmaAdcInternalSensors, &DMAInternalSensorsAdcValues, 0U, 0U);
+	}
+}

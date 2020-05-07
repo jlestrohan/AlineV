@@ -100,6 +100,7 @@
 #define OSTASK_PRIORITY_LCDMENU				osPriorityAboveNormal
 #define OSTASK_PRIORITY_ESP32_TX			osPriorityNormal
 #define OSTASK_PRIORITY_ESP32_RX			osPriorityNormal
+#define OSTASK_PRIORITY_SYSTEMINFO			osPriorityLow6
 
 
 #endif /* INC_CONFIGURATION_H_ */
