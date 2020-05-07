@@ -19,9 +19,11 @@
  * DEBUG CONFIGURATION
  * Sensors dbg_printf enable/disable
  */
-//#define HCSR04_FRONT_ENABLE
-//#define HCSR04_BOTTOM_ENABLE
-#define HCSR04_REAR_ENABLE
+//#define DEBUG_HCSR04_FRONT
+//#define DEBUG_HCSR04_BOTTOM
+//#define DEBUG_HCSR04_REAR
+//#define DEBUG_QMC5883
+//#define DEBUG_SYSTEMINFOS
 
 
 /**
