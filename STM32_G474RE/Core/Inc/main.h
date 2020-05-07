@@ -105,6 +105,8 @@ void Error_Handler(void);
 #define I2C3_TOF_SCL_GPIO_Port GPIOC
 #define mpu6050_SDA_Pin GPIO_PIN_8
 #define mpu6050_SDA_GPIO_Port GPIOA
+#define UV_LED_Pin GPIO_PIN_9
+#define UV_LED_GPIO_Port GPIOA
 #define MOTOR1_IN2_Pin GPIO_PIN_10
 #define MOTOR1_IN2_GPIO_Port GPIOA
 #define MOTOR1_IN1_Pin GPIO_PIN_11

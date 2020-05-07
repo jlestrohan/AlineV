@@ -26,6 +26,7 @@
 #include <string.h>
 #include "lcdMenu_service.h"
 #include <assert.h>
+#include "uvLed_service.h"
 
 //temp
 #include "MotorsControl_service.h"
@@ -92,6 +93,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 					strcpy(msg, "STM32 - Starting Motors\n");
 					if (xEventMotorsForward != NULL) {
 						osEventFlagsSet(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
+						osEventFlagsSet(xEventUvLed, FLG_UV_LED_ACTIVE);
 					}
 					if (xQueueEspSerialTX != NULL) {
 						osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
@@ -100,6 +102,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 					strcpy(msg, "STM32 - Stopping Motors\n");
 					if (xEventMotorsForward != NULL) {
 						osEventFlagsClear(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
+						osEventFlagsClear(xEventUvLed, FLG_UV_LED_ACTIVE);
 					}
 					if (xQueueEspSerialTX != NULL) {
 						osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);

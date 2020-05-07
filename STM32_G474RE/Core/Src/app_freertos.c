@@ -45,6 +45,7 @@
 #include "navControl_service.h"
 #include "esp32serial_service.h"
 #include "SystemInfos.h"
+#include "uvLed_service.h"
 
 /* USER CODE END Includes */
 

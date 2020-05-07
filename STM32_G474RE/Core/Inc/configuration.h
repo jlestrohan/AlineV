@@ -101,6 +101,7 @@
 #define OSTASK_PRIORITY_ESP32_TX			osPriorityNormal
 #define OSTASK_PRIORITY_ESP32_RX			osPriorityNormal
 #define OSTASK_PRIORITY_SYSTEMINFO			osPriorityLow6
+#define OSTASK_PRIORITY_UVLED				osPriorityBelowNormal4
 
 
 #endif /* INC_CONFIGURATION_H_ */
