@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */     
 
 #include <stdlib.h>
+#include "configuration.h"
 #include <VL53L0X_TOF_service.h>
 #include "string.h"
 #include "debug.h"
@@ -110,41 +111,53 @@ void MX_FREERTOS_Init(void) {
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 
+#ifdef DEBUG_SERVICE_LCD_MENU
 	if (uLcdMenuServiceInit() == EXIT_FAILURE) {
 		dbg_printf("Error Initializing LCD Menu Service");
 		Error_Handler();
 	}
+#endif
 
+#ifdef DEBUG_SERVICE_BUTTON
 	if (uButtonServiceInit() == EXIT_FAILURE) {
 		dbg_printf("Error Initializing Button Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE;
 	}
+#endif
 
+#ifdef DEBUG_SERVICE_HCSR04
 	if (uHcsr04ServiceInit() == EXIT_FAILURE) {
 		dbg_printf("Error Initializing HR-SC04 Distance Sensors Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_HR04_COMPLETE;
 	}
+#endif
 
+#ifdef DEBUG_SERVICE_MG90S
 	if (uMg90sServiceInit() == EXIT_FAILURE) {
 		dbg_printf("Error Initializing Front Servo Service");
 		Error_Handler();
 	}
+#endif
 
-	/*if (uQmc5883lServiceInit(&hi2c4) == EXIT_FAILURE) {
-		loggerE("Error Initializing QCM5883 Magnetometer Service");
+#ifdef DEBUG_SERVICE_QMC5883
+	if (uQmc5883lServiceInit() == EXIT_FAILURE) {
+		dbg_printf("Error Initializing QCM5883 Magnetometer Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE;
-	}*/
+	}
+#endif
 
-	/*if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing ESP32 Serial TX/RX Service");
+#ifdef DEBUG_SERVICE_ESP32_SERIAL
+	if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
+		dbg_printf("Error Initializing ESP32 Serial TX/RX Service");
 		Error_Handler();
-	}*/
+	}
+#endif
 
 	/*if (uVl53l0xServiceInit(&hi2c3) == EXIT_FAILURE) {
 		loggerE("Error Initializing Time of Flight Service");
@@ -170,25 +183,36 @@ void MX_FREERTOS_Init(void) {
 		ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE;
 	}*/
 
+#ifdef DEBUG_SERVICE_MOTORS
 	if (uMotorsControlServiceInit() == EXIT_FAILURE) {
 		dbg_printf("Error Initializing Motors Control Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_MOTORSCONTROL_COMPLETE;
 	}
+#endif
 
-
+#ifdef DEBUG_SERVICE_NAVCONTROL
 	if (uNavControlServiceInit() == EXIT_FAILURE) {
 		dbg_printf("Error Initializing Nav Control Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_NAVCONTROL_COMPLETE;
 	}
+#endif
 
-	if (uSystemInfoServiceInit()== EXIT_FAILURE) {
+	//FIXME: Crash here!
+	/*if (uSystemInfoServiceInit()== EXIT_FAILURE) {
 		dbg_printf("Error Initializing System Info Service");
 		Error_Handler();
+	}*/
+
+#ifdef DEBUG_SERVICE_UVLED
+	if (uUvLedServiceInit() == EXIT_FAILURE) {
+		dbg_printf("Error Initializing UV Led Service");
+		Error_Handler();
 	}
+#endif
 
 	//dbg_printf("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */

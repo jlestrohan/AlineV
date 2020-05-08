@@ -19,11 +19,25 @@
  * DEBUG CONFIGURATION
  * Sensors dbg_printf enable/disable
  */
+
+/** sensors loggers **/
 //#define DEBUG_HCSR04_FRONT
 //#define DEBUG_HCSR04_BOTTOM
 //#define DEBUG_HCSR04_REAR
 //#define DEBUG_QMC5883
 //#define DEBUG_SYSTEMINFOS
+
+/** service activation **/
+#define DEBUG_SERVICE_LCD_MENU
+#define DEBUG_SERVICE_BUTTON
+#define DEBUG_SERVICE_HCSR04
+#define DEBUG_SERVICE_MG90S
+//#define DEBUG_SERVICE_QMC5883
+#define DEBUG_SERVICE_ESP32_SERIAL
+#define DEBUG_SERVICE_MOTORS
+#define DEBUG_SERVICE_NAVCONTROL
+#define DEBUG_SERVICE_UVLED
+
 
 
 /**
