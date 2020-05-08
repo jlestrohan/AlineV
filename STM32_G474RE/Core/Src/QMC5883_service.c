@@ -32,9 +32,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
-#include "printf.h"
+//#include "printf.h"
 
-static I2C_HandleTypeDef *_hi2cxHandler;
+I2C_HandleTypeDef hi2c4;
+
 //static QMC5883 qmc1; /* Main data structs holding the constantly updated data */
 
 typedef StaticTask_t osStaticThreadDef_t;
@@ -58,7 +59,6 @@ static int16_t X, Y, Z;
  */
 static void vQmc5883lTaskStart(void *argument)
 {
-	char msg[60];
 	dbg_printf("Starting QMC5883l Service task...");
 
 	//QMC5883_Result res;
@@ -67,11 +67,12 @@ static void vQmc5883lTaskStart(void *argument)
 
 		QMC5883L_Read_Data(&X, &Y, &Z);
 
-		sprintf(msg, "x: %d - y: %d - z: %d - temp: %d - HDG: %d",
+		/*dbg_printf("x: %d - y: %d - z: %d - temp: %d - HDG: %d",
 				X, Y, Z,
 				QMC5883L_Read_Temperature(),
-				QMC5883L_Heading(X, Y));
-		//dbg_printf(msg);
+				QMC5883L_Heading(X, Y));*/
+
+
 
 		osDelay(500);
 	}
@@ -80,11 +81,10 @@ static void vQmc5883lTaskStart(void *argument)
 /**
  * Main Initialization routine
  */
-uint8_t uQmc5883lServiceInit(I2C_HandleTypeDef *hi2cx)
+uint8_t uQmc5883lServiceInit()
 {
-	_hi2cxHandler = hi2cx;
 
-	if (HAL_I2C_IsDeviceReady(_hi2cxHandler, QMC5883l_I2C_ADDRESS, 2, 5) != HAL_OK) {
+	if (HAL_I2C_IsDeviceReady(&hi2c4, QMC5883l_I2C_ADDRESS, 2, 5) != HAL_OK) {
 		dbg_printf("QMC5883 Device not ready");
 		return (EXIT_FAILURE);
 	}
@@ -123,7 +123,7 @@ void QMC5883L_Configure(_qmc5883l_MODE MODE, _qmc5883l_ODR ODR, _qmc5883l_RNG RN
 void QMC5883L_Write_Reg(uint8_t reg, uint8_t data)
 {
 	uint8_t Buffer[2]={reg,data};
-	HAL_I2C_Master_Transmit(_hi2cxHandler, QMC5883l_I2C_ADDRESS, Buffer, 2, 10);
+	HAL_I2C_Master_Transmit(&hi2c4, QMC5883l_I2C_ADDRESS, Buffer, 2, 10);
 }
 
 /**
@@ -134,7 +134,7 @@ void QMC5883L_Write_Reg(uint8_t reg, uint8_t data)
 uint8_t QMC5883L_Read_Reg(uint8_t reg)
 {
 	uint8_t Buffer[1];
-	HAL_I2C_Mem_Read(_hi2cxHandler, QMC5883l_I2C_ADDRESS, reg, 1, Buffer, 1, 10);
+	HAL_I2C_Mem_Read(&hi2c4, QMC5883l_I2C_ADDRESS, reg, 1, Buffer, 1, 10);
 	return Buffer[0];
 }
 

@@ -28,28 +28,20 @@
 
 #define MAX_HDLC_FRAME_LENGTH 512
 
-//extern osMessageQueueId_t xQueueEspSerialTX;
-
-//typedef struct {
-	//char pLoadString[64];// = "serialized json here";
-//} //PayLoad_t;
-
-/* Function to send out byte/char */
-void send_character(uint8_t data);
-
-/* Function to handle a valid HDLC frame */
-void hdlc_frame_handler(const uint8_t *data, uint16_t length);
+osMessageQueueId_t xQueueEspSerialTX;
+osMessageQueueId_t xQueueEspSerialRX;
 
 UART_HandleTypeDef huart3;
+
 
 typedef StaticTask_t osStaticThreadDef_t;
 
 static osThreadId_t xEsp32TXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32TXSerialServiceTaControlBlock;
-static uint32_t xEsp32TXSerialServiceTaBuffer[256];
+static uint32_t xEsp32TXSerialServiceTaBuffer[1024];
 static const osThreadAttr_t xEsp32TXSerialServiceTa_attributes = {
 		.name = "xEsp32TXSerialServiceTask",
-		.stack_mem = &xEsp32TXSerialServiceTaBuffer[256],
+		.stack_mem = &xEsp32TXSerialServiceTaBuffer[0],
 		.stack_size = sizeof(xEsp32TXSerialServiceTaBuffer),
 		.cb_mem = &xEsp32TXSerialServiceTaControlBlock,
 		.cb_size = sizeof(xEsp32TXSerialServiceTaControlBlock),
@@ -58,16 +50,35 @@ static const osThreadAttr_t xEsp32TXSerialServiceTa_attributes = {
 
 static osThreadId_t xEsp32RXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32RXSerialServiceTaControlBlock;
-static uint32_t xEsp32RXSerialServiceTaBuffer[256];
+static uint32_t xEsp32RXSerialServiceTaBuffer[1024];
 static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
 		.name = "xEsp32RXSerialServiceTask",
-		.stack_mem = &xEsp32RXSerialServiceTaBuffer[256],
+		.stack_mem = &xEsp32RXSerialServiceTaBuffer[0],
 		.stack_size = sizeof(xEsp32RXSerialServiceTaBuffer),
 		.cb_mem = &xEsp32RXSerialServiceTaControlBlock,
 		.cb_size = sizeof(xEsp32RXSerialServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_ESP32_RX
 };
 
+
+/**
+ * @brief Function to send out one 8bit character
+ * @param data
+ */
+void send_character(uint8_t data) {
+	Uart_write(data);
+}
+
+
+/**
+ * @brief Frame handler function. What to do with received data?
+ * @param data
+ * @param length
+ */
+void hdlc_frame_handler(const uint8_t *data, uint16_t length)
+{
+	HAL_UART_Transmit(&hlpuart1, (uint8_t *)data, length, HAL_MAX_DELAY);
+}
 
 /**
  * Main SERIAL TX Task
@@ -110,12 +121,13 @@ void vEsp32RXSerialService_Start(void* vParameter)
 			char inChar = (char)Uart_read(); /* read one byte of data */
 			Uart_write(inChar);
 			// Pass all incoming data to hdlc char receiver
-			vCharReceiver(inChar);
+			//vCharReceiver(inChar);
+
 			//HAL_UART_Transmit(&hlpuart1, (uint8_t *)&inChar, sizeof(char), HAL_MAX_DELAY);
 			//HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
 
-		osDelay(1);
+		osDelay(10);
 	}
 	osThreadTerminate(xEsp32RXSerialServiceTaskHandle);
 }
@@ -126,14 +138,20 @@ void vEsp32RXSerialService_Start(void* vParameter)
  */
 uint8_t uEsp32SerialServiceInit()
 {
-	/* initializes the ring buffer */
+	/* Initializes the Ring Buffer */
 	Ringbuf_init();
 
-	/*xQueueEspSerialTX = osMessageQueueNew(10, sizeof(PayLoad_t), NULL);
+	xQueueEspSerialTX = osMessageQueueNew(5, sizeof(jsonMessage_t), NULL);
 	if (xQueueEspSerialTX == NULL) {
 		Error_Handler();
 		return (EXIT_FAILURE);
-	}*/
+	}
+
+	xQueueEspSerialRX = osMessageQueueNew(5, sizeof(jsonMessage_t), NULL);
+	if (xQueueEspSerialRX == NULL) {
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
 
 	/* Initialize Arduhdlc library with three parameters.
 	1. Character send function, to send out HDLC frame one byte at a time.
@@ -144,38 +162,20 @@ uint8_t uEsp32SerialServiceInit()
 	/* creation of TX Serial Task */
 	xEsp32TXSerialServiceTaskHandle = osThreadNew(vEsp32TXSerialService_Start, NULL, &xEsp32TXSerialServiceTa_attributes);
 	if (xEsp32TXSerialServiceTaskHandle == NULL) {
-		Error_Handler();
 		dbg_printf("Front Servo Task TX Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
 	/* creation of RX Serial Task */
 	xEsp32RXSerialServiceTaskHandle = osThreadNew(vEsp32RXSerialService_Start, NULL, &xEsp32RXSerialServiceTa_attributes);
 	if (xEsp32RXSerialServiceTaskHandle == NULL) {
-		Error_Handler();
 		dbg_printf("Front Servo Task RX Initialization Failed");
+		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
 	return EXIT_SUCCESS;
 }
 
-/**
- * @brief Function to send out one 8bit character
- * @param data
- */
-void send_character(uint8_t data) {
-	Uart_write(data);
-}
 
-
-/**
- * @brief Frame handler function. What to do with received data?
- * @param data
- * @param length
- */
-void hdlc_frame_handler(const uint8_t *data, uint16_t length)
-{
-	//HAL_UART_Transmit(&hlpuart1, (uint8_t *)(char*)data, length, HAL_MAX_DELAY);
-
-}

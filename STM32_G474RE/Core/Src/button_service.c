@@ -52,20 +52,30 @@ static uint8_t uButtonDebounce(uint32_t tick)
  * Definitions for the onBoard button B1
  */
 static osThreadId_t xOnboardButtonServiceTaskHandle;
+static osStaticThreadDef_t  xOnboardButtonServiceTaControlBlock;
+static uint32_t xOnboardButtonServiceTaBuffer[256];
 static const osThreadAttr_t xOnBoardButtonServiceTask_attributes = {
 		.name = "buttonServiceTask",
+		.stack_mem = &xOnboardButtonServiceTaBuffer[0],
 		.priority = (osPriority_t) OSTASK_PRIORITY_BUTTON_ONBOARD,
-		.stack_size = 512
+		.cb_mem = &xOnboardButtonServiceTaControlBlock,
+		.stack_size = sizeof(xOnboardButtonServiceTaBuffer),
+		.cb_size = sizeof(xOnboardButtonServiceTaControlBlock),
 };
 
 /**
  * Definitions for the Additional button B2
  */
 static osThreadId_t xButton2ServiceTaskHandle;
+static osStaticThreadDef_t  xButton2ServiceTaControlBlock;
+static uint32_t xButton2ServiceTaBuffer[256];
 static const osThreadAttr_t xButton2ServiceTask_attributes = {
 		.name = "button2ServiceTask",
+		.stack_mem = &xButton2ServiceTaBuffer[0],
 		.priority = (osPriority_t) OSTASK_PRIORITY_BUTTON_ADD,
-		.stack_size = 512
+		.cb_mem = &xButton2ServiceTaControlBlock,
+		.stack_size = sizeof(xButton2ServiceTaBuffer),
+		.cb_size = sizeof(xButton2ServiceTaControlBlock),
 };
 
 /**
@@ -113,6 +123,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 				//HAL_UART_Transmit(&huart3, (uint8_t *)msg, strlen(msg), HAL_MAX_DELAY);
 			}
 		}
+
 		osDelay(100);
 	}
 

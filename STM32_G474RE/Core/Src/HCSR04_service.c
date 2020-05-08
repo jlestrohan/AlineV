@@ -49,7 +49,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 static osThreadId_t xHr04SensorTaskHandle;
 static osStaticThreadDef_t xHr04SensorTaControlBlock;
-static uint32_t xHr04SensorTaBuffer[512];
+static uint32_t xHr04SensorTaBuffer[256];
 static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.stack_mem = &xHr04SensorTaBuffer[0],
 		.stack_size = sizeof(xHr04SensorTaBuffer),
@@ -60,7 +60,7 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 
 static osThreadId_t xHr04ControlTaskHandle;
 static osStaticThreadDef_t xHr04ControlTaControlBlock;
-static uint32_t xHr04ControlTaBuffer[512];
+static uint32_t xHr04ControlTaBuffer[256];
 static const osThreadAttr_t xHr04ControlTa_attributes = {
 		.stack_mem = &xHr04ControlTaBuffer[0],
 		.stack_size = sizeof(xHr04ControlTaBuffer),

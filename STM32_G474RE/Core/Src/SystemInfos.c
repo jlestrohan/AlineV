@@ -55,8 +55,8 @@ static uint32_t  xSysteminfoServiceTaBuffer[1024];
 static const osThreadAttr_t xSysteminfoServiceTa_attributes = {
 		.name = "xSysteminfoServiceTask",
 		.stack_mem = & xSysteminfoServiceTaBuffer[0],
-		.stack_size = sizeof( xSysteminfoServiceTaBuffer),
-		.cb_mem = & xSysteminfoServiceTaControlBlock,
+		.stack_size = sizeof(xSysteminfoServiceTaBuffer),
+		.cb_mem = &xSysteminfoServiceTaControlBlock,
 		.cb_size = sizeof( xSysteminfoServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_SYSTEMINFO
 };
@@ -75,7 +75,6 @@ void xSysteminfoServiceTaskStart(void *vParameters)
 
 	for (;;)
 	{
-
 		status = osMessageQueueGet(xQueueDmaAdcInternalSensors, &AdcValues, 0U, 0U);
 		if (status == osOK) {
 
@@ -83,7 +82,7 @@ void xSysteminfoServiceTaskStart(void *vParameters)
 			//proctemp = readProcessorTemperature(AdcValues.adc0);
 
 			//dbg_printf("Temperature = %f", proc_temperature);
-			HAL_ADC_Start_IT(&hadc5);
+			//HAL_ADC_Start_IT(&hadc5);
 		}
 
 		osDelay(200);

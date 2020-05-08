@@ -19,7 +19,7 @@
 static osThreadId_t MotorsControl_taskHandle;
 static const osThreadAttr_t MotorsControlTa_attributes = {
 		.name = "MotorsControlServiceTask",
-		.stack_size = 256,
+		.stack_size = 512,
 		.priority = (osPriority_t) osPriorityLow1, };
 
 osEventFlagsId_t xEventMotorsForward;

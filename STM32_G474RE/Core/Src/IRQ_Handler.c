@@ -24,11 +24,13 @@
 #include "SystemInfos.h"
 
 char msg[50];
-uint32_t ADC_BUF[3];
 
+uint32_t ADC_BUF[3]; /* extern */
 osMessageQueueId_t queue_HC_SR04Handle; /* extern */
 osMessageQueueId_t xQueueDmaAdcInternalSensors;
 DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues; /* extern */
+uint8_t UartRXDmaBuffer[10]; /* extern */
+osMessageQueueId_t xQueueEspSerialRX;
 
 /**
  *
@@ -110,3 +112,4 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 		osMessageQueuePut(xQueueDmaAdcInternalSensors, &DMAInternalSensorsAdcValues, 0U, 0U);
 	}
 }
+

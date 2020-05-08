@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-06 15:31:59
+ * @ Modified time: 2020-05-08 07:15:38
  * @ Description:
  *******************************************************************************************/
 
@@ -30,7 +30,7 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 
-#define GET_CHIPID() (ESP.getCpuFreqMHz())
+#define GET_CHIPID() (ESP.getEfuseMac());
 
 RemoteDebug Debug;
 
@@ -65,8 +65,6 @@ void setup()
   uSetupSTM32SerialService();
   //uSetupOLED();
   uSetupOTA();
-
-  //DEBUG_SERIAL("Chip ID: %ul", GET_CHIPID());
 
   DEBUG_SERIAL("Ready UART");
 

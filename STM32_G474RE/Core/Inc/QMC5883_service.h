@@ -81,7 +81,7 @@ typedef enum INTTERRUPT_VARIABLES
 	INTERRUPT_ENABLE
 }_qmc5883l_INT;
 
-uint8_t uQmc5883lServiceInit(I2C_HandleTypeDef *hi2cx);
+uint8_t uQmc5883lServiceInit();
 void QMC5883L_Configure(_qmc5883l_MODE MODE, _qmc5883l_ODR ODR, _qmc5883l_RNG RNGE, _qmc5883l_OSR OSR);
 void QMC5883L_Write_Reg(uint8_t reg, uint8_t data);
 uint8_t QMC5883L_Heading(int16_t Xraw,int16_t Yraw);

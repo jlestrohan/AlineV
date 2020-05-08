@@ -65,11 +65,11 @@ void vLcdMenuServiceTask(void *argument)
 	pCurrentItem = &MenuItem_Boot;
 	vShowLCDText();
 
-	osDelay(5000);
+	//osDelay(3000);
 	pCurrentItem = &MenuItem_Ready;
 	vShowLCDText();
 
-	osDelay(2000);
+	//osDelay(2000);
 
 	for (;;) {
 
@@ -87,6 +87,7 @@ void vLcdMenuServiceTask(void *argument)
 			lcd_send_string(MenuItem.second_line);
 			osSemaphoreRelease(sem_lcdService);*/
 		}
+
 		osDelay(50);
 	}
 }
@@ -112,7 +113,7 @@ uint8_t uLcdMenuServiceInit()
 	}
 
 	/* creation of LoggerServiceTask */
-	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, &xLcdMenuServiceTa_attributes);
+	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, NULL); //&xLcdMenuServiceTa_attributes);
 	if (xLcdMenuServiceTaskHandle == NULL) {
 		dbg_printf("Initializing LCD Menu Service - Failed");
 		return (EXIT_FAILURE);
