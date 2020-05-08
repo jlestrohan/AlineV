@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-06 17:11:56
+ * @ Modified time: 2020-05-08 09:31:04
  * @ Description:
  *******************************************************************************************/
 
@@ -19,7 +19,6 @@ void remoteDebug_task(void *parameter);
 void vProcessCmdRemoteDebug();
 
 xTaskHandle xRemoteDebuggerTask_hnd = NULL;
-QueueHandle_t xQueueSerialServiceTX; /* extern */
 
 /**
  * @brief  Remote Debug setup routine
@@ -83,6 +82,11 @@ void vProcessCmdRemoteDebug()
 {
     String lastCmd = Debug.getLastCommand();
 
+    /* we prepare a cmd_pack for any command if needed, as we expect to be sending a command to the STM32 */
+    command_package_t cmd_pack;
+    cmd_pack.cmd_type = CMD_TYPE_TEXT;
+    cmd_pack.cmd_route = CMD_TRANSMIT;
+
     if (lastCmd == "info wifi")
     {
         debugI("---------------- WIFI INFO -------------------------------------");
@@ -95,16 +99,18 @@ void vProcessCmdRemoteDebug()
         debugI("----------------------------------------------------------------");
     }
 
+    //TODO: filter commands here, by text only, to make sure no gharbage command passes thru */
     if (lastCmd == "motors off")
     {
-        cmdPackage_t cmd_pack;
-        cmd_pack.cmd_type = CMD_TYPE_TEXT;
-        strcpy(cmd_pack.txtCommand, lastCmd.c_str());
+        /* motors off command received */
+        /* that's command service job to package that and transmit */
 
-        if (xQueueSerialServiceTX != NULL)
+        strcpy(cmd_pack.txtCommand, lastCmd.c_str());
+        debugI("%lu", ESP.getEfuseMac());
+        if (xQueueCommandParse != NULL)
         {
             debugI("Sending command: %s...", lastCmd.c_str());
-            xQueueSend(xQueueSerialServiceTX, &cmd_pack, portMAX_DELAY); /* send directly to the serial TX service, the post office */
+            xQueueSend(xQueueCommandParse, &cmd_pack, portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
         }
         else
         {

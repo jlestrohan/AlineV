@@ -19,6 +19,16 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
+extern osMessageQueueId_t xQueueEspSerialTX;
+extern osMessageQueueId_t xQueueEspSerialRX;
+
+typedef struct
+{
+    size_t msg_size;
+    char json[100];
+} jsonMessage_t;
+extern jsonMessage_t JsonMsg;
+
 /**
  * Main Initialization function
  * @return

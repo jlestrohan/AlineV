@@ -2,13 +2,12 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-06 16:22:22
+ * @ Modified time: 2020-05-08 13:22:05
  * @ Description:
  *******************************************************************************************/
 
 #include "stm32Serial_service.h"
 #include "configuration_esp32.h"
-#include <FreeRTOS.h>
 #include <stdint.h>
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
@@ -25,7 +24,6 @@ HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 xTaskHandle xStm32TXSerialServiceTask_hnd = NULL; /* for TX */
 xTaskHandle xStm32RXSerialServiceTask_hnd = NULL; /* for RX */
-
 extern QueueHandle_t xQueueSerialServiceTX;
 
 /* Function to send out one 8bit character */
@@ -43,17 +41,16 @@ void send_character(uint8_t data)
  */
 void vStm32TXSerialServiceTaskCode(void *pvParameters)
 {
-  cmdPackage_t cmdPack;
+  jsonMessage_t jsonMsg;
 
   for (;;)
   {
     /* receiving queue for objects tro be sent over */
-    xQueueReceive(xQueueSerialServiceTX, &cmdPack, portMAX_DELAY);
-
+    xQueueReceive(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY);
     /* we send the frame over */
-    hdlc.sendFrame((uint8_t *)&cmdPack, sizeof(cmdPack));
-
-    vTaskDelay(20);
+    hdlc.sendFrame((uint8_t *)&jsonMsg.json, jsonMsg.msg_size);
+    //debugI("Sending command thru TX now: %s", jsonMsg.json);
+    vTaskDelay(1);
   }
   vTaskDelete(xStm32TXSerialServiceTask_hnd);
 }
@@ -67,13 +64,15 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
 void vStm32RXSerialServiceTaskCode(void *pvParameters)
 {
   String nom;
+  uint8_t c;
 
   for (;;)
   {
     // Read some bytes from the USB serial port..
     if (Serial2.available() > 0)
     {
-      hdlc.charReceiver(Serial2.readBytes());
+      c = Serial2.read();
+      hdlc.charReceiver(c);
     }
     vTaskDelay(10);
   }
@@ -90,7 +89,7 @@ uint8_t uSetupSTM32SerialService()
   /* setup UART communications to and from STM32 on UART2 port */
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
 
-  xQueueSerialServiceTX = xQueueCreate(20, sizeof(cmdPackage_t));
+  xQueueSerialServiceTX = xQueueCreate(20, sizeof(command_package_t));
   if (xQueueSerialServiceTX == NULL)
   {
     debugE("error creating the xQueueSerialServiceTX queue");
