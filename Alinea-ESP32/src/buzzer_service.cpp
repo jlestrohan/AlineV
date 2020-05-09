@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 21:23:01
+ * @ Modified time: 2020-05-08 15:17:00
  * @ Description:
  *******************************************************************************************/
 
@@ -131,11 +131,13 @@ struct buzMelody_t
 };
 
 struct buzMelody_t mld_wifiSuccess = {
-    {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5}, {1, 1, 1, 1, 1, 1, 1, 1}, 8, 150};
+    {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5}, {1, 1, 1, 1, 1, 1, 1, 1}, 8, 130};
 struct buzMelody_t mld_cmdReceived = {
     {note_C5, note_G5, note_C6}, {1, 1, 1}, 3, 80};
 struct buzMelody_t mld_cmdReady = {
-    {note_C5, note_G5, note_E5, note_C6}, {1, 2, 1, 3}, 4, 140};
+    {note_C5, note_G5, note_E5, note_C6}, {1, 2, 1, 3}, 4, 120};
+struct buzMelody_t mld_cmdFeedback = {
+    {note_E6, note_C6, note_G6}, {1, 1, 1}, 3, 80};
 
 struct buzMelody_t *melodyPtr;
 
@@ -255,6 +257,9 @@ uint8_t vPlayMelody(melodyType_t melody_type)
         break;
     case MelodyType_WifiSuccess:
         melodyPtr = &mld_wifiSuccess;
+        break;
+    case MelodyType_CommandFeedback:
+        melodyPtr = &mld_cmdFeedback;
         break;
     default:
         break;

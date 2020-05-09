@@ -73,6 +73,7 @@ void vStm32RXSerialServiceTaskCode(void *pvParameters)
     {
       c = Serial2.read();
       hdlc.charReceiver(c);
+      vPlayMelody(MelodyType_CommandFeedback);
     }
     vTaskDelay(10);
   }
