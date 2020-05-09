@@ -119,7 +119,7 @@ void vNavControlServiceTask(void *vParameters)
 		/**
 		 * * Bottom flag prevents the android to fall to its death, let's handle this */
 		if ((HR04_SensorsData.sonarNum == HR04_SONAR_BOTTOM) && (HR04_SensorsData.distance > 10)) {
-			osEventFlagsClear(xEventMotorsForward, MOTORS_FORWARD_ACTIVE); /* completely stop the motors*/
+			osEventFlagsSet(xEventMotorsMotion, MOTORS_IDLE); /* completely stop the motors*/
 		}
 
 

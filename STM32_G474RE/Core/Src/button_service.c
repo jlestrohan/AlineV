@@ -102,8 +102,8 @@ static void vOnBoardButtonServiceTask(void *argument)
 				// Test to see if servo is receving the active/inactive flag
 				if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
 					strcpy(msg, "STM32 - Starting Motors\n");
-					if (xEventMotorsForward != NULL) {
-						osEventFlagsSet(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
+					if (xEventMotorsMotion != NULL) {
+						osEventFlagsSet(xEventMotorsMotion, MOTORS_FORWARD);
 						osEventFlagsSet(xEventUvLed, FLG_UV_LED_ACTIVE);
 					}
 					if (xQueueEspSerialTX != NULL) {
@@ -111,8 +111,8 @@ static void vOnBoardButtonServiceTask(void *argument)
 					}
 				} else {
 					strcpy(msg, "STM32 - Stopping Motors\n");
-					if (xEventMotorsForward != NULL) {
-						osEventFlagsClear(xEventMotorsForward, MOTORS_FORWARD_ACTIVE);
+					if (xEventMotorsMotion != NULL) {
+						osEventFlagsSet(xEventMotorsMotion, MOTORS_IDLE);
 						osEventFlagsClear(xEventUvLed, FLG_UV_LED_ACTIVE);
 					}
 					if (xQueueEspSerialTX != NULL) {
@@ -146,7 +146,9 @@ static void vButton2ServiceTask(void *argument)
 			osEventFlagsWait(xEventButtonExt, B_EXT_PRESSED_FLAG, osFlagsWaitAny, osWaitForever);
 			if (uButtonDebounce(uBtn2LastPressedTick) || uBtn2LastPressedTick == 0) {
 				uBtn2LastPressedTick = HAL_GetTick();
-				osEventFlagsSet(xEventMenuNavButton, BEXT_PRESSED_EVT);
+				//osEventFlagsSet(xEventMenuNavButton, BEXT_PRESSED_EVT);
+				osEventFlagsSet(xEventMotorsMotion, MOTORS_BACKWARD);
+
 			}
 		}
 		osDelay(100);

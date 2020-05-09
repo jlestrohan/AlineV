@@ -18,9 +18,11 @@
 #include "cmsis_os2.h"
 
 #define MOTORS_DEFAULT_FW_SPEED		15
-#define MOTORS_DEFAULT_BW_SPEED		7
+#define MOTORS_DEFAULT_BW_SPEED		10
 
-#define MOTORS_FORWARD_ACTIVE	(1 << 0)
+#define MOTORS_IDLE		(1 << 0) /* if this flag is set the others are ignored */
+#define MOTORS_FORWARD	(1 << 1)
+#define MOTORS_BACKWARD	(1 << 2)
 
 #ifndef bool
 typedef enum {
@@ -48,7 +50,7 @@ typedef struct {
 	uint8_t currentSpeedRight;				/* 0 - 100 */
 } MotorData_t;
 
-extern osEventFlagsId_t xEventMotorsForward;
+extern osEventFlagsId_t xEventMotorsMotion;
 
 /**
  * @brief  MPU6050 result enumeration

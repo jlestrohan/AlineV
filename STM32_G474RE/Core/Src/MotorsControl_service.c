@@ -17,13 +17,25 @@
 #include "MG90S_service.h"
 #include <assert.h>
 
-static osThreadId_t MotorsControl_taskHandle;
-static const osThreadAttr_t MotorsControlTa_attributes = {
-		.name = "MotorsControlServiceTask",
-		.stack_size = 512,
-		.priority = (osPriority_t) osPriorityLow1, };
+/* functions definition */
+static void motorSetMotionForward(MotorData_t *data);
+static void motorSetMotionBackward(MotorData_t *data);
+static void motorsSetMotionIdle(MotorData_t *data);
 
-osEventFlagsId_t xEventMotorsForward;
+typedef StaticTask_t osStaticThreadDef_t;
+static osThreadId_t xMotorsControlTaskHnd;
+static uint32_t xMotorsControlTaBuffer[256];
+static osStaticThreadDef_t xMotorsControlTaControlBlock;
+static const osThreadAttr_t xMotorsControlTa_attributes = {
+		.name = "MotorsControlServiceTask",
+		.priority = (osPriority_t) osPriorityLow1,
+		.stack_mem = &xMotorsControlTaBuffer[0],
+		.stack_size = sizeof(xMotorsControlTaBuffer),
+		.cb_mem = &xMotorsControlTaControlBlock,
+		.cb_size = sizeof(xMotorsControlTaControlBlock),
+};
+
+osEventFlagsId_t xEventMotorsMotion;
 
 /**
  * Main DataStruct accessible from everywhere
@@ -44,26 +56,33 @@ static void motorSetMotionTurnLeft(MotorData_t *data);
  * Motors Control main task
  * @param argument
  */
-static void MotorsControlTask_Start(void *vParameters)
+static void vMotorsControlTaskStart(void *vParameters)
 {
 
-	/* prevent compilation warning */
-	UNUSED(vParameters);
+	uint8_t flags;
 
 	for (;;)
 	{
-		/* event flag motors active, if set we start a motion, if not we idle */
+		/* event flag motors active - these flags are just disposable events flags */
+		flags = osEventFlagsWait(xEventMotorsMotion, MOTORS_FORWARD | MOTORS_BACKWARD | MOTORS_IDLE, osFlagsNoClear, osWaitForever);
+		//printf("flags: %d", flags);
 
-		if (osEventFlagsGet(xEventMotorsForward) && MOTORS_FORWARD_ACTIVE) {
+		if (osEventFlagsGet(xEventMotorsMotion) && MOTORS_IDLE) {
+			motorsSetMotionIdle(&MotorData);
+			osEventFlagsClear(xEventMotorsMotion, MOTORS_IDLE);
+		}
+		if (osEventFlagsGet(xEventMotorsMotion) && MOTORS_FORWARD) {
 			motorSetMotionForward(&MotorData);
-		} else {
-			motorsSetMotorsIdle(&MotorData);
+			osEventFlagsClear(xEventMotorsMotion, MOTORS_FORWARD);
+		}
+		if (osEventFlagsGet(xEventMotorsMotion) && MOTORS_BACKWARD) {
+			motorSetMotionBackward(&MotorData);
+			osEventFlagsClear(xEventMotorsMotion, MOTORS_BACKWARD);
 		}
 
-		osDelay(50);
+	osDelay(10);
 	}
-
-	osThreadTerminate(MotorsControl_taskHandle);
+	osThreadTerminate(xMotorsControlTaskHnd);
 }
 
 /**
@@ -72,8 +91,8 @@ static void MotorsControlTask_Start(void *vParameters)
  */
 uint8_t uMotorsControlServiceInit()
 {
-	xEventMotorsForward = osEventFlagsNew(NULL);
-	if (xEventMotorsForward == NULL) {
+	xEventMotorsMotion = osEventFlagsNew(NULL);
+	if (xEventMotorsMotion == NULL) {
 		printf("Motors Event Flag Initialization Failed");
 		Error_Handler();
 		return (EXIT_FAILURE);
@@ -87,9 +106,9 @@ uint8_t uMotorsControlServiceInit()
 	htim17.Instance->CCR1 = 0;
 
 	/* creation of the MotorsControl_task */
-	MotorsControl_taskHandle = osThreadNew(MotorsControlTask_Start, NULL, &MotorsControlTa_attributes);
-	if (MotorsControl_taskHandle == NULL) {
-		dbg_printf("MotorsControl Task Initialization Failed");
+	xMotorsControlTaskHnd = osThreadNew(vMotorsControlTaskStart, NULL, &xMotorsControlTa_attributes);
+	if (xMotorsControlTaskHnd == NULL) {
+		printf("MotorsControl Task Initialization Failed");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -201,7 +220,7 @@ static void motorSetMotionTurnRight(MotorData_t *data)
 /**
  * Sets motors power to 0 but does not change the recorded motion
  */
-static void motorsSetMotorsIdle(MotorData_t *data)
+static void motorsSetMotionIdle(MotorData_t *data)
 {
 	htim16.Instance->CCR1 = 0;
 	htim17.Instance->CCR1 = 0;
