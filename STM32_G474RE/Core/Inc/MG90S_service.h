@@ -24,12 +24,12 @@ typedef enum {
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */
 extern xServoPosition_t xServoPosition;
+extern osEventFlagsId_t evt_Mg90sMotionControlFlag;
 /********************************************************/
 
 /* event flag to activate the servo */
 #define FLG_MG90S_ACTIVE	(1 << 0)
 
-extern osEventFlagsId_t evt_Mg90sMotionControlFlag;
 
 /**
  * Main Initialization function

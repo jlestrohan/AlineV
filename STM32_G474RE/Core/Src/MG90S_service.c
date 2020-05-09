@@ -19,8 +19,7 @@
 
 /* flag to track activity of the servo */
 
-extern osEventFlagsId_t evt_Mg90sMotionControlFlag;
-
+osEventFlagsId_t evt_Mg90sMotionControlFlag;
 xServoPosition_t xServoPosition = ServoDirection_Center; /* center for a start */
 
 typedef StaticTask_t osStaticThreadDef_t;

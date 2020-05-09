@@ -18,20 +18,23 @@
 /********************************************************************
  * Extern variables from the different sensors and devices
  */
-MotorData_t MotorData;
-xServoPosition_t xServoPosition;
-osEventFlagsId_t evt_Mg90sMotionControlFlag;
+MotorData_t MotorData; /* extern */
+osEventFlagsId_t evt_Mg90sMotionControlFlag; /* extern */
+xServoPosition_t xServoPosition; /* extern */
+osMessageQueueId_t xMessageQueueMotorMotion; /* extern */
 
 /********************************************************************/
 
+static MotorMotion_t motorMotion;
+
 /* a few macros */
-#define MC_MOTORS_FORWARD	(((MotorData.motorMotion_Left == MotorMotion_Forward) && (MotorData.motorMotion_Right == MotorMotion_Forward)) && \
+#define MC_MOTORS_FORWARD	(((MotorData.motorMotion_Left == MOTOR_MOTION_FORWARD) && (MotorData.motorMotion_Right == MOTOR_MOTION_FORWARD)) && \
 		((MotorData.currentSpeedLeft > 0) && (MotorData.currentSpeedRight > 0)))
 
-#define MC_MOTORS_BACKWARD	(((MotorData.motorMotion_Left == MotorMotion_Backward) && (MotorData.motorMotion_Right == MotorMotion_Backward)) && \
+#define MC_MOTORS_BACKWARD	(((MotorData.motorMotion_Left == MOTOR_MOTION_BACKWARD) && (MotorData.motorMotion_Right == MOTOR_MOTION_BACKWARD)) && \
 		((MotorData.currentSpeedLeft > 0) && (MotorData.currentSpeedRight > 0)))
 
-#define MC_MOTORS_IDLE 		(((MotorData.motorMotion_Left == MotorMotion_Backward) && (MotorData.motorMotion_Right == MotorMotion_Backward)) && \
+#define MC_MOTORS_IDLE 		(((MotorData.motorMotion_Left == MOTOR_MOTION_IDLE) && (MotorData.motorMotion_Right == MOTOR_MOTION_IDLE)) && \
 		((MotorData.currentSpeedLeft == 0) && (MotorData.currentSpeedRight == 0)))
 
 
@@ -91,6 +94,7 @@ void vNavControlServiceTask(void *vParameters)
 
 
 
+
 		/*******************************************************************************************************************/
 		/** HC-SR04 CONTROL
 		 * - Selection of actives ones vs inactives ones */
@@ -119,14 +123,35 @@ void vNavControlServiceTask(void *vParameters)
 		/**
 		 * * Bottom flag prevents the android to fall to its death, let's handle this */
 		if ((HR04_SensorsData.sonarNum == HR04_SONAR_BOTTOM) && (HR04_SensorsData.distance > 10)) {
-			osEventFlagsSet(xEventMotorsMotion, MOTORS_IDLE); /* completely stop the motors*/
+			motorMotion = MOTOR_MOTION_IDLE;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U); /* completely stop the motors*/
 		}
 
+		/*******************************************************************************************************************/
+		/** FRONT MOTION OBSTACLE AVOIDANCE CONTROL 																	   */
+
+		if (MC_MOTORS_FORWARD) {
+
+			/* front sensing, let's check when servo is directed to the front */
+			if (xServoPosition == ServoDirection_Center) {
+				if ((HR04_SensorsData.sonarNum == HR04_SONAR_FRONT) && (HR04_SensorsData.distance < 20)) {
+					/* distance front is less than 20cm we need to take action... */
+					/* first we set motors idle */
+					motorMotion = MOTOR_MOTION_IDLE;
+					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+
+					/* next we ask the sensor to make a 180° */
 
 
-		//xHcrSr04ControlFlag
+				}
+			}
 
-		osDelay(20);
+
+
+
+		}
+
+		osDelay(1);
 	}
 	osThreadTerminate(xNavControlServiceTaskHandle);
 }

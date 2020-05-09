@@ -17,11 +17,6 @@
 #include "MG90S_service.h"
 #include <assert.h>
 
-/* functions definition */
-static void motorSetMotionForward(MotorData_t *data);
-static void motorSetMotionBackward(MotorData_t *data);
-static void motorsSetMotionIdle(MotorData_t *data);
-
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xMotorsControlTaskHnd;
 static uint32_t xMotorsControlTaBuffer[256];
@@ -35,16 +30,16 @@ static const osThreadAttr_t xMotorsControlTa_attributes = {
 		.cb_size = sizeof(xMotorsControlTaControlBlock),
 };
 
-osEventFlagsId_t xEventMotorsMotion;
+osMessageQueueId_t xQueueMotorMotionOrder;
 
 /**
  * Main DataStruct accessible from everywhere
  */
 extern MotorData_t MotorData;
-MotorData_t MotorData, lastMotorData = {MotorMotion_Idle, MotorMotion_Idle, 0,0};
+MotorData_t MotorData, lastMotorData = {MOTOR_MOTION_IDLE, MOTOR_MOTION_IDLE, 0,0};
 
 /* functions definitions */
-static void motorsSetMotorsIdle(MotorData_t *data);
+static void motorsSetMotionIdle(MotorData_t *data);
 static void motorSetMotionForward(MotorData_t *data);
 static void motorSetMotionBackward(MotorData_t *data);
 static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
@@ -58,29 +53,28 @@ static void motorSetMotionTurnLeft(MotorData_t *data);
  */
 static void vMotorsControlTaskStart(void *vParameters)
 {
-
-	uint8_t flags;
+	MotorMotion_t msgOrder;
 
 	for (;;)
 	{
 		/* event flag motors active - these flags are just disposable events flags */
-		flags = osEventFlagsWait(xEventMotorsMotion, MOTORS_FORWARD | MOTORS_BACKWARD | MOTORS_IDLE, osFlagsNoClear, osWaitForever);
-		//printf("flags: %d", flags);
+		osMessageQueueGet(xQueueMotorMotionOrder, &msgOrder, NULL, osWaitForever);
 
-		if (osEventFlagsGet(xEventMotorsMotion) && MOTORS_IDLE) {
-			motorsSetMotionIdle(&MotorData);
-			osEventFlagsClear(xEventMotorsMotion, MOTORS_IDLE);
-		}
-		if (osEventFlagsGet(xEventMotorsMotion) && MOTORS_FORWARD) {
+		switch (msgOrder) {
+		case MOTOR_MOTION_FORWARD:
 			motorSetMotionForward(&MotorData);
-			osEventFlagsClear(xEventMotorsMotion, MOTORS_FORWARD);
-		}
-		if (osEventFlagsGet(xEventMotorsMotion) && MOTORS_BACKWARD) {
+			break;
+
+		case MOTOR_MOTION_BACKWARD:
 			motorSetMotionBackward(&MotorData);
-			osEventFlagsClear(xEventMotorsMotion, MOTORS_BACKWARD);
+			break;
+
+		case MOTOR_MOTION_IDLE: default:
+			motorsSetMotionIdle(&MotorData);
+			break;
 		}
 
-	osDelay(10);
+		osDelay(10);
 	}
 	osThreadTerminate(xMotorsControlTaskHnd);
 }
@@ -91,9 +85,12 @@ static void vMotorsControlTaskStart(void *vParameters)
  */
 uint8_t uMotorsControlServiceInit()
 {
-	xEventMotorsMotion = osEventFlagsNew(NULL);
-	if (xEventMotorsMotion == NULL) {
-		printf("Motors Event Flag Initialization Failed");
+	/* start Idle for now */
+	xQueueMotorMotionOrder = MOTOR_MOTION_IDLE;
+
+	xQueueMotorMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xQueueMotorMotionOrder == NULL) {
+		printf("Motors Message Queue Initialization Failed");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -113,6 +110,7 @@ uint8_t uMotorsControlServiceInit()
 		return (EXIT_FAILURE);
 	}
 
+	printf("Initializing Motors Control Service... Success!\n\r");
 	return (EXIT_SUCCESS);
 }
 
@@ -162,10 +160,17 @@ static void motorSetMotionForward(MotorData_t *data)
 
 	/* now we set the right values into the main motors control struct */
 	lastMotorData = *data; /* backup the data into the last known values struct */
-	data->motorMotion_Left = MotorMotion_Forward;
-	data->motorMotion_Right = MotorMotion_Forward;
-	MotorSetSpeed(data, lastMotorData.currentSpeedLeft > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED,
-			lastMotorData.currentSpeedRight > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED);
+	data->motorMotion_Left = MOTOR_MOTION_FORWARD;
+	data->motorMotion_Right = MOTOR_MOTION_FORWARD;
+
+	/* if the last motion is not backward, we can restore the old speed. */
+	if ((lastMotorData.motorMotion_Left != MOTOR_MOTION_BACKWARD) && (lastMotorData.motorMotion_Right != MOTOR_MOTION_BACKWARD)) {
+		MotorSetSpeed(data, lastMotorData.currentSpeedLeft > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED,
+				lastMotorData.currentSpeedRight > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED);
+	} else {
+		/* or we just set the speed by default */
+		MotorSetSpeed(data,MOTORS_DEFAULT_FW_SPEED, MOTORS_DEFAULT_FW_SPEED);
+	}
 }
 
 /**
@@ -180,8 +185,8 @@ static void motorSetMotionBackward(MotorData_t *data)
 
 	/* now we set the right values into the main motors control struct */
 	lastMotorData = *data; /* backup the data into the last known values struct */
-	data->motorMotion_Left = MotorMotion_Backward;
-	data->motorMotion_Right = MotorMotion_Backward;
+	data->motorMotion_Left = MOTOR_MOTION_BACKWARD;
+	data->motorMotion_Right = MOTOR_MOTION_BACKWARD;
 	MotorSetSpeed(data, MOTORS_DEFAULT_BW_SPEED, MOTORS_DEFAULT_BW_SPEED);
 }
 
@@ -197,8 +202,8 @@ static void motorSetMotionTurnLeft(MotorData_t *data)
 
 	/* now we set the right values into the main motors control struct */
 	lastMotorData = *data; /* backup the data into the last known values struct */
-	data->motorMotion_Left = MotorMotion_Backward;
-	data->motorMotion_Right = MotorMotion_Forward;
+	data->motorMotion_Left = MOTOR_MOTION_BACKWARD;
+	data->motorMotion_Right = MOTOR_MOTION_FORWARD;
 }
 
 /**
@@ -213,8 +218,8 @@ static void motorSetMotionTurnRight(MotorData_t *data)
 
 	/* now we set the right values into the main motors control struct */
 	lastMotorData = *data; /* backup the data into the last known values struct */
-	data->motorMotion_Left = MotorMotion_Forward;
-	data->motorMotion_Right = MotorMotion_Backward;
+	data->motorMotion_Left = MOTOR_MOTION_FORWARD;
+	data->motorMotion_Right = MOTOR_MOTION_BACKWARD;
 }
 
 /**
@@ -227,8 +232,8 @@ static void motorsSetMotionIdle(MotorData_t *data)
 
 	lastMotorData = *data; /* backup the data into the last known values struct */
 	MotorSetSpeed(data, 0, 0);
-	data->motorMotion_Left = MotorMotion_Idle;
-	data->motorMotion_Right = MotorMotion_Idle;
+	data->motorMotion_Left = MOTOR_MOTION_IDLE;
+	data->motorMotion_Right = MOTOR_MOTION_IDLE;
 }
 
 

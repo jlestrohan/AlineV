@@ -35,8 +35,10 @@
 char msg[50];
 
 osEventFlagsId_t xEventOnBoardButton,xEventButtonExt;
-osMessageQueueId_t xQueueEspSerialTX;
+osMessageQueueId_t xQueueEspSerialTX; /*extern */
+osMessageQueueId_t xQueueMotorMotionOrder; /* extern */
 
+static MotorMotion_t motorMotion;
 typedef StaticTask_t osStaticThreadDef_t;
 
 /**
@@ -102,8 +104,9 @@ static void vOnBoardButtonServiceTask(void *argument)
 				// Test to see if servo is receving the active/inactive flag
 				if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
 					strcpy(msg, "STM32 - Starting Motors\n");
-					if (xEventMotorsMotion != NULL) {
-						osEventFlagsSet(xEventMotorsMotion, MOTORS_FORWARD);
+					if (xQueueMotorMotionOrder != NULL) {
+						motorMotion = MOTOR_MOTION_FORWARD;
+						osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
 						osEventFlagsSet(xEventUvLed, FLG_UV_LED_ACTIVE);
 					}
 					if (xQueueEspSerialTX != NULL) {
@@ -111,8 +114,9 @@ static void vOnBoardButtonServiceTask(void *argument)
 					}
 				} else {
 					strcpy(msg, "STM32 - Stopping Motors\n");
-					if (xEventMotorsMotion != NULL) {
-						osEventFlagsSet(xEventMotorsMotion, MOTORS_IDLE);
+					if (xQueueMotorMotionOrder != NULL) {
+						motorMotion = MOTOR_MOTION_IDLE;
+						osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
 						osEventFlagsClear(xEventUvLed, FLG_UV_LED_ACTIVE);
 					}
 					if (xQueueEspSerialTX != NULL) {
@@ -127,7 +131,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 
 		osDelay(100);
 	}
-
+	osThreadTerminate(xOnboardButtonServiceTaskHandle);
 }
 
 
@@ -140,6 +144,13 @@ static void vButton2ServiceTask(void *argument)
 	uint32_t uBtn2LastPressedTick = 0;
 	printf("Starting Button EXT Service task...\n\r");
 
+	xEventButtonExt = osEventFlagsNew(NULL);
+	if (xEventButtonExt == NULL) {
+		printf("Button 2 Service Event Flags object not created!\n\r");
+		Error_Handler();
+		osThreadSuspend(xButton2ServiceTaskHandle);
+	}
+
 	for (;;)
 	{
 		if (xEventButtonExt != NULL) {
@@ -147,12 +158,15 @@ static void vButton2ServiceTask(void *argument)
 			if (uButtonDebounce(uBtn2LastPressedTick) || uBtn2LastPressedTick == 0) {
 				uBtn2LastPressedTick = HAL_GetTick();
 				//osEventFlagsSet(xEventMenuNavButton, BEXT_PRESSED_EVT);
-				osEventFlagsSet(xEventMotorsMotion, MOTORS_BACKWARD);
-
+				if (xQueueMotorMotionOrder != NULL) {
+					motorMotion = MOTOR_MOTION_BACKWARD;
+					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+				}
 			}
 		}
 		osDelay(100);
 	}
+	osThreadTerminate(xButton2ServiceTaskHandle);
 }
 
 /**
@@ -162,15 +176,9 @@ uint8_t uButtonServiceInit()
 {
 	xEventOnBoardButton = osEventFlagsNew(NULL);
 	if (xEventOnBoardButton == NULL) {
-		dbg_printf("Button Service Event Flags object not created!");
+		printf("Button Service Event Flags object not created!\n\r");
 		Error_Handler();
-		return EXIT_FAILURE;
-	}
-	xEventButtonExt = osEventFlagsNew(NULL);
-	if (xEventButtonExt == NULL) {
-		dbg_printf("Button 2 Service Event Flags object not created!");
-		Error_Handler();
-		return EXIT_FAILURE;
+		osThreadSuspend(xOnboardButtonServiceTaskHandle);
 	}
 
 	xOnboardButtonServiceTaskHandle = osThreadNew(vOnBoardButtonServiceTask, NULL, &xOnBoardButtonServiceTask_attributes);

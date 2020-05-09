@@ -35,9 +35,9 @@ typedef enum {
  * Motor speed
  */
 typedef enum {
-	MotorMotion_Idle,
-	MotorMotion_Forward,
-	MotorMotion_Backward,
+	MOTOR_MOTION_IDLE,
+	MOTOR_MOTION_FORWARD,
+	MOTOR_MOTION_BACKWARD,
 } MotorMotion_t;
 
 /**
@@ -50,7 +50,7 @@ typedef struct {
 	uint8_t currentSpeedRight;				/* 0 - 100 */
 } MotorData_t;
 
-extern osEventFlagsId_t xEventMotorsMotion;
+extern osMessageQueueId_t xQueueMotorMotionOrder;
 
 /**
  * @brief  MPU6050 result enumeration
