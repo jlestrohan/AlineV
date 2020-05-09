@@ -28,6 +28,7 @@
 #include "lcdMenu_service.h"
 #include <assert.h>
 #include "uvLed_service.h"
+#include "navControl_service.h"
 
 //temp
 #include "MotorsControl_service.h"
@@ -37,6 +38,7 @@ char msg[50];
 osEventFlagsId_t xEventOnBoardButton,xEventButtonExt;
 osMessageQueueId_t xQueueEspSerialTX; /*extern */
 osMessageQueueId_t xQueueMotorMotionOrder; /* extern */
+FSM_Status_t FSM_IA_STATUS; /* extern */
 
 static MotorMotion_t motorMotion;
 typedef StaticTask_t osStaticThreadDef_t;
@@ -105,6 +107,8 @@ static void vOnBoardButtonServiceTask(void *argument)
 				if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
 					strcpy(msg, "STM32 - Starting Motors\n");
 					if (xQueueMotorMotionOrder != NULL) {
+						/* let's pretend we're starting an exploration mission */
+						FSM_IA_STATUS = statusRUNNING;
 						motorMotion = MOTOR_MOTION_FORWARD;
 						osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
 						osEventFlagsSet(xEventUvLed, FLG_UV_LED_ACTIVE);

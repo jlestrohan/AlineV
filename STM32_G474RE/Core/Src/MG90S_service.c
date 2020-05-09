@@ -9,6 +9,7 @@
 
 #include "MG90S_service.h"
 #include "configuration.h"
+#include "HCSR04_service.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include <stdio.h>
@@ -21,6 +22,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 osMessageQueueId_t xQueueMg90sMotionOrder;
 xServoPosition_t xServoPosition;
+
 
 /**
  * Main task definition
@@ -69,7 +71,11 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 		case SERVO_DIRECTION_RIGHT45: default:
 			xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45; break;
 		}
-		osDelay(500);
+		osDelay(125);
+		HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* once the servo has made it to its right angle, we start measuring for a little time */
+		osDelay(125);
+		HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and then we" stop */
+		osDelay(125);
 	}
 	osThreadTerminate(xFrontServoThreeProbesTaskHnd);
 }

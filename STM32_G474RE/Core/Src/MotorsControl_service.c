@@ -40,11 +40,11 @@ MotorData_t MotorData, lastMotorData = {MOTOR_MOTION_IDLE, MOTOR_MOTION_IDLE, 0,
 
 /* functions definitions */
 static void motorsSetMotionIdle(MotorData_t *data);
-static void motorSetMotionForward(MotorData_t *data);
-static void motorSetMotionBackward(MotorData_t *data);
+static void motorSetMotionForward(MotorData_t *data, uint8_t speed);
+static void motorSetMotionBackward(MotorData_t *data, uint8_t speed);
 static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
-static void motorSetMotionTurnRight(MotorData_t *data);
-static void motorSetMotionTurnLeft(MotorData_t *data);
+static void motorSetMotionTurnRight(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
+static void motorSetMotionTurnLeft(MotorData_t *data, uint8_t speed_left, uint8_t speed_right);
 
 
 /**
@@ -62,19 +62,31 @@ static void vMotorsControlTaskStart(void *vParameters)
 
 		switch (msgOrder) {
 		case MOTOR_MOTION_FORWARD:
-			motorSetMotionForward(&MotorData);
+			motorSetMotionForward(&MotorData, MOTORS_DEFAULT_FW_SPEED);
 			break;
 
 		case MOTOR_MOTION_BACKWARD:
-			motorSetMotionBackward(&MotorData);
+			motorSetMotionBackward(&MotorData, MOTORS_DEFAULT_BW_SPEED);
 			break;
 
-		case MOTOR_MOTION_IDLE: default:
+		case MOTOR_MOTION_IDLE:
+			motorsSetMotionIdle(&MotorData);
+			break;
+		case MOTOR_SPEED_REDUCE_20:
+			MotorSetSpeed(&MotorData, MOTORS_DEFAULT_FW_SPEED - MOTORS_DEFAULT_FW_SPEED * 0.2, MOTORS_DEFAULT_FW_SPEED - MOTORS_DEFAULT_FW_SPEED * 0.2);
+			break;
+		case MOTOR_MOTION_TURN_RIGHT:
+			motorSetMotionTurnRight(&MotorData, MOTORS_DEFAULT_TURN_SPEED, MOTORS_DEFAULT_TURN_SPEED);
+			break;
+		case MOTOR_MOTION_TURN_LEFT:
+			motorSetMotionTurnLeft(&MotorData, MOTORS_DEFAULT_TURN_SPEED, MOTORS_DEFAULT_TURN_SPEED);
+			break;
+		default:
 			motorsSetMotionIdle(&MotorData);
 			break;
 		}
 
-		osDelay(10);
+		osDelay(1);
 	}
 	osThreadTerminate(xMotorsControlTaskHnd);
 }
@@ -120,9 +132,6 @@ uint8_t uMotorsControlServiceInit()
  */
 static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 {
-	assert(speed_right > -1);
-	assert(speed_left > -1);
-
 	/* let's clamp the values to avoid overflow */
 	speed_left = speed_left > 100 ? 100 : speed_left;
 	speed_right = speed_right > 100 ? 100 : speed_right;
@@ -143,15 +152,16 @@ static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_r
 	}
 
 	/* save the current values into the data struct */
-	data->currentSpeedLeft = speed_left;							/* records the current speed */
+	lastMotorData = *data; /* backup the data into the last known values struct */
+	data->currentSpeedLeft = speed_left; /* records the current speed */
 	data->currentSpeedRight = speed_right;
-
 }
 
 /**
  * Sets LN298 GPIO controls for forward motion
+ * One speed for two motors, we are supposed to go forward
  */
-static void motorSetMotionForward(MotorData_t *data)
+static void motorSetMotionForward(MotorData_t *data, uint8_t speed)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
@@ -163,20 +173,15 @@ static void motorSetMotionForward(MotorData_t *data)
 	data->motorMotion_Left = MOTOR_MOTION_FORWARD;
 	data->motorMotion_Right = MOTOR_MOTION_FORWARD;
 
-	/* if the last motion is not backward, we can restore the old speed. */
-	if ((lastMotorData.motorMotion_Left != MOTOR_MOTION_BACKWARD) && (lastMotorData.motorMotion_Right != MOTOR_MOTION_BACKWARD)) {
-		MotorSetSpeed(data, lastMotorData.currentSpeedLeft > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED,
-				lastMotorData.currentSpeedRight > 0 ? lastMotorData.currentSpeedLeft : MOTORS_DEFAULT_FW_SPEED);
-	} else {
-		/* or we just set the speed by default */
-		MotorSetSpeed(data,MOTORS_DEFAULT_FW_SPEED, MOTORS_DEFAULT_FW_SPEED);
-	}
+	/* set the required speed */
+	MotorSetSpeed(data, speed, speed);
 }
 
 /**
  * Sets LN298 GPIO controls for backward motion
+ * We are supposed to not be turning, straight backward
  */
-static void motorSetMotionBackward(MotorData_t *data)
+static void motorSetMotionBackward(MotorData_t *data, uint8_t speed)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
@@ -187,14 +192,17 @@ static void motorSetMotionBackward(MotorData_t *data)
 	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MOTOR_MOTION_BACKWARD;
 	data->motorMotion_Right = MOTOR_MOTION_BACKWARD;
-	MotorSetSpeed(data, MOTORS_DEFAULT_BW_SPEED, MOTORS_DEFAULT_BW_SPEED);
+
+	MotorSetSpeed(data, speed, speed);
 }
 
 /**
  * Sets LN298 GPIO controls for left turn motion
+ * speed = turning speed, two different values will equal to have a turning forward motion
  */
-static void motorSetMotionTurnLeft(MotorData_t *data)
+static void motorSetMotionTurnLeft(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 {
+
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOC, MOTOR2_IN3_Pin, GPIO_PIN_RESET);
@@ -204,12 +212,14 @@ static void motorSetMotionTurnLeft(MotorData_t *data)
 	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MOTOR_MOTION_BACKWARD;
 	data->motorMotion_Right = MOTOR_MOTION_FORWARD;
+
+	MotorSetSpeed(&MotorData, speed_left, speed_right);
 }
 
 /**
  * Sets LN298 GPIO controls for right turn motion
  */
-static void motorSetMotionTurnRight(MotorData_t *data)
+static void motorSetMotionTurnRight(MotorData_t *data, uint8_t speed_left, uint8_t speed_right)
 {
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN1_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, MOTOR1_IN2_Pin, GPIO_PIN_SET);
@@ -220,7 +230,10 @@ static void motorSetMotionTurnRight(MotorData_t *data)
 	lastMotorData = *data; /* backup the data into the last known values struct */
 	data->motorMotion_Left = MOTOR_MOTION_FORWARD;
 	data->motorMotion_Right = MOTOR_MOTION_BACKWARD;
+
+	MotorSetSpeed(&MotorData, speed_left, speed_right);
 }
+
 
 /**
  * Sets motors power to 0 but does not change the recorded motion
@@ -231,9 +244,11 @@ static void motorsSetMotionIdle(MotorData_t *data)
 	htim17.Instance->CCR1 = 0;
 
 	lastMotorData = *data; /* backup the data into the last known values struct */
-	MotorSetSpeed(data, 0, 0);
+
 	data->motorMotion_Left = MOTOR_MOTION_IDLE;
 	data->motorMotion_Right = MOTOR_MOTION_IDLE;
+
+	MotorSetSpeed(data, 0, 0);
 }
 
 

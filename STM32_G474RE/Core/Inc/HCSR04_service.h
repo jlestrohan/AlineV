@@ -12,6 +12,11 @@
 
 #include <stdint.h>
 #include "cmsis_os2.h"
+#include "tim.h"
+
+#define HTIM_ULTRASONIC_REAR &htim1
+#define HTIM_ULTRASONIC_FRONT &htim2
+#define HTIM_ULTRASONIC_BOTTOM &htim3
 
 #define HC_SR04_SONARS_CNT	   	3 			/* Current number of sonars that are connected to the board */
 #define MICROSECONDS_TO_CM 		29/2 /* have to divide µsec by this number to get distance in cm */
@@ -19,11 +24,6 @@
 #define HR04_SONAR_REAR			0x01U
 #define HR04_SONAR_FRONT		0x02U
 #define HR04_SONAR_BOTTOM		0x03U
-
-/* event flag to activate the sensors */
-#define FLG_SONAR_REAR_ACTIVE		(1 << 0)
-#define FLG_SONAR_FRONT_ACTIVE		(1 << 1)
-#define FLG_SONAR_BOTTOM_ACTIVE		(1 << 2)
 
 typedef struct {
 	uint8_t		distance;

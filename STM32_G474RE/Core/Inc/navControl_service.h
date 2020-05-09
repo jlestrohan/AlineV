@@ -15,6 +15,18 @@
 
 #include <stdint.h>
 
+/**
+ * Finite State Machine indicating the current status of the "mission"
+ * This is public
+ */
+typedef enum {
+	statusIDLE,
+	statusRUNNING,  //!< statusRUNNING
+	statusAVOIDANCE,//!< statusAVOIDANCE
+} FSM_Status_t;
+
+extern FSM_Status_t FSM_IA_STATUS; /* default idle */
+
 uint8_t uNavControlServiceInit();
 
 #endif /* INC_NAVCONTROL_SERVICE_H_ */

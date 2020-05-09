@@ -15,15 +15,17 @@
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
 
+typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the code elsewhere */
+
 /**
  * DEBUG CONFIGURATION
  * Sensors dbg_printf enable/disable
  */
 
 /** sensors loggers **/
-//#define DEBUG_HCSR04_FRONT
+#define DEBUG_HCSR04_FRONT
 //#define DEBUG_HCSR04_BOTTOM
-//#define DEBUG_HCSR04_REAR
+#define DEBUG_HCSR04_REAR
 //#define DEBUG_QMC5883
 //#define DEBUG_SYSTEMINFOS
 
@@ -37,14 +39,22 @@
 #define DEBUG_SERVICE_MOTORS
 #define DEBUG_SERVICE_NAVCONTROL
 #define DEBUG_SERVICE_UVLED
+#define DEBUG_SERVICE_CMD_PARSER
 
 
 
 /**
  * BEHAVIOUR CONTROL
  */
- /* on a forward motion, the rover will stop if the US sensor goes above the defined distance */
-#define ULTRASONIC_HOLE_MIN_DISTANCE_STOP_CM			10
+ /* on a forward motion, the rover will stop if the US BOTTOM sensor goes above the defined distance */
+#define US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM			10
+
+/* what distance is considered by both angles of front distance sensing as "obstacle" */
+#define US_ANGLE_FRONT_MIN_STOP_CM					15
+
+/* distance from which we stop the forward motion once an obstacle has been detected */
+#define US_FRONT_MIN_STOP_CM						25
+
 /* on a backward motion distance under which the rover will stop going backward */
 #define ULTRASONIC_BACK_SENSOR_STOP_REAR_MOTION_CM		15
 
@@ -102,23 +112,23 @@
   osPriorityRealtime7     = 48+7,       ///< Priority: realtime + 7
  */
 /* tasks priorities here */
-#define OSTASK_PRIORITY_LOGGER				osPriorityHigh
-#define OSTASK_PRIORITY_BUTTON_ONBOARD		osPriorityBelowNormal1
-#define OSTASK_PRIORITY_NAVCONTROL			osPriorityHigh5
-#define OSTASK_PRIORITY_BUTTON_ADD			osPriorityBelowNormal3
-#define OSTASK_PRIORITY_HCSR04				osPriorityHigh
-#define OSTASK_PRIORITY_HCSR04_CTL			osPriorityLow4
-#define OSTASK_PRIORITY_MG90S				osPriorityBelowNormal5
-#define OSTASK_PRIORITY_MG90S_3PROBES		osPriorityBelowNormal6
-#define OSTASK_PRIORITY_QMC5883				osPriorityBelowNormal2
-#define OSTASK_PRIORITY_MPU6050				osPriorityLow5
-#define OSTASK_PRIORITY_LCDMENU				osPriorityAboveNormal
-#define OSTASK_PRIORITY_ESP32_TX			osPriorityNormal1
-#define OSTASK_PRIORITY_ESP32_RX			osPriorityNormal2
-#define OSTASK_PRIORITY_SYSTEMINFO			osPriorityLow6
-#define OSTASK_PRIORITY_UVLED				osPriorityBelowNormal4
-#define OSTASK_PRIORITY_CMD_SERVICE			osPriorityNormal3
-#define OSTASK_PRIORITY_MOTORS CONTROL		osPriorityHigh7
+#define OSTASK_PRIORITY_BUTTON_ONBOARD					osPriorityBelowNormal1
+#define OSTASK_PRIORITY_NAVCONTROL_NORM_MOTION			osPriorityHigh5
+#define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityHigh5
+#define OSTASK_PRIORITY_BUTTON_ADD						osPriorityBelowNormal3
+#define OSTASK_PRIORITY_HCSR04							osPriorityHigh6
+#define OSTASK_PRIORITY_HCSR04_CTL						osPriorityBelowNormal6
+#define OSTASK_PRIORITY_MG90S							osPriorityBelowNormal5
+#define OSTASK_PRIORITY_MG90S_3PROBES					osPriorityBelowNormal6
+#define OSTASK_PRIORITY_QMC5883							osPriorityBelowNormal2
+#define OSTASK_PRIORITY_MPU6050							osPriorityLow5
+#define OSTASK_PRIORITY_LCDMENU							osPriorityAboveNormal
+#define OSTASK_PRIORITY_ESP32_TX						osPriorityNormal1
+#define OSTASK_PRIORITY_ESP32_RX						osPriorityNormal2
+#define OSTASK_PRIORITY_SYSTEMINFO						osPriorityLow6
+#define OSTASK_PRIORITY_UVLED							osPriorityBelowNormal4
+#define OSTASK_PRIORITY_CMD_SERVICE						osPriorityNormal3
+#define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityHigh
 
 
 #endif /* INC_CONFIGURATION_H_ */
