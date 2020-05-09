@@ -14,6 +14,7 @@
 #include "MG90S_service.h"
 #include "printf.h"
 #include "MotorsControl_service.h"
+#include "uvLed_service.h"
 
 /********************************************************************
  * Extern variables from the different sensors and devices
@@ -67,6 +68,7 @@ static const osThreadAttr_t NavControlServiceTa_attributes = {
 void vNavControlServiceTask(void *vParameters)
 {
 	printf("Starting navControl task...\n\r");
+	xServoPattern_t xServopattern;
 
 	for (;;)
 	{
@@ -87,9 +89,11 @@ void vNavControlServiceTask(void *vParameters)
 		/** FRONT SERVO CONTROL 																						   */
 
 		if (MC_MOTORS_FORWARD) {
-			osEventFlagsSet(evt_Mg90sMotionControlFlag, FLG_MG90S_ACTIVE);
+			xServopattern = SERVO_PATTERN_THREE_PROBES;
+			osMessageQueuePut(xQueueMg90sMotionOrder, &xServopattern, 0U, osWaitForever);
 		} else {
-			osEventFlagsClear(evt_Mg90sMotionControlFlag, FLG_MG90S_ACTIVE);
+			xServopattern = SERVO_PATTERN_IDLE;
+			osMessageQueuePut(xQueueMg90sMotionOrder, &xServopattern, 0U, osWaitForever);
 		}
 
 
@@ -131,15 +135,24 @@ void vNavControlServiceTask(void *vParameters)
 		/** FRONT MOTION OBSTACLE AVOIDANCE CONTROL 																	   */
 
 		if (MC_MOTORS_FORWARD) {
-
 			/* front sensing, let's check when servo is directed to the front */
-			if (xServoPosition == ServoDirection_Center) {
+			if (xServoPosition == SERVO_DIRECTION_CENTER) {
 				if ((HR04_SensorsData.sonarNum == HR04_SONAR_FRONT) && (HR04_SensorsData.distance < 20)) {
 					/* distance front is less than 20cm we need to take action... */
 					/* first we set motors idle */
 					motorMotion = MOTOR_MOTION_IDLE;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
 
+					/* blink front leds */
+					osEventFlagsClear(xEventUvLed, FLG_UV_LED_ACTIVE);
+					osDelay(150);
+					osEventFlagsSet(xEventUvLed, FLG_UV_LED_ACTIVE);
+					osDelay(150);
+					osEventFlagsClear(xEventUvLed, FLG_UV_LED_ACTIVE);
+					osDelay(150);
+					osEventFlagsSet(xEventUvLed, FLG_UV_LED_ACTIVE);
+					osDelay(150);
+					osEventFlagsClear(xEventUvLed, FLG_UV_LED_ACTIVE);
 					/* next we ask the sensor to make a 180° */
 
 
@@ -151,7 +164,7 @@ void vNavControlServiceTask(void *vParameters)
 
 		}
 
-		osDelay(1);
+		osDelay(20);
 	}
 	osThreadTerminate(xNavControlServiceTaskHandle);
 }

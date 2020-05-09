@@ -104,18 +104,21 @@
 /* tasks priorities here */
 #define OSTASK_PRIORITY_LOGGER				osPriorityHigh
 #define OSTASK_PRIORITY_BUTTON_ONBOARD		osPriorityBelowNormal1
-#define OSTASK_PRIORITY_NAVCONTROL			osPriorityNormal
+#define OSTASK_PRIORITY_NAVCONTROL			osPriorityHigh5
 #define OSTASK_PRIORITY_BUTTON_ADD			osPriorityBelowNormal3
-#define OSTASK_PRIORITY_HCSR04				osPriorityNormal
+#define OSTASK_PRIORITY_HCSR04				osPriorityHigh
 #define OSTASK_PRIORITY_HCSR04_CTL			osPriorityLow4
 #define OSTASK_PRIORITY_MG90S				osPriorityBelowNormal5
+#define OSTASK_PRIORITY_MG90S_3PROBES		osPriorityBelowNormal6
 #define OSTASK_PRIORITY_QMC5883				osPriorityBelowNormal2
 #define OSTASK_PRIORITY_MPU6050				osPriorityLow5
 #define OSTASK_PRIORITY_LCDMENU				osPriorityAboveNormal
-#define OSTASK_PRIORITY_ESP32_TX			osPriorityNormal
-#define OSTASK_PRIORITY_ESP32_RX			osPriorityNormal
+#define OSTASK_PRIORITY_ESP32_TX			osPriorityNormal1
+#define OSTASK_PRIORITY_ESP32_RX			osPriorityNormal2
 #define OSTASK_PRIORITY_SYSTEMINFO			osPriorityLow6
 #define OSTASK_PRIORITY_UVLED				osPriorityBelowNormal4
+#define OSTASK_PRIORITY_CMD_SERVICE			osPriorityNormal3
+#define OSTASK_PRIORITY_MOTORS CONTROL		osPriorityHigh7
 
 
 #endif /* INC_CONFIGURATION_H_ */

@@ -16,20 +16,24 @@
 #include "cmsis_os2.h"
 
 typedef enum {
-	ServoDirection_Left = 	0x32U,
-	ServoDirection_Center = 0x04BU,
-	ServoDirection_Right = 	0x64U
+	SERVO_PATTERN_IDLE,
+	SERVO_PATTERN_THREE_PROBES,
+	SERVO_PATTERN_HALF_RADAR
+} xServoPattern_t;
+
+typedef enum {
+	SERVO_DIRECTION_LEFT90 		= 	25U,
+	SERVO_DIRECTION_LEFT45 		= 	50U,
+	SERVO_DIRECTION_CENTER 		= 	75U,
+	SERVO_DIRECTION_RIGHT45		= 	100U,
+	SERVO_DIRECTION_RIGHT90		= 	125U
 } xServoPosition_t;
 
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */
 extern xServoPosition_t xServoPosition;
-extern osEventFlagsId_t evt_Mg90sMotionControlFlag;
+extern osMessageQueueId_t xQueueMg90sMotionOrder;
 /********************************************************/
-
-/* event flag to activate the servo */
-#define FLG_MG90S_ACTIVE	(1 << 0)
-
 
 /**
  * Main Initialization function
