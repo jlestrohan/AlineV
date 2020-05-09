@@ -17,8 +17,8 @@
 
 #include "esp32serial_service.h"
 #include "configuration.h"
-#include "debug.h"
-#include "command.service.h"
+#include "printf.h"
+#include "main.h"
 #include "usart.h"
 #include "UartRingbuffer.h"
 #include "hdlc_protocol.h"
@@ -86,9 +86,7 @@ void hdlc_frame_handler(const uint8_t *data, uint16_t length)
  */
 void vEsp32TXSerialService_Start(void* vParameter)
 {
-	dbg_printf("Starting vEsp32TXSerial Service task...");
-	//PayLoad_t payload;// = "serialized json here";
-	//osStatus_t status;
+	printf("Starting ESP32 Serial TX Service task...\n\r");
 
 	for (;;)
 	{
@@ -110,7 +108,7 @@ void vEsp32TXSerialService_Start(void* vParameter)
  */
 void vEsp32RXSerialService_Start(void* vParameter)
 {
-	dbg_printf("Starting vEsp32RXSerial Service task...");
+	printf("Starting ESP32 Serial RX Service task...\n\r");
 
 	for (;;)
 	{
@@ -162,7 +160,7 @@ uint8_t uEsp32SerialServiceInit()
 	/* creation of TX Serial Task */
 	xEsp32TXSerialServiceTaskHandle = osThreadNew(vEsp32TXSerialService_Start, NULL, &xEsp32TXSerialServiceTa_attributes);
 	if (xEsp32TXSerialServiceTaskHandle == NULL) {
-		dbg_printf("Front Servo Task TX Initialization Failed");
+		printf("Front Servo Task TX Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -170,11 +168,12 @@ uint8_t uEsp32SerialServiceInit()
 	/* creation of RX Serial Task */
 	xEsp32RXSerialServiceTaskHandle = osThreadNew(vEsp32RXSerialService_Start, NULL, &xEsp32RXSerialServiceTa_attributes);
 	if (xEsp32RXSerialServiceTaskHandle == NULL) {
-		dbg_printf("Front Servo Task RX Initialization Failed");
+		printf("Front Servo Task RX Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
+	printf("Initializing ESP32 Serial Service... Success!\n\r");
 	return EXIT_SUCCESS;
 }
 

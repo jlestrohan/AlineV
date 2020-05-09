@@ -12,7 +12,8 @@
 #include "MotorsControl_service.h"
 #include "gpio.h"
 #include "tim.h"
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "MG90S_service.h"
 #include <assert.h>
 
@@ -73,7 +74,7 @@ uint8_t uMotorsControlServiceInit()
 {
 	xEventMotorsForward = osEventFlagsNew(NULL);
 	if (xEventMotorsForward == NULL) {
-		dbg_printf("Motors Event Flag Initialization Failed");
+		printf("Motors Event Flag Initialization Failed");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}

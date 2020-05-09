@@ -25,7 +25,7 @@
 #include <FreeRTOS.h>
 #include <HCSR04_service.h>
 #include "tim.h"
-#include "debug.h"
+#include "printf.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -78,7 +78,7 @@ HC_SR04_Result HC_SR04_StartupTimers();
  */
 static void vHr04ControlTaskStart(void *argument)
 {
-	dbg_printf("Starting HCSR_04 Control task...");
+	printf("Starting HCSR_04 Control task...\n\r");
 
 	for (;;) {
 		if (osEventFlagsGet(xHcrSr04ControlFlag) && FLG_SONAR_FRONT_ACTIVE) {
@@ -110,7 +110,7 @@ static void vHr04ControlTaskStart(void *argument)
  */
 static void vHr04SensorTaskStart(void *argument)
 {
-	dbg_printf("Starting HCSR_04 Service task...");
+	printf("Starting HCSR_04 Service task...\n\r");
 
 	osStatus_t status = -1;
 
@@ -150,7 +150,7 @@ uint8_t uHcsr04ServiceInit()
 {
 	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(HR04_SensorsData_t), NULL);
 	if (!queue_HC_SR04Handle) {
-		dbg_printf("HR04 Sensor Queue Initialization Failed");
+		printf("HR04 Sensor Queue Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -158,7 +158,7 @@ uint8_t uHcsr04ServiceInit()
 	/* definition of evt_HCSR04ControlFlag */
 	xHcrSr04ControlFlag = osEventFlagsNew(NULL);
 	if (xHcrSr04ControlFlag == NULL) {
-		dbg_printf("HCSR04 Event Flag Initialization Failed");
+		printf("HCSR04 Event Flag Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -166,7 +166,7 @@ uint8_t uHcsr04ServiceInit()
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
 	if (xHr04SensorTaskHandle == NULL) {
-		dbg_printf("HR04 Sensor Task Initialization Failed");
+		printf("HR04 Sensor Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -174,17 +174,17 @@ uint8_t uHcsr04ServiceInit()
 	/* creation of HR04Control_task */
 	xHr04ControlTaskHandle = osThreadNew(vHr04ControlTaskStart, NULL, &xHr04ControlTa_attributes);
 	if (xHr04ControlTaskHandle == NULL) {
-		dbg_printf("HR04 Control Task Initialization Failed");
+		printf("HR04 Control Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
-		dbg_printf("HC_SR04 Timers Initialization Failed");
+		printf("HC_SR04 Timers Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
-	dbg_printf("Initializing HC-SR04 Service... Success!");
+	printf("Initializing HC-SR04 Service... Success!\n\r");
 	return (EXIT_SUCCESS);
 }
 

@@ -12,11 +12,12 @@
  ******************************************************************************
  */
 #include "Button_service.h"
+#include "main.h"
 #include "configuration.h"
 #include "cmsis_os2.h"
 #include "ServicesSupervisorFlags.h"
 #include <FreeRTOS.h>
-#include "debug.h"
+#include "printf.h"
 #include <stdlib.h>
 #include "stdint.h"
 #include <stdbool.h>
@@ -85,7 +86,7 @@ static const osThreadAttr_t xButton2ServiceTask_attributes = {
 static void vOnBoardButtonServiceTask(void *argument)
 {
 	uint32_t uOnboardBtnLastPressedTick = 0;
-	dbg_printf("Starting Button ONBOARD Service task...");
+	printf("Starting Onboard Button Service task...\n\r");
 
 	for (;;)
 	{
@@ -136,9 +137,8 @@ static void vOnBoardButtonServiceTask(void *argument)
  */
 static void vButton2ServiceTask(void *argument)
 {
-
 	uint32_t uBtn2LastPressedTick = 0;
-	dbg_printf("Starting Button EXT Service task...");
+	printf("Starting Button EXT Service task...\n\r");
 
 	for (;;)
 	{
@@ -173,19 +173,19 @@ uint8_t uButtonServiceInit()
 
 	xOnboardButtonServiceTaskHandle = osThreadNew(vOnBoardButtonServiceTask, NULL, &xOnBoardButtonServiceTask_attributes);
 	if (xOnboardButtonServiceTaskHandle == NULL) {
-		dbg_printf("Button Service Task not created");
+		printf("Button Service Task not created\n\r");
 		Error_Handler();
 		return EXIT_FAILURE;
 	}
 
 	xButton2ServiceTaskHandle = osThreadNew(vButton2ServiceTask, NULL, &xButton2ServiceTask_attributes);
 	if (xButton2ServiceTaskHandle == NULL) {
-		dbg_printf("Button 2 Service Task not created");
+		printf("Button 2 Service Task not created\n\r");
 		Error_Handler();
 		return EXIT_FAILURE;
 	}
 
-	dbg_printf("Initializing Button Service... Success!");
+	printf("Initializing Button Service... Success!\n\r");
 	return EXIT_SUCCESS;
 }
 

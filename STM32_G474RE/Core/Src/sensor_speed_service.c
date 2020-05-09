@@ -9,7 +9,8 @@
 #include <stdlib.h>
 #include <FreeRTOS.h>
 #include "sensor_speed_service.h"
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -63,11 +64,11 @@ uint8_t sensor_speed_initialize()
 	        &SpeedSensorServiceTa_attributes);
 	if (!SpeedSensorServiceTaHandle) {
 		sensorSpeedStatus = sensorSpeedServiceInitError;
-		dbg_printf("Speed Sensor Service - Initialization Failure");
+		printf("Speed Sensor Service - Initialization Failure");
 		return (EXIT_FAILURE);
 	}
 
-	dbg_printf("Speed Sensor Service - Initialization complete");
+	printf("Speed Sensor Service - Initialization complete");
 	return (EXIT_SUCCESS);
 }
 
@@ -77,7 +78,7 @@ uint8_t sensor_speed_initialize()
  */
 void speedSensorService_task(void *argument)
 {
-	dbg_printf("Starting lm393 speed service task...");
+	printf("Starting lm393 speed service task...");
 	evt_speed_sensor = osEventFlagsNew(NULL);
 	uint32_t flagStatus = 0;
 	char msg[40] = {0};
@@ -118,7 +119,7 @@ void speedSensorService_task(void *argument)
 		/* saves the current SysTick to fdurther measure */
 		wheelProps[speedSensorNum].currentWheelTick = HAL_GetTick();
 		wheelProps[speedSensorNum].wheelTicksCounter++;
-		dbg_printf("Sensor number: %d - tick counts: %d", speedSensorNum,
+		printf("Sensor number: %d - tick counts: %d", speedSensorNum,
 		        wheelProps[speedSensorNum].wheelTicksCounter); /*(wheelProps[0].wheelTicksCounter/20)*60); */ /* bad formula to be fixed */
 
 		osDelay(1);

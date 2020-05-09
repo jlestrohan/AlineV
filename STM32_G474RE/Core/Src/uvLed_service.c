@@ -7,7 +7,8 @@
 
 #include "uvLed_service.h"
 #include <stdlib.h>
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "configuration.h"
 #include "gpio.h"
 
@@ -33,7 +34,7 @@ static const osThreadAttr_t xUvLedServiceTa_attributes = {
  */
 void vUvLedServiceTaskStart(void *vParameters)
 {
-	dbg_printf("Starting UV LED Service task...");
+	printf("Starting UV LED Service task...\n\r");
 
 	for (;;) {
 		/* LED is lit when pin is down */
@@ -52,7 +53,7 @@ uint8_t uUvLedServiceInit()
 {
 	xEventUvLed = osEventFlagsNew(NULL);
 	if (xEventUvLed == NULL) {
-		dbg_printf("Error Initializing xEventUvLed Event Flag...");
+		printf("Error Initializing xEventUvLed Event Flag...\n\r");
 		Error_Handler();
 		return EXIT_FAILURE;
 	}
@@ -60,7 +61,7 @@ uint8_t uUvLedServiceInit()
 	/* creation of HR04Sensor1_task */
 	xUvLedServiceTaskHandle = osThreadNew(vUvLedServiceTaskStart, NULL, &xUvLedServiceTa_attributes);
 	if (xUvLedServiceTaskHandle == NULL) {
-		dbg_printf("xUvLedService Task Initialization Failed");
+		printf("xUvLedService Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}

@@ -25,7 +25,7 @@
 #include "task.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "debug.h"
+#include "printf.h"
 #include "UartRingbuffer.h"
 /* USER CODE END Includes */
 

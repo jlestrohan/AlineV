@@ -9,7 +9,8 @@
 
 #include "lcdMenu_service.h"
 #include "i2c.h"
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "configuration.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,7 +57,7 @@ void fc_menu_ready()
  */
 void vLcdMenuServiceTask(void *argument)
 {
-	dbg_printf("Starting LCD Menu Service task...");
+	printf("Starting LCD Menu Service task...\n\r");
 
 	vSetupMenuTopics();
 	/* sets the starting screen */
@@ -76,7 +77,7 @@ void vLcdMenuServiceTask(void *argument)
 		if (xEventMenuNavButton != NULL) {
 			osEventFlagsWait(xEventMenuNavButton,BEXT_PRESSED_EVT, osFlagsWaitAny, osWaitForever);
 
-			dbg_printf("BUTTON 2 WAS PRESSED");
+			printf("BUTTON 2 WAS PRESSED\n\r");
 			//TODO: implement long press= call prev function
 			//pCurrentItem = (*pCurrentItem).next;
 
@@ -108,14 +109,14 @@ uint8_t uLcdMenuServiceInit()
 	xEventMenuNavButton = osEventFlagsNew(NULL);
 	if (xEventMenuNavButton == NULL) {
 		Error_Handler();
-		dbg_printf("LCD Menu Service Event Flags object not created!");
+		printf("LCD Menu Service Event Flags object not created!\n\r");
 		return EXIT_FAILURE;
 	}
 
 	/* creation of LoggerServiceTask */
 	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, NULL); //&xLcdMenuServiceTa_attributes);
 	if (xLcdMenuServiceTaskHandle == NULL) {
-		dbg_printf("Initializing LCD Menu Service - Failed");
+		printf("Initializing LCD Menu Service - Failed\n\r");
 		return (EXIT_FAILURE);
 	}
 
@@ -125,7 +126,7 @@ uint8_t uLcdMenuServiceInit()
 	lcd_send_string(MenuItem_Home.second_line);
 	osSemaphoreRelease(sem_lcdService);*/
 
-	dbg_printf("Initializing LCD Menu Service - Success!");
+	printf("Initializing LCD Menu Service - Success!\n\r");
 	return (EXIT_SUCCESS);
 
 }

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include "configuration.h"
 #include "MG90S_service.h"
-#include "debug.h"
+#include "printf.h"
 #include "MotorsControl_service.h"
 
 /********************************************************************
@@ -63,7 +63,7 @@ static const osThreadAttr_t NavControlServiceTa_attributes = {
  */
 void vNavControlServiceTask(void *vParameters)
 {
-	dbg_printf("Starting navControl task...");
+	printf("Starting navControl task...\n\r");
 
 	for (;;)
 	{
@@ -140,11 +140,11 @@ uint8_t uNavControlServiceInit()
 	/* creation of HR04Sensor1_task */
 	xNavControlServiceTaskHandle = osThreadNew(vNavControlServiceTask, NULL, &NavControlServiceTa_attributes);
 	if (xNavControlServiceTaskHandle == NULL) {
-		dbg_printf("Nav Control Task Initialization Failed");
+		printf("Nav Control Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
-	dbg_printf("Initializing Nav Control Service... Success!");
+	printf("Initializing Nav Control Service... Success!\n\r");
 	return (EXIT_SUCCESS);
 }

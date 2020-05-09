@@ -11,7 +11,8 @@
  */
 
 #include "sdcard_service.h"
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "fatfs_sd.h"
 #include "string.h"
 #include <FreeRTOS.h>
@@ -75,7 +76,7 @@ void sdcard_write_test()
 
 	/* closes file */
 	fresult = f_close(&fil);
-	dbg_printf("file1.txt created and the data is written");
+	printf("file1.txt created and the data is written");
 
 	/* opens a RO file */
 	fresult = f_open(&fil, "file1.txt", FA_READ);
@@ -83,7 +84,7 @@ void sdcard_write_test()
 	/* reads string from file */
 	f_gets(buffer, sizeof(buffer), &fil);
 
-	dbg_printf(buffer);
+	printf(buffer);
 
 	/* closes file */
 	f_close(&fil);
@@ -99,13 +100,13 @@ void sdcard_check_free_space()
 	f_getfree(NULL, &free_clust, &pfs);
 	total = (uint32_t) ((pfs->n_fatent - 2) * pfs->csize * 0.5);
 	/* sprintf(buffer, "SD CARD Total Size: \t%lu", total);*/
-	dbg_printf(buffer, "SD CARD id: \t%d", pfs->id);
+	printf(buffer, "SD CARD id: \t%d", pfs->id);
 
 	/* dbg_printf(buffer, "SD CARD sectors size: \t%lu", pfs->csize); */
 
 	bufclear();
 	free_space = (uint32_t) (pfs->free_clst * pfs->csize * 0.5);
-	dbg_printf(buffer, "SD CARD Free Space: \t%lu", free_space);
+	printf(buffer, "SD CARD Free Space: \t%lu", free_space);
 }
 
 /**
@@ -137,22 +138,22 @@ uint8_t uSdCardServiceInit()
 	DSTATUS my_status = SD_disk_initialize(0);
 
 	if (my_status == STA_NOINIT) {
-		dbg_printf("error in initializing SD CARD...\n");
+		printf("error in initializing SD CARD...\n");
 	}
 
 	if (my_status == STA_NODISK) {
-		dbg_printf("No medium in the drive...\n");
+		printf("No medium in the drive...\n");
 	}
 
 	if (my_status == STA_PROTECT) {
-		dbg_printf(" Write protected...\n");
+		printf(" Write protected...\n");
 	}
 
 	fresult = f_mount(&fs, "", 0);
 	if (fresult != FR_OK) {
-		dbg_printf("error in mounting SD CARD");
+		printf("error in mounting SD CARD");
 	} else {
-		dbg_printf("SD CARD mounted succesfully...");
+		printf("SD CARD mounted succesfully...");
 	}
 
 	sdcard_check_free_space();

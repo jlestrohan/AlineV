@@ -36,7 +36,8 @@
 #include "configuration.h"
 #include <stdlib.h>
 #include <stdint.h>
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "adc.h"
 
 double readProcessorTemperature (uint32_t temperature_adc);
@@ -78,10 +79,10 @@ void xSysteminfoServiceTaskStart(void *vParameters)
 		status = osMessageQueueGet(xQueueDmaAdcInternalSensors, &AdcValues, 0U, 0U);
 		if (status == osOK) {
 
-			//dbg_printf("Temperature = %f, VBat = %lu, VRefIn = %lu", readProcessorTemperature(AdcValues.adc0), AdcValues.adc1, AdcValues.adc2);
+			//printf("Temperature = %f, VBat = %lu, VRefIn = %lu", readProcessorTemperature(AdcValues.adc0), AdcValues.adc1, AdcValues.adc2);
 			//proctemp = readProcessorTemperature(AdcValues.adc0);
 
-			//dbg_printf("Temperature = %f", proc_temperature);
+			//printf("Temperature = %f", proc_temperature);
 			//HAL_ADC_Start_IT(&hadc5);
 		}
 
@@ -99,7 +100,7 @@ uint8_t uSystemInfoServiceInit()
 	/* creating queue for DMA Internal sensors ADC */
 	xQueueDmaAdcInternalSensors = osMessageQueueNew(10, sizeof(DMAInternalSensorsAdcValues_t), NULL);
 	if (xQueueDmaAdcInternalSensors == NULL) {
-		dbg_printf("HR04 Sensor Queue Initialization Failed");
+		printf("HR04 Sensor Queue Initialization Failed");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -107,7 +108,7 @@ uint8_t uSystemInfoServiceInit()
 	/* creation of SysteminfoService Task */
 	xSysteminfoServiceTaskHandle = osThreadNew(xSysteminfoServiceTaskStart, NULL, &xSysteminfoServiceTa_attributes);
 	if (xSysteminfoServiceTaskHandle == NULL) {
-		dbg_printf("System Info Task Initialization Failed");
+		printf("System Info Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 

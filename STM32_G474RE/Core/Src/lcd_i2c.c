@@ -12,6 +12,8 @@
 #include "string.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "printf.h"
+#include "main.h"
 
 uint8_t lcdCommandBuffer[6] = {0x00};
 osSemaphoreId_t xSemaphoreLcd;

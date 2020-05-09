@@ -15,7 +15,7 @@
 #include "button_service.h"
 #include "main.h"
 #include "usart.h"
-#include "debug.h"
+#include "printf.h"
 #include "cmsis_os2.h"
 #include "HCSR04_service.h"
 #include "gpio.h"

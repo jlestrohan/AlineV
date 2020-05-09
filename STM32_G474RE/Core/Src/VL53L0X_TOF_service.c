@@ -12,7 +12,8 @@
 #include "cmsis_os2.h"
 #include "usart.h"
 #include "FreeRTOS.h"
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "vl53l0x_api.h"
 
 #define TOF_DEFAULT_ADDRESS			0x29U << 1
@@ -130,7 +131,7 @@ static const osThreadAttr_t timeofflightServiceTa_attributes = {
  */
 void timeofflightService_task(void *argument)
 {
-	dbg_printf("Starting timeofflight task...");
+	printf("Starting timeofflight task...");
 	ST53L0A1_Init();
 	for (;;) {
 
@@ -170,21 +171,21 @@ void detectSensors(int SetDisplay)
 			/* Try to read one register using default 0x52 address */
 			status = VL53L0X_RdWord(pDev, VL53L0X_REG_IDENTIFICATION_MODEL_ID, &Id);
 			if (status) {
-				dbg_printf(errmsg, "#%d Read id fail\n", i);
+				printf(errmsg, "#%d Read id fail\n", i);
 				break;
 			}
 			if (Id == 0xEEAA) {
 				/* Sensor is found => Change its I2C address to final one */
 				status = VL53L0X_SetDeviceAddress(pDev,FinalAddress);
 				if (status != 0) {
-					dbg_printf(errmsg, "#%d VL53L0X_SetDeviceAddress fail\n", i);
+					printf(errmsg, "#%d VL53L0X_SetDeviceAddress fail\n", i);
 					break;
 				}
 				pDev->I2cDevAddr = FinalAddress;
 				/* Check all is OK with the new I2C address and initialize the sensor */
 				status = VL53L0X_RdWord(pDev, VL53L0X_REG_IDENTIFICATION_MODEL_ID, &Id);
 				if (status != 0) {
-					dbg_printf(errmsg, "#%d VL53L0X_RdWord fail\n", i);
+					printf(errmsg, "#%d VL53L0X_RdWord fail\n", i);
 					break;
 				}
 
@@ -193,16 +194,16 @@ void detectSensors(int SetDisplay)
 					pDev->Present = 1;
 				}
 				else{
-					dbg_printf(errmsg, "VL53L0X_DataInit %d fail\n", i);
+					printf(errmsg, "VL53L0X_DataInit %d fail\n", i);
 					break;
 				}
-				dbg_printf(errmsg, "VL53L0X %d Present and initiated to final 0x%x\n", pDev->Id, pDev->I2cDevAddr);
+				printf(errmsg, "VL53L0X %d Present and initiated to final 0x%x\n", pDev->Id, pDev->I2cDevAddr);
 				nDevPresent++;
 				nDevMask |= 1 << i;
 				pDev->Present = 1;
 			}
 			else {
-				dbg_printf(errmsg, "#%d unknown ID %x\n", i, Id);
+				printf(errmsg, "#%d unknown ID %x\n", i, Id);
 				status = 1;
 			}
 		} while (0);
@@ -225,11 +226,11 @@ uint8_t uVl53l0xServiceInit(I2C_HandleTypeDef *hi2cx)
 	timeofflightServiceTaHandle = osThreadNew(timeofflightService_task, NULL, &timeofflightServiceTa_attributes);
 	if (!timeofflightServiceTaHandle) {
 		timeofflightServiceStatus = timeofflightServiceInitError;
-		dbg_printf("Initializing timeofflight Service - Failed");
+		printf("Initializing timeofflight Service - Failed");
 		return (EXIT_FAILURE);
 	}
 
-	dbg_printf("Initializing timeofflight Service - Success!");
+	printf("Initializing timeofflight Service - Success!");
 	return (EXIT_SUCCESS);
 }
 
@@ -270,12 +271,12 @@ uint8_t ST53L0A1_ResetId(uint8_t DevNo, uint8_t state)
         status= _ExpanderWR(TOF_DEFAULT_ADDRESS, GPSR+1, &CurIOVal.bytes[1], 1);
         break;
     default:
-    	dbg_printf(errmsg, "Invalid DevNo %d", DevNo);
+    	printf(errmsg, "Invalid DevNo %d", DevNo);
         return EXIT_FAILURE;
     }
 /*error with valid id */
     if( status ){
-    	dbg_printf(errmsg, "expander i/o error for DevNo %d state %d ",DevNo, state);
+    	printf(errmsg, "expander i/o error for DevNo %d state %d ",DevNo, state);
     }
     return status;
 }
@@ -360,32 +361,32 @@ void SetupSingleShot(RangingConfig_e rangingConfig){
         if( VL53L0XDevs[i].Present){
             status=VL53L0X_StaticInit(&VL53L0XDevs[i]);
             if( status ){
-            	dbg_printf(errmsg, "VL53L0X_StaticInit %d failed\n",i);
+            	printf(errmsg, "VL53L0X_StaticInit %d failed\n",i);
             }
 
             status = VL53L0X_PerformRefCalibration(&VL53L0XDevs[i], &VhvSettings, &PhaseCal);
 			if( status ){
-				dbg_printf(errmsg, "VL53L0X_PerformRefCalibration failed\n");
+				printf(errmsg, "VL53L0X_PerformRefCalibration failed\n");
 			}
 
 			status = VL53L0X_PerformRefSpadManagement(&VL53L0XDevs[i], &refSpadCount, &isApertureSpads);
 			if( status ){
-				dbg_printf(errmsg, "VL53L0X_PerformRefSpadManagement failed\n");
+				printf(errmsg, "VL53L0X_PerformRefSpadManagement failed\n");
 			}
 
             status = VL53L0X_SetDeviceMode(&VL53L0XDevs[i], VL53L0X_DEVICEMODE_SINGLE_RANGING); /* Setup in single ranging mode */
             if( status ){
-            	dbg_printf(errmsg, "VL53L0X_SetDeviceMode failed\n");
+            	printf(errmsg, "VL53L0X_SetDeviceMode failed\n");
             }
 
             status = VL53L0X_SetLimitCheckEnable(&VL53L0XDevs[i], VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, 1); /* Enable Sigma limit */
 			if( status ){
-				dbg_printf(errmsg, "VL53L0X_SetLimitCheckEnable failed\n");
+				printf(errmsg, "VL53L0X_SetLimitCheckEnable failed\n");
 			}
 
 			status = VL53L0X_SetLimitCheckEnable(&VL53L0XDevs[i], VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, 1); /* Enable Signa limit */
 			if( status ){
-				dbg_printf(errmsg, "VL53L0X_SetLimitCheckEnable failed\n");
+				printf(errmsg, "VL53L0X_SetLimitCheckEnable failed\n");
 			}
 			/* Ranging configuration */
             switch(rangingConfig) {
@@ -411,37 +412,37 @@ void SetupSingleShot(RangingConfig_e rangingConfig){
 				finalRangeVcselPeriod = 10;
 				break;
             default:
-            	dbg_printf("Not Supported");
+            	printf("Not Supported");
             }
 
             status = VL53L0X_SetLimitCheckValue(&VL53L0XDevs[i],  VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE, signalLimit);
 			if( status ){
-				dbg_printf("VL53L0X_SetLimitCheckValue failed\n");
+				printf("VL53L0X_SetLimitCheckValue failed\n");
 			}
 
 			status = VL53L0X_SetLimitCheckValue(&VL53L0XDevs[i],  VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE, sigmaLimit);
 			if( status ){
-				dbg_printf("VL53L0X_SetLimitCheckValue failed\n");
+				printf("VL53L0X_SetLimitCheckValue failed\n");
 			}
 
             status = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&VL53L0XDevs[i],  timingBudget);
             if( status ){
-            	dbg_printf("VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed\n");
+            	printf("VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed\n");
             }
 
             status = VL53L0X_SetVcselPulsePeriod(&VL53L0XDevs[i],  VL53L0X_VCSEL_PERIOD_PRE_RANGE, preRangeVcselPeriod);
 			if( status ){
-				dbg_printf("VL53L0X_SetVcselPulsePeriod failed\n");
+				printf("VL53L0X_SetVcselPulsePeriod failed\n");
 			}
 
             status = VL53L0X_SetVcselPulsePeriod(&VL53L0XDevs[i],  VL53L0X_VCSEL_PERIOD_FINAL_RANGE, finalRangeVcselPeriod);
 			if( status ){
-				dbg_printf("VL53L0X_SetVcselPulsePeriod failed\n");
+				printf("VL53L0X_SetVcselPulsePeriod failed\n");
 			}
 
 			status = VL53L0X_PerformRefCalibration(&VL53L0XDevs[i], &VhvSettings, &PhaseCal);
 			if( status ){
-				dbg_printf("VL53L0X_PerformRefCalibration failed\n");
+				printf("VL53L0X_PerformRefCalibration failed\n");
 			}
 
             VL53L0XDevs[i].LeakyFirst=1;
@@ -495,13 +496,13 @@ uint8_t ST53L0A1_Init(void) {
 
     status = _ExpanderRd( TOF_DEFAULT_ADDRESS, 0, ExpanderData, 2);
     if (status != 0 || ExpanderData[0] != 0x00 || ExpanderData[1] != 0x16) {
-    	dbg_printf (errmsg, "I2C Expander @0x%02X not detected",(int)TOF_DEFAULT_ADDRESS );
+    	printf (errmsg, "I2C Expander @0x%02X not detected",(int)TOF_DEFAULT_ADDRESS );
         goto done_err;
 
     }
     status = _ExpanderRd( TOF_DEFAULT_ADDRESS, 0, ExpanderData, 2);
     if (status != 0 || ExpanderData[0] != 0x00 || ExpanderData[1] != 0x16) {
-    	dbg_printf(errmsg, "I2C Expander @0x%02X not detected",(int)TOF_DEFAULT_ADDRESS);
+    	printf(errmsg, "I2C Expander @0x%02X not detected",(int)TOF_DEFAULT_ADDRESS);
         goto done_err;
     }
 
@@ -511,21 +512,21 @@ uint8_t ST53L0A1_Init(void) {
     ExpanderData[1] = 0xFF;
     status = _ExpanderWR(TOF_DEFAULT_ADDRESS, GPDR, ExpanderData, 2);
     if (status) {
-    	dbg_printf(errmsg, "Set Expander @0x%02X DR", TOF_DEFAULT_ADDRESS);
+    	printf(errmsg, "Set Expander @0x%02X DR", TOF_DEFAULT_ADDRESS);
         goto done_err;
     }
     ExpanderData[0] = 0xFF;
     ExpanderData[1] = 0xBF; /* all but bit 14-15 that is pb1 and xhurt */
     status = _ExpanderWR(TOF_DEFAULT_ADDRESS, GPDR, ExpanderData, 2);
     if (status) {
-    	dbg_printf(errmsg, "Set Expander @0x%02X DR", TOF_DEFAULT_ADDRESS);
+    	printf(errmsg, "Set Expander @0x%02X DR", TOF_DEFAULT_ADDRESS);
         goto done_err;
     }
     /* shut down all segment and all device */
     CurIOVal.u32=0x7F + (0x7F<<7) + (0x7F<<16)+(0x7F<<(16+7));
     status= _ExpandersSetAllIO();
     if( status ){
-    	dbg_printf("Set initial i/o ");
+    	printf("Set initial i/o ");
     }
 
 done_err:

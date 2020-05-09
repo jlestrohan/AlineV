@@ -17,7 +17,8 @@
 #include "i2c.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 
 /* Default I2C address */
 #define MPU6050_I2C_ADDR			0xD0
@@ -100,7 +101,7 @@ static const osThreadAttr_t mpu6050ServiceTa_attributes = {
  */
 static void StartMPU6050ServiceTask(void *argument)
 {
-	dbg_printf("Starting mpu6050 service task...");
+	printf("Starting mpu6050 service task...");
 	MPU6050_Result result = {0};
 	char res[100] = "";
 
@@ -142,7 +143,7 @@ MPU6050_Result uMpu6050ServiceInit(I2C_HandleTypeDef *i2cxHandler)
 	_i2cxHandler = i2cxHandler;
 
 	if (HAL_I2C_IsDeviceReady(i2cxHandler, MPU6050_I2C_ADDR, 2, 5) != HAL_OK) {
-		dbg_printf("MPU6050 Device not ready");
+		printf("MPU6050 Device not ready");
 		return (EXIT_FAILURE);
 	}
 
@@ -150,16 +151,16 @@ MPU6050_Result uMpu6050ServiceInit(I2C_HandleTypeDef *i2cxHandler)
 	mpu6050ServiceTaHandle = osThreadNew(StartMPU6050ServiceTask, NULL, &mpu6050ServiceTa_attributes);
 	if (!mpu6050ServiceTaHandle) {
 		return (EXIT_FAILURE);
-		dbg_printf("MPU6050 Initialization failed...");
+		printf("MPU6050 Initialization failed...");
 	}
 
 	result = MPU6050_Init(&mpu1, MPU6050_Device_0, MPU6050_Accelerometer_2G, MPU6050_Gyroscope_250s);
 	if (result != MPU6050_Result_Ok) {
-		dbg_printf("MPU6050 Initialization failed");
+		printf("MPU6050 Initialization failed");
 		return EXIT_FAILURE;
 	}
 
-	dbg_printf("Initializing MPU6050 Service... Success!");
+	printf("Initializing MPU6050 Service... Success!");
 	return (EXIT_SUCCESS);
 }
 

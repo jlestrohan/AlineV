@@ -31,7 +31,7 @@
 #include "configuration.h"
 #include <VL53L0X_TOF_service.h>
 #include "string.h"
-#include "debug.h"
+#include "printf.h"
 #include "sensor_speed_service.h"
 #include "i2c.h"
 #include "Button_service.h"
@@ -113,14 +113,14 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_LCD_MENU
 	if (uLcdMenuServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing LCD Menu Service");
+		printf("Error Initializing LCD Menu Service\n\r");
 		Error_Handler();
 	}
 #endif
 
 #ifdef DEBUG_SERVICE_BUTTON
 	if (uButtonServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing Button Service");
+		printf("Error Initializing Button Service\n\r");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_BUTTON_COMPLETE;
@@ -129,7 +129,7 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_HCSR04
 	if (uHcsr04ServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing HR-SC04 Distance Sensors Service");
+		printf("Error Initializing HR-SC04 Distance Sensors Service\n\r");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_HR04_COMPLETE;
@@ -138,14 +138,14 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_MG90S
 	if (uMg90sServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing Front Servo Service");
+		printf("Error Initializing Front Servo Service\n\r");
 		Error_Handler();
 	}
 #endif
 
 #ifdef DEBUG_SERVICE_QMC5883
 	if (uQmc5883lServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing QCM5883 Magnetometer Service");
+		printf("Error Initializing QCM5883 Magnetometer Service\n\r");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE;
@@ -154,7 +154,7 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_ESP32_SERIAL
 	if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing ESP32 Serial TX/RX Service");
+		printf("Error Initializing ESP32 Serial TX/RX Service\n\r");
 		Error_Handler();
 	}
 #endif
@@ -185,7 +185,7 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_MOTORS
 	if (uMotorsControlServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing Motors Control Service");
+		printf("Error Initializing Motors Control Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_MOTORSCONTROL_COMPLETE;
@@ -194,7 +194,7 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_NAVCONTROL
 	if (uNavControlServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing Nav Control Service");
+		printf("Error Initializing Nav Control Service");
 		Error_Handler();
 	} else {
 		ServicesSuccessFlags |= SERVICE_NAVCONTROL_COMPLETE;
@@ -209,7 +209,7 @@ void MX_FREERTOS_Init(void) {
 
 #ifdef DEBUG_SERVICE_UVLED
 	if (uUvLedServiceInit() == EXIT_FAILURE) {
-		dbg_printf("Error Initializing UV Led Service");
+		printf("Error Initializing UV Led Service");
 		Error_Handler();
 	}
 #endif

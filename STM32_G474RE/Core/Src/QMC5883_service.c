@@ -27,7 +27,8 @@
 #include "configuration.h"
 #include <FreeRTOS.h>
 #include <QMC5883_service.h>
-#include "debug.h"
+#include "printf.h"
+#include "main.h"
 #include "cmsis_os2.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -59,7 +60,7 @@ static int16_t X, Y, Z;
  */
 static void vQmc5883lTaskStart(void *argument)
 {
-	dbg_printf("Starting QMC5883l Service task...");
+	printf("Starting QMC5883l Service task...");
 
 	//QMC5883_Result res;
 
@@ -85,7 +86,7 @@ uint8_t uQmc5883lServiceInit()
 {
 
 	if (HAL_I2C_IsDeviceReady(&hi2c4, QMC5883l_I2C_ADDRESS, 2, 5) != HAL_OK) {
-		dbg_printf("QMC5883 Device not ready");
+		printf("QMC5883 Device not ready");
 		return (EXIT_FAILURE);
 	}
 
@@ -94,7 +95,7 @@ uint8_t uQmc5883lServiceInit()
 	/* creation of QMC5883Sensor_task */
 	xQmc5883TaskHandle = osThreadNew(vQmc5883lTaskStart, NULL, &QMC5883Ta_attributes);
 	if (!xQmc5883TaskHandle) {
-		dbg_printf("QMC5883 Task Initialization Failed");
+		printf("QMC5883 Task Initialization Failed");
 		return (EXIT_FAILURE);
 	}
 

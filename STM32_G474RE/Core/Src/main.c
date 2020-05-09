@@ -32,7 +32,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "debug.h"
+#include "printf.h"
 #include "string.h"
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -197,7 +197,10 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void _putchar(char character)
+{
+  HAL_UART_Transmit(&hlpuart1, (uint8_t *)&character, sizeof(uint8_t), HAL_MAX_DELAY);
+}
 /* USER CODE END 4 */
 
  /**
