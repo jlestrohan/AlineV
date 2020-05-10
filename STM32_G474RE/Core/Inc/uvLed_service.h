@@ -11,9 +11,15 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
-#define FLG_UV_LED_ACTIVE		(1 << 0)
+typedef enum {
+	UV_LED_STATUS_UNSET,
+	UV_LED_STATUS_SET,
+	UV_LED_STATUS_BLINK
+} UV_LedStatus_t;
 
-extern osEventFlagsId_t xEventUvLed;
+/*********************************************************/
+/** PUBLIC 												 */
+extern osMessageQueueId_t xQueueUVLedStatus;
 
 uint8_t uUvLedServiceInit();
 

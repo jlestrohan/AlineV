@@ -49,7 +49,6 @@ CoreInfo_t CoreInfo;
 
 UART_HandleTypeDef hlpuart1;
 
-typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xSysteminfoServiceTaskHandle;
 static osStaticThreadDef_t  xSysteminfoServiceTaControlBlock;
 static uint32_t  xSysteminfoServiceTaBuffer[1024];

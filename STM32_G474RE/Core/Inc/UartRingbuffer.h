@@ -15,7 +15,7 @@
 /**
  * change the size of the buffer
  */
-#define UART_BUFFER_SIZE 512
+#define UART_BUFFER_SIZE 256
 
 typedef struct
 {

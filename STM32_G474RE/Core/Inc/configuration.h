@@ -23,24 +23,26 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
  */
 
 /** sensors loggers **/
+#define DEBUG_HCSR04_LEFT45
+#define DEBUG_HCSR04_RIGHT45
 #define DEBUG_HCSR04_FRONT
 //#define DEBUG_HCSR04_BOTTOM
-#define DEBUG_HCSR04_REAR
+//#define DEBUG_HCSR04_REAR
 //#define DEBUG_QMC5883
 //#define DEBUG_SYSTEMINFOS
 
 /** service activation **/
-#define DEBUG_SERVICE_LCD_MENU
+//#define DEBUG_SERVICE_LCD_MENU
 #define DEBUG_SERVICE_BUTTON
 #define DEBUG_SERVICE_HCSR04
 #define DEBUG_SERVICE_MG90S
 //#define DEBUG_SERVICE_QMC5883
-#define DEBUG_SERVICE_ESP32_SERIAL
+//#define DEBUG_SERVICE_ESP32_SERIAL
 #define DEBUG_SERVICE_MOTORS
+#define DEBUG_SERVICE_MPU6050
 #define DEBUG_SERVICE_NAVCONTROL
 #define DEBUG_SERVICE_UVLED
-#define DEBUG_SERVICE_CMD_PARSER
-
+//#define DEBUG_SERVICE_CMD_PARSER
 
 
 /**
@@ -53,13 +55,13 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM			10
 
 /* what distance is considered by both angles of front distance sensing as "obstacle" */
-#define US_ANGLE_FRONT_MIN_STOP_CM					15
+#define US_ANGLE_FRONT_MIN_STOP_CM					25
 
 /* distance from which we stop the forward motion once an obstacle has been detected */
-#define US_FRONT_MIN_STOP_CM						25
+#define US_FRONT_MIN_STOP_CM						30
 
 /* on a backward motion distance under which the rover will stop going backward */
-#define ULTRASONIC_BACK_SENSOR_STOP_REAR_MOTION_CM		15
+#define US_REAR_MIN_STOP_CM							20
 
 
 /**
@@ -116,15 +118,16 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
  */
 /* tasks priorities here */
 #define OSTASK_PRIORITY_BUTTON_ONBOARD					osPriorityBelowNormal1
-#define OSTASK_PRIORITY_NAVCONTROL_NORM_MOTION			osPriorityHigh5
-#define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityHigh5
+#define OSTASK_PRIORITY_NAVCONTROL_NORM_MOTION			osPriorityHigh1
+#define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityHigh2
+#define OSTASK_PRIORITY_NAVCONTROL_DECISION				osPriorityHigh3
 #define OSTASK_PRIORITY_BUTTON_ADD						osPriorityBelowNormal3
-#define OSTASK_PRIORITY_HCSR04							osPriorityHigh6
-#define OSTASK_PRIORITY_HCSR04_CTL						osPriorityBelowNormal6
+#define OSTASK_PRIORITY_HCSR04							osPriorityHigh4
+#define OSTASK_PRIORITY_HCSR04_CTL						osPriorityLow5
 #define OSTASK_PRIORITY_MG90S							osPriorityBelowNormal5
 #define OSTASK_PRIORITY_MG90S_3PROBES					osPriorityBelowNormal6
 #define OSTASK_PRIORITY_QMC5883							osPriorityBelowNormal2
-#define OSTASK_PRIORITY_MPU6050							osPriorityLow5
+#define OSTASK_PRIORITY_MPU6050							osPriorityLow7
 #define OSTASK_PRIORITY_LCDMENU							osPriorityAboveNormal
 #define OSTASK_PRIORITY_ESP32_TX						osPriorityNormal1
 #define OSTASK_PRIORITY_ESP32_RX						osPriorityNormal2

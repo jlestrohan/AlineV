@@ -12,9 +12,7 @@
 #include "configuration.h"
 #include "gpio.h"
 
-osEventFlagsId_t xEventUvLed;
-
-typedef StaticTask_t osStaticThreadDef_t;
+osMessageQueueId_t xQueueUVLedStatus;
 
 static osThreadId_t xUvLedServiceTaskHandle;
 static osStaticThreadDef_t xUvLedServiceTaControlBlock;
@@ -36,10 +34,33 @@ void vUvLedServiceTaskStart(void *vParameters)
 {
 	printf("Starting UV LED Service task...\n\r");
 
+	uint8_t uUvLedStatus;
+	osStatus_t status;
+
+	/* starting with leds unlit */
+	HAL_GPIO_WritePin(GPIOA, UV_LED_Pin, GPIO_PIN_SET); /* set = unlit */
+
 	for (;;) {
-		/* LED is lit when pin is down */
-		HAL_GPIO_WritePin(GPIOA, UV_LED_Pin, !(osEventFlagsGet(xEventUvLed) && FLG_UV_LED_ACTIVE));
-		osDelay(500);
+
+		status = osMessageQueueGet(xQueueUVLedStatus, &uUvLedStatus, 0U, osWaitForever);
+		if (status == osOK) {
+
+			switch (uUvLedStatus) {
+			case UV_LED_STATUS_UNSET:
+				HAL_GPIO_WritePin(GPIOA, UV_LED_Pin, GPIO_PIN_SET);
+				break;
+			case UV_LED_STATUS_SET:
+				HAL_GPIO_WritePin(GPIOA, UV_LED_Pin, GPIO_PIN_RESET);
+				break;
+			case UV_LED_STATUS_BLINK:
+				HAL_GPIO_TogglePin(GPIOA, UV_LED_Pin);
+				osDelay(120);
+				uUvLedStatus = UV_LED_STATUS_BLINK;
+				osMessageQueuePut(xQueueUVLedStatus, &uUvLedStatus, 0U, osWaitForever);
+				break;
+			}
+		}
+		osDelay(10);
 	}
 	osThreadTerminate(xUvLedServiceTaskHandle);
 }
@@ -51,9 +72,9 @@ void vUvLedServiceTaskStart(void *vParameters)
  */
 uint8_t uUvLedServiceInit()
 {
-	xEventUvLed = osEventFlagsNew(NULL);
-	if (xEventUvLed == NULL) {
-		printf("Error Initializing xEventUvLed Event Flag...\n\r");
+	xQueueUVLedStatus = osMessageQueueNew(10,  sizeof(uint8_t), NULL);
+	if (xQueueUVLedStatus == NULL) {
+		printf("Error Initializing xQueueUVLedStatus UV Leds Service Queue...\n\r");
 		Error_Handler();
 		return EXIT_FAILURE;
 	}
@@ -66,6 +87,10 @@ uint8_t uUvLedServiceInit()
 		return (EXIT_FAILURE);
 	}
 
+	UV_LedStatus_t ldst = UV_LED_STATUS_UNSET;
+	osMessageQueuePut(xQueueUVLedStatus, &ldst, 0U, osWaitForever);
+
+	printf("Initializing UV LED Service... Success!\n\r");
 	return EXIT_SUCCESS;
 }
 

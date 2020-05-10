@@ -14,18 +14,19 @@
 #define INC_NAVCONTROL_SERVICE_H_
 
 #include <stdint.h>
+#include "cmsis_os2.h"
 
 /**
- * Finite State Machine indicating the current status of the "mission"
- * This is public
+ * Finite State Machine Flags indicating the current status of the "mission"
  */
-typedef enum {
-	statusIDLE,
-	statusRUNNING,  //!< statusRUNNING
-	statusAVOIDANCE,//!< statusAVOIDANCE
-} FSM_Status_t;
+#define FLAG_NAV_STATUS_IDLE							(1 << 0)
+#define FLAG_NAV_STATUS_STARTING						(1 << 1)
+#define FLAG_NAV_STATUS_STARTING_DIST_CHECK1_SUCCESS	(1 << 2) /* we did a first round with the front servo that did not reveal anything wrong */
+#define FLAG_NAV_STATUS_STARTING_DIST_CHECK1_ERROR		(1 << 3) /* an obstacle has been detected at a certain angle during this check we need to take action */
+#define FLAG_NAV_STATUS_RUNNING							(1 << 4)
+#define FLAG_NAV_STATUS_AVOIDING						(1 << 5)
 
-extern FSM_Status_t FSM_IA_STATUS; /* default idle */
+extern osEventFlagsId_t xEventFlagNavControlMainCom; /* used to communicate with the nav control (buttons ?..) */
 
 uint8_t uNavControlServiceInit();
 

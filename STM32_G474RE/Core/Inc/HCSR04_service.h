@@ -25,18 +25,40 @@
 #define HR04_SONAR_FRONT		0x02U
 #define HR04_SONAR_BOTTOM		0x03U
 
+typedef enum {
+	HCSR04_US_ALL_STOP,
+	HCSR04_US_FRONT_ONLY,
+	HCSR04_US_FRONT_BOTTOM,
+	HCSR04_US_BOTTOM_ONLY,
+	HCSR04_US_REAR_ONLY
+} HR04_SensorsActive_t;
+
 typedef struct {
-	uint8_t		distance;
-	uint8_t		sonarNum;
+	uint8_t		dist_front;
+	uint8_t		dist_left45;
+	uint8_t		dist_right45;
+	uint8_t 	dist_bottom;
+	uint8_t		dist_rear;
+	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */
 } HR04_SensorsData_t;
+
+/**
+ * Used in IRQ to pass minimal values to the queue
+ */
+typedef struct {
+	uint8_t		last_capt_sensor; 	/* last captured sensor */
+	uint8_t		last_capt_value; 	/* last captured value */
+} IrqHCSRAcquisition_t;
 
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */
-extern HR04_SensorsData_t HR04_SensorsData;
+extern HR04_SensorsData_t HR04_SensorsData;		/* always hold the current values on every field */
+extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous values on every field */
 /********************************************************/
 
 extern osEventFlagsId_t xHcrSr04ControlFlag;
 extern osMessageQueueId_t queue_HC_SR04Handle;
+extern osMessageQueueId_t xQueuePWMControlHnd;
 
 /**
  * Main initialization function

@@ -36,9 +36,7 @@ char msg[50];
 osMessageQueueId_t xQueueButtonEvent;
 
 osMessageQueueId_t xQueueEspSerialTX; /*extern */
-osMessageQueueId_t xQueueNavControlMainCom; /* extern */
-NavControl_Actions_t nav_actions;
-
+osEventFlagsId_t xEventFlagNavControlMainCom; /* extern */
 
 static MotorMotion_t motorMotion;
 typedef StaticTask_t osStaticThreadDef_t;
@@ -97,19 +95,24 @@ static void vOnBoardButtonServiceTask(void *argument)
 
 					//FIXME:
 					if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
-						if (xQueueNavControlMainCom != NULL) {
-							/* let's pretend we're starting an exploration mission */
-							nav_actions = navSTART_EXPLORE;
-							osMessageQueuePut(xQueueNavControlMainCom, &nav_actions, 0U, 0U);
-						}
+
+						/* if we're not already in action, let's initiate the exploration sequence */
+						//osEventFlagsSet(xEventFlagNavControlMainCom, FLAG_NAV_STATUS_STARTING);
+
+						motorMotion = MOTOR_MOTION_FORWARD;
+						osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+
 						if (xQueueEspSerialTX != NULL) {
 							osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
 						}
 					} else {
 						if (xQueueMotorMotionOrder != NULL) {
-							nav_actions = navIDLE;
-							osMessageQueuePut(xQueueNavControlMainCom, &nav_actions, 0U, 0U);
+
+							motorMotion = MOTOR_MOTION_IDLE;
+							osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+
 							if (xQueueEspSerialTX != NULL) {
+								sprintf(msg, "Initiating exploration sequence... \n\r");
 								osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
 							}
 						}

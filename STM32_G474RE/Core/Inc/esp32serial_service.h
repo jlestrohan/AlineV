@@ -18,9 +18,11 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "UartRingbuffer.h"
 
 extern osMessageQueueId_t xQueueEspSerialTX;
 extern osMessageQueueId_t xQueueEspSerialRX;
+extern uint8_t UART_DMA_BUF[4];
 
 typedef struct
 {

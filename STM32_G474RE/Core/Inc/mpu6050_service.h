@@ -24,6 +24,28 @@
 #endif
 
 /**
+ * @brief  Main MPU6050 structure
+ */
+typedef struct
+{
+	uint8_t Address; /*!< I2C address of device. */
+	float Gyro_Mult; /*!< Gyroscope corrector from raw data to "degrees/s". Only for private use */
+	float Acce_Mult; /*!< Accelerometer corrector from raw data to "g". Only for private use */
+	int16_t Accelerometer_X; /*!< Accelerometer value X axis */
+	int16_t Accelerometer_Y; /*!< Accelerometer value Y axis */
+	int16_t Accelerometer_Z; /*!< Accelerometer value Z axis */
+	int16_t Gyroscope_X; /*!< Gyroscope value X axis */
+	int16_t Gyroscope_Y; /*!< Gyroscope value Y axis */
+	int16_t Gyroscope_Z; /*!< Gyroscope value Z axis */
+	float Temperature; /*!< Temperature in degrees */
+} MPU6050;
+
+/************************************************************************
+ * DATA ***/
+extern MPU6050 mpu1;
+/************************************************************************/
+
+/**
  * @brief  Data rates predefined constants
  * @{
  */
@@ -79,23 +101,6 @@ typedef enum
 	MPU6050_Gyroscope_1000s = 0x02, /*!< Range is +- 1000 degrees/s */
 	MPU6050_Gyroscope_2000s = 0x03 /*!< Range is +- 2000 degrees/s */
 } MPU6050_Gyroscope;
-
-/**
- * @brief  Main MPU6050 structure
- */
-typedef struct
-{
-	uint8_t Address; /*!< I2C address of device. */
-	float Gyro_Mult; /*!< Gyroscope corrector from raw data to "degrees/s". Only for private use */
-	float Acce_Mult; /*!< Accelerometer corrector from raw data to "g". Only for private use */
-	int16_t Accelerometer_X; /*!< Accelerometer value X axis */
-	int16_t Accelerometer_Y; /*!< Accelerometer value Y axis */
-	int16_t Accelerometer_Z; /*!< Accelerometer value Z axis */
-	int16_t Gyroscope_X; /*!< Gyroscope value X axis */
-	int16_t Gyroscope_Y; /*!< Gyroscope value Y axis */
-	int16_t Gyroscope_Z; /*!< Gyroscope value Z axis */
-	float Temperature; /*!< Temperature in degrees */
-} MPU6050;
 
 
 /**

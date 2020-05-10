@@ -16,9 +16,10 @@
 #include "cmsis_os2.h"
 
 typedef enum {
-	SERVO_PATTERN_IDLE,
-	SERVO_PATTERN_THREE_PROBES,
-	SERVO_PATTERN_HALF_RADAR
+	SERVO_PATTERN_IDLE,				/* stops any motion stays in place */
+	SERVO_PATTERN_RETURN_CENTER,	/* returns to center */
+	SERVO_PATTERN_THREE_PROBES,		/* starts -45 0 +45 pattern */
+	SERVO_PATTERN_HALF_RADAR		/* moves from right to left in a circular motion */
 } xServoPattern_t;
 
 typedef enum {

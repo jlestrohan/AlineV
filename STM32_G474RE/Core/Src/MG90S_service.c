@@ -7,6 +7,11 @@
  *	TIM5 -> PWM 20ms -> PB2
  *******************************************************************/
 
+#define FLAG_MG90S_STATUS_IDLE					(1 << 0)
+#define FLAG_MG90S_STATUS_CENTER				(1 << 1)
+#define FLAG_MG90S_STATUS_THREE_PROBES			(1 << 2)
+#define FLAG_MG90S_STATUS_HALF_RADAR			(1 << 3)
+
 #include "MG90S_service.h"
 #include "configuration.h"
 #include "HCSR04_service.h"
@@ -17,11 +22,14 @@
 #include "tim.h"
 #include "printf.h"
 #include "main.h"
+#include <stdbool.h>
+#include "navControl_service.h"
 
 typedef StaticTask_t osStaticThreadDef_t;
 
 osMessageQueueId_t xQueueMg90sMotionOrder;
 xServoPosition_t xServoPosition;
+osEventFlagsId_t xFlagSensorMotionStatus; /* used to tell the three probes task to run its code or not */
 
 
 /**
@@ -59,25 +67,31 @@ static const osThreadAttr_t xFrontServoThreeProbesTa_attributes = {
 void vFrontServoThreeProbes_Start(void *vParameter)
 {
 	xServoPosition_t direction = SERVO_DIRECTION_CENTER;
+	uint32_t flags;
 
 	for (;;)
 	{
-		htim5.Instance->CCR1 = xServoPosition; /* 0 to 100 */
-		switch (xServoPosition) {
-		case SERVO_DIRECTION_LEFT45:
-			xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_RIGHT45; break;
-		case SERVO_DIRECTION_CENTER:
-			xServoPosition=(direction == SERVO_DIRECTION_RIGHT45 ? SERVO_DIRECTION_RIGHT45 : SERVO_DIRECTION_LEFT45); break;
-		case SERVO_DIRECTION_RIGHT45: default:
-			xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45; break;
+		/* only active if internal flag is set */
+		flags = osEventFlagsGet(xFlagSensorMotionStatus);
+		if (flags == FLAG_MG90S_STATUS_THREE_PROBES) {
+			htim5.Instance->CCR1 = xServoPosition; /* 0 to 100 */
+			switch (xServoPosition) {
+			case SERVO_DIRECTION_LEFT45:
+				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_RIGHT45; break;
+			case SERVO_DIRECTION_CENTER:
+				xServoPosition=(direction == SERVO_DIRECTION_RIGHT45 ? SERVO_DIRECTION_RIGHT45 : SERVO_DIRECTION_LEFT45); break;
+			case SERVO_DIRECTION_RIGHT45: default:
+				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45; break;
+			}
+			osDelay(500);
 		}
-		osDelay(125);
-		HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* once the servo has made it to its right angle, we start measuring for a little time */
-		osDelay(125);
-		HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and then we" stop */
-		osDelay(125);
+
+		/* Radar mode */
+
+
+		osDelay(1);
 	}
-	osThreadTerminate(xFrontServoThreeProbesTaskHnd);
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -95,25 +109,30 @@ void vFrontServo_Start(void* vParameters)
 
 		status = osMessageQueueGet(xQueueMg90sMotionOrder, &xServopattern, NULL, 0U); // no wait
 		if (status == osOK) {
+			osEventFlagsClear(xFlagSensorMotionStatus, 0xFFFF); /* clears all remaining flags to be sure */
+
 			switch (xServopattern) {
 			case SERVO_PATTERN_IDLE: default:
-				osThreadSuspend(xFrontServoThreeProbesTaskHnd);
+				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_IDLE);
+				break;
+			case SERVO_PATTERN_RETURN_CENTER:
+				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_CENTER);
 				htim5.Instance->CCR1 = SERVO_DIRECTION_CENTER;
 				break;
-
 			case SERVO_PATTERN_THREE_PROBES:
-				osThreadResume(xFrontServoThreeProbesTaskHnd);
-
+				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_THREE_PROBES);
 				break;
 			case SERVO_PATTERN_HALF_RADAR:
-
+				/* sets the starting position */
+				htim5.Instance->CCR1 = 25; /* to the right first */
+				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_HALF_RADAR);
 				break;
 			}
 		}
 
 		osDelay(10);
 	}
-	osThreadTerminate(xFrontServoTaskHnd);
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -129,6 +148,8 @@ uint8_t uMg90sServiceInit()
 		return (EXIT_FAILURE);
 	}
 
+	xFlagSensorMotionStatus = osEventFlagsNew(NULL);
+
 	/* creation of xFrontServo_task */
 	xFrontServoTaskHnd = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
 	if (xFrontServoTaskHnd == NULL) {
@@ -143,8 +164,6 @@ uint8_t uMg90sServiceInit()
 		printf("Front Servo Three Probes Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
-	} else {
-		osThreadSuspend(xFrontServoThreeProbesTaskHnd); // will activate when needed
 	}
 
 	if (HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1) != HAL_OK) {

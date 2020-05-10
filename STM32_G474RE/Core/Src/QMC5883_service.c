@@ -39,7 +39,6 @@ I2C_HandleTypeDef hi2c4;
 
 //static QMC5883 qmc1; /* Main data structs holding the constantly updated data */
 
-typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xQmc5883TaskHandle;
 static osStaticThreadDef_t QMC5883TaControlBlock;
 static uint32_t QMC5883TaBuffer[512];
