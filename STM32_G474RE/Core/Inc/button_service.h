@@ -9,8 +9,7 @@
 #define INC_BUTTON_SERVICE_H_
 
 #include "cmsis_os2.h"
-
-#define BTN_DEBOUNCE_MS			150 /*  ms */
+#include "configuration.h"
 
 typedef enum {
 	BTN_BUTTON_ONBOARD_PRESSED,

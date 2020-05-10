@@ -46,6 +46,9 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 /**
  * BEHAVIOUR CONTROL
  */
+/* buttons debouncing */
+#define BTN_DEBOUNCE_MS								150 /*  ms */
+
  /* on a forward motion, the rover will stop if the US BOTTOM sensor goes above the defined distance */
 #define US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM			10
 
