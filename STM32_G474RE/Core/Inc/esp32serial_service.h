@@ -18,11 +18,18 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
-#include "UartRingbuffer.h"
+//#include "UartRingbuffer.h"
+
+#define UART_DMA_BUFFER_SIZE 2048
+#define PARSER_MESSAGE_LIST_SIZE 8
+#define PARSER_MESSAGE_SIZE 1024
 
 extern osMessageQueueId_t xQueueEspSerialTX;
 extern osMessageQueueId_t xQueueEspSerialRX;
-extern uint8_t UART_DMA_BUF[4];
+
+extern uint8_t UART_DMA_BUF[UART_DMA_BUFFER_SIZE];
+
+
 
 typedef struct
 {

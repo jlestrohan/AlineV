@@ -27,17 +27,20 @@
 char msg[50];
 
 uint32_t ADC_BUF[3]; /* extern */
+//uint8_t UART_DMA_BUF[4]; /* extern */
+
 osMessageQueueId_t queue_HC_SR04Handle; /* extern */
 osMessageQueueId_t xQueueDmaAdcInternalSensors;
 DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues; /* extern */
 uint8_t UartRXDmaBuffer[10]; /* extern */
-osMessageQueueId_t xQueueEspSerialRX;
+osMessageQueueId_t xQueueEspSerialRX; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
 IrqHCSRAcquisition_t sensorData;
 
 uint32_t readVal;
+
 
 /**
  *

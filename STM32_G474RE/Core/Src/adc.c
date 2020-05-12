@@ -98,7 +98,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
   
     /* ADC5 DMA Init */
     /* ADC5 Init */
-    hdma_adc5.Instance = DMA1_Channel1;
+    hdma_adc5.Instance = DMA1_Channel5;
     hdma_adc5.Init.Request = DMA_REQUEST_ADC5;
     hdma_adc5.Init.Direction = DMA_PERIPH_TO_MEMORY;
     hdma_adc5.Init.PeriphInc = DMA_PINC_DISABLE;

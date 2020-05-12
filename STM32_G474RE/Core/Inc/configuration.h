@@ -23,9 +23,9 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
  */
 
 /** sensors loggers **/
-#define DEBUG_HCSR04_LEFT45
-#define DEBUG_HCSR04_RIGHT45
-#define DEBUG_HCSR04_FRONT
+//#define DEBUG_HCSR04_LEFT45
+//#define DEBUG_HCSR04_RIGHT45
+//#define DEBUG_HCSR04_FRONT
 //#define DEBUG_HCSR04_BOTTOM
 //#define DEBUG_HCSR04_REAR
 //#define DEBUG_QMC5883
@@ -37,12 +37,12 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define DEBUG_SERVICE_HCSR04
 #define DEBUG_SERVICE_MG90S
 //#define DEBUG_SERVICE_QMC5883
-//#define DEBUG_SERVICE_ESP32_SERIAL
+#define DEBUG_SERVICE_ESP32_SERIAL
 #define DEBUG_SERVICE_MOTORS
 #define DEBUG_SERVICE_MPU6050
 #define DEBUG_SERVICE_NAVCONTROL
 #define DEBUG_SERVICE_UVLED
-//#define DEBUG_SERVICE_CMD_PARSER
+#define DEBUG_SERVICE_CMD_PARSER
 
 
 /**
