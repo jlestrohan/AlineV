@@ -25,14 +25,14 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 /** sensors loggers **/
 //#define DEBUG_HCSR04_LEFT45
 //#define DEBUG_HCSR04_RIGHT45
-//#define DEBUG_HCSR04_FRONT
+#define DEBUG_HCSR04_FRONT
 //#define DEBUG_HCSR04_BOTTOM
 //#define DEBUG_HCSR04_REAR
 //#define DEBUG_QMC5883
 //#define DEBUG_SYSTEMINFOS
 
 /** service activation **/
-//#define DEBUG_SERVICE_LCD_MENU
+#define DEBUG_SERVICE_LCD_MENU
 #define DEBUG_SERVICE_BUTTON
 #define DEBUG_SERVICE_HCSR04
 #define DEBUG_SERVICE_MG90S
@@ -54,11 +54,13 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
  /* on a forward motion, the rover will stop if the US BOTTOM sensor goes above the defined distance */
 #define US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM			10
 
-/* what distance is considered by both angles of front distance sensing as "obstacle" */
-#define US_ANGLE_FRONT_MIN_STOP_CM					25
+/* what distance is considered by both angles of front distance sensing as "potential obstacle" */
+#define US_ANGLE_FRONT_MIN_DANGER_CM				40
 
 /* distance from which we stop the forward motion once an obstacle has been detected */
-#define US_FRONT_MIN_STOP_CM						30
+#define US_FRONT_MIN_STOP_CM						20	/* obstacle stop */
+#define US_FRONT_MIN_DANGER_CM						30	/* obstacle near danger */
+#define US_FRONT_MIN_WARNING_CM						40	/* obstacle potentially near, warning */
 
 /* on a backward motion distance under which the rover will stop going backward */
 #define US_REAR_MIN_STOP_CM							20

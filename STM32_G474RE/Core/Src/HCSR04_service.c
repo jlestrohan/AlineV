@@ -93,11 +93,11 @@ static void vHr04SensorTaskStart(void *argument)
 
 			/* for the front sensor we store the right values at the right vars in HR04_SensorsData */
 			if (sensorData.last_capt_sensor == HR04_SONAR_FRONT) {
-				switch (xServoPosition) {
+				switch (htim5.Instance->CCR1) {
 				case SERVO_DIRECTION_LEFT45:
 					HR04_SensorsData.dist_left45 = sensorData.last_capt_value;
 #ifdef DEBUG_HCSR04_LEFT45
-					printf("%d\n\r", HR04_SensorsData.dist_left45);
+					printf("%d\n\r", HR04_SensorsData.dist_left45); //TODO: put this var in register keyword
 #endif
 					break;
 				case SERVO_DIRECTION_CENTER:

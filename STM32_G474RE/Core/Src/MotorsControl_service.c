@@ -72,8 +72,11 @@ static void vMotorsControlTaskStart(void *vParameters)
 		case MOTOR_MOTION_IDLE:
 			motorsSetMotionIdle(&MotorData);
 			break;
-		case MOTOR_SPEED_REDUCE_20:
-			MotorSetSpeed(&MotorData, MOTORS_DEFAULT_FW_SPEED - MOTORS_DEFAULT_FW_SPEED * 0.2, MOTORS_DEFAULT_FW_SPEED - MOTORS_DEFAULT_FW_SPEED * 0.2);
+		case MOTOR_SPEED_REDUCE_DANGER:
+			MotorSetSpeed(&MotorData, MOTORS_DEFAULT_DANGER_SPEED, MOTORS_DEFAULT_DANGER_SPEED);
+			break;
+		case MOTOR_SPEED_REDUCE_WARNING:
+			MotorSetSpeed(&MotorData, MOTORS_DEFAULT_WARNING_SPEED, MOTORS_DEFAULT_WARNING_SPEED);
 			break;
 		case MOTOR_MOTION_TURN_RIGHT:
 			motorSetMotionTurnRight(&MotorData, MOTORS_DEFAULT_TURN_SPEED, MOTORS_DEFAULT_TURN_SPEED);

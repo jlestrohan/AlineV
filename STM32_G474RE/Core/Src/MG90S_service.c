@@ -83,7 +83,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 			case SERVO_DIRECTION_RIGHT45: default:
 				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45; break;
 			}
-			osDelay(500);
+			osDelay(250);
 		}
 
 		/* Radar mode */
