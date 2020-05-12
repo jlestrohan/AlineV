@@ -1,6 +1,6 @@
-# Alinea
+# AlineV
 
-### Autonomous Low Impact Networked Exploration Android
+### Autonomous Low Impact Networked Eradication Vehicle Android
 
 Protype built around:
 
