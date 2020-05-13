@@ -38,11 +38,9 @@
 #include "sdcard_service.h"
 #include "IRQ_Handler.h"
 #include "lcdMenu_service.h"
-#include "QMC5883_service.h"
 #include "HCSR04_service.h"
 #include "MotorsControl_service.h"
 #include "MG90S_service.h"
-#include "MPU6050_service.h"
 #include "navControl_service.h"
 #include "esp32serial_service.h"
 #include "SystemInfos.h"
@@ -143,21 +141,12 @@ void MX_FREERTOS_Init(void) {
 	}
 #endif
 
-#ifdef DEBUG_SERVICE_QMC5883
-	if (uQmc5883lServiceInit() == EXIT_FAILURE) {
-		printf("Error Initializing QCM5883 Magnetometer Service\n\r");
-		Error_Handler();
-	} else {
-		ServicesSuccessFlags |= SERVICE_HCM5883_COMPLETE;
-	}
-#endif
-
-#ifdef DEBUG_SERVICE_CMD_PARSER
+/*#ifdef DEBUG_SERVICE_CMD_PARSER
 	if (uCmdParseServiceInit() == EXIT_FAILURE) {
 		printf("Error Initializing Command Parser Service\n\r");
 		Error_Handler();
 	}
-#endif
+#endif*/
 
 #ifdef DEBUG_SERVICE_ESP32_SERIAL
 	if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
@@ -173,12 +162,6 @@ void MX_FREERTOS_Init(void) {
 	} else {
 		ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE;
 	}*/
-
-	if (uMpu6050ServiceInit() == EXIT_FAILURE) {
-		printf("Error Initializing MPU6050 Sensor Service\n\r");
-	} else {
-		ServicesSuccessFlags |= SERVICE_MPU6050_COMPLETE;
-	}
 
 	/*if (uSdCardServiceInit() == EXIT_FAILURE) {
 		loggerE("Error Initializing SD Card Service");

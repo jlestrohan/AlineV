@@ -100,7 +100,6 @@ int main(void)
   MX_DMA_Init();
   MX_LPUART1_UART_Init();
   MX_I2C1_Init();
-  MX_I2C2_Init();
   MX_SPI2_Init();
   if (MX_FATFS_Init() != APP_OK) {
     Error_Handler();
@@ -180,13 +179,11 @@ void SystemClock_Config(void)
   /** Initializes the peripherals clocks 
   */
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_LPUART1
-                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C2
-                              |RCC_PERIPHCLK_I2C3|RCC_PERIPHCLK_I2C4
-                              |RCC_PERIPHCLK_ADC345;
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_I2C3
+                              |RCC_PERIPHCLK_I2C4|RCC_PERIPHCLK_ADC345;
   PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_SYSCLK;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
-  PeriphClkInit.I2c2ClockSelection = RCC_I2C2CLKSOURCE_SYSCLK;
   PeriphClkInit.I2c3ClockSelection = RCC_I2C3CLKSOURCE_SYSCLK;
   PeriphClkInit.I2c4ClockSelection = RCC_I2C4CLKSOURCE_PCLK1;
   PeriphClkInit.Adc345ClockSelection = RCC_ADC345CLKSOURCE_SYSCLK;
