@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include <command_service.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -37,6 +36,7 @@
 #include "Button_service.h"
 #include "sdcard_service.h"
 #include "IRQ_Handler.h"
+#include "BMP280_service.h"
 #include "lcdMenu_service.h"
 #include "HCSR04_service.h"
 #include "MotorsControl_service.h"
@@ -84,9 +84,9 @@ uint16_t ServicesSuccessFlags = 0; /* holds the flags of succesfully running ser
 /* Definitions for supervisorTask */
 osThreadId_t supervisorTaskHandle;
 const osThreadAttr_t supervisorTask_attributes = {
-		.name = "supervisorTask",
-		.priority = (osPriority_t) osPriorityLow,
-		.stack_size = 256 * 4
+  .name = "supervisorTask",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 256 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -99,12 +99,12 @@ void StartSupervisorTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 void MX_FREERTOS_Init(void) {
-	/* USER CODE BEGIN Init */
+  /* USER CODE BEGIN Init */
 
 	char *msg = "\n\r-------------------------- Starting program... Initializing services...\n\n\r";
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
@@ -155,13 +155,12 @@ void MX_FREERTOS_Init(void) {
 	}
 #endif
 
-
-	/*if (sensor_speed_initialize() == EXIT_FAILURE) {
-		loggerE("Error Initializing Speed Sensors Service");
+#ifdef DEBUG_SERVICE_BMP280
+	if (uBmp280ServiceInit() == EXIT_FAILURE) {
+		printf("Error Initializing BMP280 Service\n\r");
 		Error_Handler();
-	} else {
-		ServicesSuccessFlags |= SERVICE_SPEED_COMPLETE;
-	}*/
+	}
+#endif
 
 	/*if (uSdCardServiceInit() == EXIT_FAILURE) {
 		loggerE("Error Initializing SD Card Service");
@@ -204,31 +203,31 @@ void MX_FREERTOS_Init(void) {
 	//dbg_printf("Init sequence complete....");
 	/** let's start the 1µs timer for the whole application */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-	/* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-	/* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-	/* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-	/* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-	/* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-	/* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-	/* Create the thread(s) */
-	/* creation of supervisorTask */
-	supervisorTaskHandle = osThreadNew(StartSupervisorTask, NULL, &supervisorTask_attributes);
+  /* Create the thread(s) */
+  /* creation of supervisorTask */
+  supervisorTaskHandle = osThreadNew(StartSupervisorTask, NULL, &supervisorTask_attributes);
 
-	/* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
-	/* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
 }
 
@@ -241,7 +240,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartSupervisorTask */
 void StartSupervisorTask(void *argument)
 {
-	/* USER CODE BEGIN StartSupervisorTask */
+  /* USER CODE BEGIN StartSupervisorTask */
 	/* USER CODE BEGIN StartDefaultTask */
 	osDelay(5000);
 
@@ -251,7 +250,7 @@ void StartSupervisorTask(void *argument)
 
 		osDelay(100);
 	}
-	/* USER CODE END StartSupervisorTask */
+  /* USER CODE END StartSupervisorTask */
 }
 
 /* Private application code --------------------------------------------------*/
