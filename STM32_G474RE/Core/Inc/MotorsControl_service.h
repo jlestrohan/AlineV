@@ -46,6 +46,8 @@ typedef enum {
 	MOTOR_SPEED_NORMAL,		/* reset to normal speed */
 	MOTOR_MOTION_TURN_RIGHT, /* FIXME: here we need to have MOTOR_MOTION_TURN_HEADING once BMP280 is working as intended */
 	MOTOR_MOTION_TURN_LEFT,
+	MOTOR_MOTION_FORWARD_RIGHT, /* keep motion but a little to the right */
+	MOTOR_MOTION_FORWARD_LEFT /* keep motion but a little to the left */
 } MotorMotion_t;
 
 /**
@@ -56,6 +58,7 @@ typedef struct {
 	MotorMotion_t motorMotion_Right;
 	uint8_t currentSpeedLeft;				/* 0 - 100 */
 	uint8_t currentSpeedRight;				/* 0 - 100 */
+
 } MotorData_t;
 
 extern osMessageQueueId_t xQueueMotorMotionOrder;

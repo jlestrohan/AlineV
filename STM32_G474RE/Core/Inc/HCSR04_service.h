@@ -58,7 +58,6 @@ extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous value
 
 extern osEventFlagsId_t xHcrSr04ControlFlag;
 extern osMessageQueueId_t queue_HC_SR04Handle;
-extern osMessageQueueId_t xQueuePWMControlHnd;
 
 /**
  * Main initialization function
