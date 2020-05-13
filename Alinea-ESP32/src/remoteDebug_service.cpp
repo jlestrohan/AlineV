@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 09:31:04
+ * @ Modified time: 2020-05-13 20:20:38
  * @ Description:
  *******************************************************************************************/
 
@@ -12,6 +12,7 @@
 #include "configuration_esp32.h"
 #include <stdlib.h>
 #include "command_service.h"
+#include "ledstrip_service.h"
 
 WiFiClass WiFi;
 
@@ -33,12 +34,13 @@ uint8_t uSetupRemoteDebug()
     Debug.begin(THINGNAME);         // Initialize the WiFi server
 
     String helpCmd = "****\n\rinfo wifi - information about the Wifi connexion\n\r";
+    helpCmd.concat("ledstrip on/off - light up/off the front bottom leds\n\r");
     helpCmd.concat("motors off - stops both motors\n\r");
 
     helpCmd.concat("****\n\r");
 
     Debug.setHelpProjectsCmds(helpCmd);
-    Debug.setCallBackProjectCmds(&vProcessCmdRemoteDebug);
+    Debug.setCallBackProjectCmds(&vProcessCmdRemoteDebug); /* command call back everytime a command is received */
 
     /** FREERTOS Debug Task */
     xTaskCreate(
@@ -67,7 +69,6 @@ void remoteDebug_task(void *parameter)
     for (;;)
     {
         Debug.handle();
-
         vTaskDelay(10);
     }
     vTaskDelete(&xRemoteDebuggerTask_hnd);
@@ -87,34 +88,15 @@ void vProcessCmdRemoteDebug()
     cmd_pack.cmd_type = CMD_TYPE_TEXT;
     cmd_pack.cmd_route = CMD_TRANSMIT;
 
-    if (lastCmd == "info wifi")
+    strcpy(cmd_pack.txtCommand, lastCmd.c_str());
+
+    if (xQueueCommandParse != NULL)
     {
-        debugI("---------------- WIFI INFO -------------------------------------");
-        debugI("Connected to WiFi AP: %s", WiFi.SSID().c_str());
-        debugI("IP: %s", WiFi.localIP().toString().c_str());
-        debugI("IPv6: %s", WiFi.localIPv6().toString().c_str());
-        debugI("MAC: %s", WiFi.macAddress().c_str());
-        debugI("RSSI: %d%%", (uint8_t)abs(WiFi.RSSI()));
-        debugI("Hostname: %s", WiFi.getHostname());
-        debugI("----------------------------------------------------------------");
+        //debugI("Sending command: %s...", lastCmd.c_str());
+        xQueueSend(xQueueCommandParse, &cmd_pack, portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
     }
-
-    //TODO: filter commands here, by text only, to make sure no gharbage command passes thru */
-    if (lastCmd == "motors off")
+    else
     {
-        /* motors off command received */
-        /* that's command service job to package that and transmit */
-
-        strcpy(cmd_pack.txtCommand, lastCmd.c_str());
-        debugI("%lu", ESP.getEfuseMac());
-        if (xQueueCommandParse != NULL)
-        {
-            debugI("Sending command: %s...", lastCmd.c_str());
-            xQueueSend(xQueueCommandParse, &cmd_pack, portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
-        }
-        else
-        {
-            debugI("Failed sending command: %s...", lastCmd.c_str());
-        }
+        debugI("Failed sending command: %s...", lastCmd.c_str());
     }
 }
