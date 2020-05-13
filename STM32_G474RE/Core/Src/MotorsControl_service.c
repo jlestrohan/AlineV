@@ -35,7 +35,7 @@ osMessageQueueId_t xQueueMotorMotionOrder;
 /**
  * Main DataStruct accessible from everywhere
  */
-extern MotorData_t MotorData;
+extern MotorData_t MotorData, lastMotorData;
 MotorData_t MotorData, lastMotorData = {MOTOR_MOTION_IDLE, MOTOR_MOTION_IDLE, 0,0};
 
 /* functions definitions */
@@ -83,6 +83,12 @@ static void vMotorsControlTaskStart(void *vParameters)
 			break;
 		case MOTOR_MOTION_TURN_LEFT:
 			motorSetMotionTurnLeft(&MotorData, MOTORS_DEFAULT_TURN_SPEED, MOTORS_DEFAULT_TURN_SPEED);
+			break;
+		case MOTOR_MOTION_FORWARD_RIGHT: //TODO: add PID here, the more/less we reduce distance against wall the more we derive each caterp speed */
+			MotorSetSpeed(&MotorData, MotorData.currentSpeedLeft + 2, MotorData.currentSpeedRight - 2);
+			break;
+		case MOTOR_MOTION_FORWARD_LEFT: //TODO: add PID here, the more/less we reduce distance against wall the more we derive each caterp speed */
+			MotorSetSpeed(&MotorData, MotorData.currentSpeedLeft - 2, MotorData.currentSpeedRight + 2);
 			break;
 		default:
 			motorsSetMotionIdle(&MotorData);

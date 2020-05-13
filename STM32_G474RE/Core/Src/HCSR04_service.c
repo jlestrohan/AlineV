@@ -32,7 +32,6 @@
 
 HR04_SensorsData_t HR04_SensorsData;
 osMessageQueueId_t queue_HC_SR04Handle;
-osMessageQueueId_t xQueuePWMControlHnd;
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
 xServoPosition_t xServoPosition; /* extern */
@@ -59,17 +58,6 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.cb_mem = &xHr04SensorTaControlBlock,
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
 
-static osThreadId_t xHr04PWMControlTaskHandle;
-static osStaticThreadDef_t xHr04PWMControlTaControlBlock;
-static uint32_t xHr04PWMControlTaBuffer[256];
-static const osThreadAttr_t xHr04PWMControlTa_attributes = {
-		.stack_mem = &xHr04PWMControlTaBuffer[0],
-		.stack_size = sizeof(xHr04PWMControlTaBuffer),
-		.name = "xHr04PWMControlServiceTask",
-		.cb_size = sizeof(xHr04PWMControlTaControlBlock),
-		.cb_mem = &xHr04PWMControlTaControlBlock,
-		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
-
 /* functions definitions */
 HC_SR04_Result HC_SR04_StartupTimers();
 
@@ -93,6 +81,10 @@ static void vHr04SensorTaskStart(void *argument)
 
 			/* for the front sensor we store the right values at the right vars in HR04_SensorsData */
 			if (sensorData.last_capt_sensor == HR04_SONAR_FRONT) {
+
+				/* need data smoothing here, running average for now, see bayesian later */
+				sensorData.last_capt_sensor = (sensorData.last_capt_sensor + HR04_SensorsData.dist_front)/2;
+
 				switch (htim5.Instance->CCR1) {
 				case SERVO_DIRECTION_LEFT45:
 					HR04_SensorsData.dist_left45 = sensorData.last_capt_value;
@@ -135,53 +127,6 @@ static void vHr04SensorTaskStart(void *argument)
 }
 
 /**
- * PWM Control Task... activates the triggers on the targetted sensors
- * @param vParameter
- */
-void vHr04PWMControlTaskStart(void* vParameter)
-{
-	HR04_SensorsActive_t active;
-	osStatus_t status;
-
-	for (;;)
-	{
-		status = osMessageQueueGet(xQueuePWMControlHnd, &active, NULL, osWaitForever);
-		if (status == osOK) {
-			switch (active) {
-			case HCSR04_US_FRONT_ONLY:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3); /* we start rear ultrasonic sensor measure */
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and we stop the other two */
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
-				break;
-			case HCSR04_US_FRONT_BOTTOM:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3); /* we start rear ultrasonic sensor measure */
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and we stop the other two */
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
-				break;
-			case HCSR04_US_BOTTOM_ONLY:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3); /* we start rear ultrasonic sensor measure */
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and we stop the other two */
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
-				break;
-			case HCSR04_US_REAR_ONLY:
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3); /* we start rear ultrasonic sensor measure */
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and we stop the other two */
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
-				break;
-			case HCSR04_US_ALL_STOP:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3); /* we start rear ultrasonic sensor measure */
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* and we stop the other two */
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
-				break;
-			default: break;
-			}
-		}
-		osDelay(1);
-	}
-	osThreadTerminate(xHr04PWMControlTaskHandle);
-}
-
-/**
  * Initialization function
  * @return
  */
@@ -194,26 +139,10 @@ uint8_t uHcsr04ServiceInit()
 		return (EXIT_FAILURE);
 	}
 
-	/** This queue is used to ask the service to start/stop the triggers on the different US sensors */
-	xQueuePWMControlHnd = osMessageQueueNew(10, sizeof(uint8_t), NULL);
-	if (xQueuePWMControlHnd == NULL) {
-		printf("HR04 PWM Control Queue Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
 	if (xHr04SensorTaskHandle == NULL) {
 		printf("HR04 Sensor Task Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	/* creation of HR04 Control Task */
-	xHr04PWMControlTaskHandle = osThreadNew(vHr04PWMControlTaskStart, NULL, &xHr04PWMControlTa_attributes);
-	if (xHr04PWMControlTaskHandle == NULL) {
-		printf("HR04 PWM Control Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}

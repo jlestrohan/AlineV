@@ -17,6 +17,7 @@
 #include "uvLed_service.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "IRQ_Handler.h"
 
 #define NUMBER_INIT_ATTEMPTS 2 /* how many trimes we retry before taking an action of avoidance */
 
@@ -27,7 +28,6 @@ MotorData_t MotorData; /* extern */
 osEventFlagsId_t evt_Mg90sMotionControlFlag; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 osMessageQueueId_t xMessageQueueMotorMotion; /* extern */
-osMessageQueueId_t xQueuePWMControlHnd; /* extern */
 
 /********************************************************************/
 
@@ -35,12 +35,16 @@ osMessageQueueId_t xQueuePWMControlHnd; /* extern */
 static void _vMotionForwardRules();
 static void _vMotionBackwardRules();
 static void _vMotionIdleRules();
+//static uint8_t _vMotionSeekEscapePath();
 
 static MotorMotion_t motorMotion;
 static xServoPattern_t xServopattern;
 static HR04_SensorsActive_t xSensorActive;
+IrqHCSRAcquisition_t sensorData;
+MotorData_t lastMotorData; /* extern - records the last before the last events */
 
-osEventFlagsId_t xEventFlagNavControlMainComn, xEventFlagDecisionControlMainCom;
+osEventFlagsId_t xEventFlagNavControlMainComn;
+osMessageQueueId_t xMessageQueueDecisionControlMainCom;
 
 /* a few macros */
 #define MC_MOTORS_FORWARD	(((MotorData.motorMotion_Left == MOTOR_MOTION_FORWARD) && (MotorData.motorMotion_Right == MOTOR_MOTION_FORWARD)) && \
@@ -94,18 +98,21 @@ void vNavControlNormalMotionTask(void *vParameters)
 	printf("Starting navControl task...\n\r");
 	uint8_t avoidance = false; /* avoidance process ongoing ? */
 
+	/* FINITE STATE MACHINE TO CLEAN UP AND REWRITE THE PROPER WAY !!! */
+
 	for (;;)
 	{
 		/*******************************************************************************************************************/
 		/** FRONT SERVO CONTROL + HCVSR ACTIVATION
 		 */
 
-		if (MC_MOTORS_FORWARD) {
+		if (MC_MOTORS_FORWARD && !avoidance) {
 			_vMotionForwardRules(); /* only sensors and servos */
-
-		} else if (MC_MOTORS_BACKWARD) {
+		}
+		if (MC_MOTORS_BACKWARD) {
 			_vMotionBackwardRules();/* only sensors and servos */
-		} else {
+		}
+		if (MC_MOTORS_IDLE) {
 			_vMotionIdleRules();/* only sensors and servos */
 		}
 
@@ -115,33 +122,58 @@ void vNavControlNormalMotionTask(void *vParameters)
 		if (MC_MOTORS_FORWARD) {
 			if (HR04_SensorsData.dist_bottom > US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM) {
 				motorMotion = MOTOR_MOTION_IDLE;
-				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U); /* completely stop the motors*/
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
 			}
 		}
 
 
 		/*******************************************************************************************************************/
 		/** FRONT MOTION OBSTACLE AVOIDANCE CONTROL
+		 *
+		 *TODO: The ESP32 is able to send commands for an immediate stop when its 2 I2C TOF sensors detect a low obstacle in front
+		 * In such case an order is transmitted to activate avoidance.
 		 */
 
-		if (MC_MOTORS_FORWARD) { /* forward and not already avoiding ? */
-			if (HR04_SensorsData.dist_front < US_FRONT_MIN_WARNING_CM) {
-				motorMotion = MOTOR_SPEED_REDUCE_WARNING;
-				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U); /* completely stop the motors*/
-				printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
+		/* FRONT SENSOR BEHAVIOUR */
+		if ((MC_MOTORS_FORWARD) && (!avoidance) && HR04_SensorsData.dist_front > 2) { /* forward and not already avoiding ? */
+
+
+			if (sensorData.last_capt_sensor == HR04_SONAR_FRONT) {
+
+				/* no obstacle anywhere we go full speed */
+				/*if (sensorData.last_capt_value >= US_FRONT_MIN_WARNING_CM)
+				{
+					motorMotion = MOTOR_SPEED_NORMAL;
+					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				/*}*/
+
+				if (sensorData.last_capt_value < US_FRONT_MIN_WARNING_CM) {
+					motorMotion = MOTOR_SPEED_REDUCE_WARNING;
+					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+					//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
+				}
+				if (sensorData.last_capt_value < US_FRONT_MIN_DANGER_CM) {
+					motorMotion = MOTOR_SPEED_REDUCE_DANGER;
+					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+					//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
+				}
+				if ((sensorData.last_capt_value < US_FRONT_MIN_STOP_CM) || (HR04_SensorsData.dist_left45 < US_FRONT_MIN_STOP_CM) ||
+						(HR04_SensorsData.dist_front < US_FRONT_MIN_STOP_CM)) {
+					motorMotion = MOTOR_MOTION_IDLE;
+					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+					printf("incident found front, servo at %lu, distance at: %d\n\r", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
+					avoidance = true; /* we set that flag to be able to try to avoid the obstacle */
+				}
 			}
-			if (HR04_SensorsData.dist_front < US_FRONT_MIN_DANGER_CM) {
-				motorMotion = MOTOR_SPEED_REDUCE_DANGER;
-				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U); /* completely stop the motors*/
-				printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
-			}
-			if (HR04_SensorsData.dist_front < US_FRONT_MIN_STOP_CM) {
-				motorMotion = MOTOR_MOTION_IDLE;
-				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U); /* completely stop the motors*/
-				printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
-				avoidance = true; /* we set that flag to be able to try to avoid the obstacle */
-			}
+
+
+			/* FRONT DERIVATION IF OBSTACLE IS DETECTED ON THE ANGLES */
+			/* once detected a warning zone, we try to follow a heading which is parallel to the obstacle detected at the angle */
+
 		}
+
+
+
 
 		/* avoid flag is set, we try some emergency measures */
 		if (avoidance) {
@@ -149,34 +181,44 @@ void vNavControlNormalMotionTask(void *vParameters)
 			_vMotionBackwardRules();
 
 			/* first we go back for a little */
-			osDelay(1000);	motorMotion = MOTOR_MOTION_BACKWARD;
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+			osDelay(1000);
+			motorMotion = MOTOR_MOTION_BACKWARD;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 			_vMotionIdleRules();
-			osDelay(1000); motorMotion = MOTOR_MOTION_IDLE;
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+			osDelay(1000);
+			motorMotion = MOTOR_MOTION_IDLE;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+			/* interrogates sensor to retrieve the best solution to escape, right ? or left ? */
 
 			_vMotionForwardRules();
 			/* tru to determine if angle right obstacle is nearer that left */
-			if (HR04_SensorsData.dist_left45 > HR04_SensorsData.dist_right45) {
-				/* if so we turn left */
+			//uint8_t direction = _vMotionSeekEscapePath();
+			//if (direction == 0) {
+			if (HR04_SensorsData.dist_left45 > HR04_SensorsData.dist_right45) { //FIXME Inverted here seek why
+				printf("More room to the right");
 				osDelay(1000); motorMotion = MOTOR_MOTION_TURN_RIGHT;
 			} else {
+				printf("More room to the left");
 				osDelay(1000); motorMotion = MOTOR_MOTION_TURN_LEFT;
 			}
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 			osDelay(1000);
 
 			avoidance = false; /* we start again */
 
 			/* idle.. */
 			_vMotionIdleRules();
-			osDelay(1000); motorMotion = MOTOR_MOTION_IDLE;
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+			motorMotion = MOTOR_MOTION_IDLE;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+			/* Formward Rules */
+			_vMotionForwardRules();
 
 			/* then forward again */
 			_vMotionForwardRules();
 			osDelay(1000);	motorMotion = MOTOR_MOTION_FORWARD;
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 		}
 
 
@@ -194,8 +236,32 @@ void vNavControlNormalMotionTask(void *vParameters)
  */
 static void vNavDecisionControlTask(void *vParameter)
 {
+	NavSpecialEvent_t special_event;
+	char msg[30];
+
 	for(;;)
 	{
+		osMessageQueueGet(xMessageQueueDecisionControlMainCom, &special_event, 0U, osWaitForever);
+
+		switch (special_event) {
+		case START_EVENT:
+			sprintf(msg, "Initiating disinfection program....");
+			motorMotion = MOTOR_MOTION_FORWARD;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+			//if (xQueueEspSerialTX != NULL)
+			//	osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
+			break;
+
+		case STOP_EVENT: default:
+			sprintf(msg, "Stopping disinfection program....");
+			motorMotion = MOTOR_MOTION_IDLE;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+			//if (xQueueEspSerialTX != NULL)
+			//	osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
+			break;
+		}
+
 
 		osDelay(20);
 	}
@@ -208,9 +274,9 @@ static void vNavDecisionControlTask(void *vParameter)
  */
 uint8_t uNavControlServiceInit()
 {
-	xEventFlagDecisionControlMainCom = osEventFlagsNew(NULL);
-	if (xEventFlagDecisionControlMainCom == NULL) {
-		printf("Decision Control Event Flag Initialization Failed\n\r");
+	xMessageQueueDecisionControlMainCom = osMessageQueueNew(1, sizeof(uint8_t), NULL);
+	if (xMessageQueueDecisionControlMainCom == NULL) {
+		printf("Decision Control MessageQUeue Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -251,8 +317,8 @@ static void _vMotionForwardRules()
 	xServopattern = SERVO_PATTERN_THREE_PROBES;
 	osMessageQueuePut(xQueueMg90sMotionOrder, &xServopattern, 0U, osWaitForever);
 
-	xSensorActive = HCSR04_US_FRONT_BOTTOM;
-	osMessageQueuePut(xQueuePWMControlHnd, &xSensorActive, 0U, osWaitForever);
+	HAL_TIM_PWM_Start(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3);
 
 	/* Activates the front LEDS */
 	UV_LedStatus_t led_status = UV_LED_STATUS_SET;
@@ -264,12 +330,13 @@ static void _vMotionForwardRules()
  */
 static void _vMotionBackwardRules()
 {
-	/* front servo pattern idle */
+	/* front servo pattern backward */
 	xServopattern = SERVO_PATTERN_RETURN_CENTER;
 	osMessageQueuePut(xQueueMg90sMotionOrder, &xServopattern, 0U, osWaitForever);
 
-	xSensorActive = HCSR04_US_REAR_ONLY;
-	osMessageQueuePut(xQueuePWMControlHnd, &xSensorActive, 0U, osWaitForever);
+	HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3);
 
 	/* Activates the front LEDS */
 	UV_LedStatus_t led_status = UV_LED_STATUS_SET;
@@ -286,10 +353,13 @@ static void _vMotionIdleRules()
 	osMessageQueuePut(xQueueMg90sMotionOrder, &xServopattern, 0U, osWaitForever);
 
 	/* we cut down all US sensors */
-	xSensorActive = HCSR04_US_ALL_STOP;
-	osMessageQueuePut(xQueuePWMControlHnd, &xSensorActive, 0, osWaitForever);
+	HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_REAR, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_BOTTOM, TIM_CHANNEL_3);
 
 	/* Activates the front LEDS */
 	UV_LedStatus_t led_status = UV_LED_STATUS_UNSET;
 	osMessageQueuePut(xQueueUVLedStatus, &led_status, 0U, osWaitForever);
 }
+
+

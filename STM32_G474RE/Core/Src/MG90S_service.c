@@ -29,7 +29,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 osMessageQueueId_t xQueueMg90sMotionOrder;
 xServoPosition_t xServoPosition;
-osEventFlagsId_t xFlagSensorMotionStatus; /* used to tell the three probes task to run its code or not */
+osMessageQueueId_t xMessageQueueSensorMotionStatus; /* used to tell the three probes task to run its code or not */
 
 
 /**
@@ -67,23 +67,33 @@ static const osThreadAttr_t xFrontServoThreeProbesTa_attributes = {
 void vFrontServoThreeProbes_Start(void *vParameter)
 {
 	xServoPosition_t direction = SERVO_DIRECTION_CENTER;
-	uint32_t flags;
+	uint8_t motion_status;
+	osStatus_t status;
+	HR04_SensorsActive_t active;
 
 	for (;;)
 	{
-		/* only active if internal flag is set */
-		flags = osEventFlagsGet(xFlagSensorMotionStatus);
-		if (flags == FLAG_MG90S_STATUS_THREE_PROBES) {
+		status = osMessageQueueGet(xMessageQueueSensorMotionStatus, &motion_status, 0U, 0U);
+		switch(motion_status){
+		case FLAG_MG90S_STATUS_THREE_PROBES:
 			htim5.Instance->CCR1 = xServoPosition; /* 0 to 100 */
 			switch (xServoPosition) {
 			case SERVO_DIRECTION_LEFT45:
-				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_RIGHT45; break;
+				xServoPosition = SERVO_DIRECTION_CENTER;  /* go to the right place */
+				direction = SERVO_DIRECTION_RIGHT45;
+				osDelay(200);
+				break;
 			case SERVO_DIRECTION_CENTER:
-				xServoPosition=(direction == SERVO_DIRECTION_RIGHT45 ? SERVO_DIRECTION_RIGHT45 : SERVO_DIRECTION_LEFT45); break;
+				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* stop the timer */
+				xServoPosition=(direction == SERVO_DIRECTION_RIGHT45 ? SERVO_DIRECTION_RIGHT45 : SERVO_DIRECTION_LEFT45);
+				osDelay(300);
+				 break;
 			case SERVO_DIRECTION_RIGHT45: default:
-				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45; break;
+				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* stop the timer */
+				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45;
+				osDelay(200);
+				break;
 			}
-			osDelay(250);
 		}
 
 		/* Radar mode */
@@ -104,30 +114,51 @@ void vFrontServo_Start(void* vParameters)
 
 	xServoPattern_t xServopattern;
 	osStatus_t status;
+	uint8_t motion_status;
 
 	for (;;) {
 
-		status = osMessageQueueGet(xQueueMg90sMotionOrder, &xServopattern, NULL, 0U); // no wait
+		status = osMessageQueueGet(xQueueMg90sMotionOrder, &xServopattern, NULL, osWaitForever); // no wait
 		if (status == osOK) {
-			osEventFlagsClear(xFlagSensorMotionStatus, 0xFFFF); /* clears all remaining flags to be sure */
 
 			switch (xServopattern) {
 			case SERVO_PATTERN_IDLE: default:
-				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_IDLE);
+				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
+				motion_status = FLAG_MG90S_STATUS_IDLE;
+				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
 				break;
 			case SERVO_PATTERN_RETURN_CENTER:
-				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_CENTER);
+				motion_status = FLAG_MG90S_STATUS_CENTER;
+				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
+				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
 				htim5.Instance->CCR1 = SERVO_DIRECTION_CENTER;
 				break;
 			case SERVO_PATTERN_THREE_PROBES:
-				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_THREE_PROBES);
+				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
+				motion_status = FLAG_MG90S_STATUS_THREE_PROBES;
+				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
 				break;
 			case SERVO_PATTERN_HALF_RADAR:
 				/* sets the starting position */
+				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
 				htim5.Instance->CCR1 = 25; /* to the right first */
-				osEventFlagsSet(xFlagSensorMotionStatus, FLAG_MG90S_STATUS_HALF_RADAR);
+				motion_status = FLAG_MG90S_STATUS_HALF_RADAR;
+				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
+				break;
+			case SERVO_PATTERN_LEFT45:
+				htim5.Instance->CCR1 = SERVO_DIRECTION_LEFT45;
+				break;
+			case SERVO_PATTERN_LEFT90:
+				htim5.Instance->CCR1 = SERVO_DIRECTION_LEFT90;
+				break;
+			case SERVO_PATTERN_RIGHT45:
+				htim5.Instance->CCR1 = SERVO_DIRECTION_RIGHT45;
+				break;
+			case SERVO_PATTERN_RIGHT90:
+				htim5.Instance->CCR1 = SERVO_DIRECTION_LEFT90;
 				break;
 			}
+
 		}
 
 		osDelay(10);
@@ -148,7 +179,12 @@ uint8_t uMg90sServiceInit()
 		return (EXIT_FAILURE);
 	}
 
-	xFlagSensorMotionStatus = osEventFlagsNew(NULL);
+	xMessageQueueSensorMotionStatus =  osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xMessageQueueSensorMotionStatus == NULL) {
+		printf("Front Servo MotionStatus Queue Initialization Failed\n\r");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
 
 	/* creation of xFrontServo_task */
 	xFrontServoTaskHnd = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
