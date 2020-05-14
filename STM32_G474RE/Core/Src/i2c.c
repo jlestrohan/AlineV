@@ -236,7 +236,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     PC6     ------> I2C4_SCL
     PC7     ------> I2C4_SDA 
     */
-    GPIO_InitStruct.Pin = I2C4_GY271_SCL_Pin|I2C4_GY271_SDA_Pin;
+    GPIO_InitStruct.Pin = I2C4_BPM280_SCL_Pin|I2C4_BPM280_SDA_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -311,7 +311,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
     PC6     ------> I2C4_SCL
     PC7     ------> I2C4_SDA 
     */
-    HAL_GPIO_DeInit(GPIOC, I2C4_GY271_SCL_Pin|I2C4_GY271_SDA_Pin);
+    HAL_GPIO_DeInit(GPIOC, I2C4_BPM280_SCL_Pin|I2C4_BPM280_SDA_Pin);
 
   /* USER CODE BEGIN I2C4_MspDeInit 1 */
 
