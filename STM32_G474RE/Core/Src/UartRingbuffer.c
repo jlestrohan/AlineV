@@ -15,7 +15,6 @@
 /**** define the UART you are using  ****/
 
 UART_HandleTypeDef huart3;
-osSemaphoreId_t xSemaphoreUartRingBuffer;
 
 #define uart &huart3
 
@@ -35,11 +34,6 @@ void store_char(unsigned char c, ring_buffer *buffer);
 
 uint8_t Ringbuf_init(void)
 {
-	xSemaphoreUartRingBuffer = osSemaphoreNew(1U, 1U, NULL);
-	if (xSemaphoreUartRingBuffer == NULL) {
-		printf("Error creating UartRing Semaphore...");
-	}
-
 	_rx_buffer = &rx_buffer;
 	_tx_buffer = &tx_buffer;
 
@@ -95,7 +89,6 @@ int Look_for (char *str, char *buffertolookinto)
 
 int Uart_read(void)
 {
-	osSemaphoreAcquire(xSemaphoreUartRingBuffer, osWaitForever);
 	// if the head isn't ahead of the tail, we don't have any characters
 	if(_rx_buffer->head == _rx_buffer->tail)
 	{
@@ -107,12 +100,10 @@ int Uart_read(void)
 		_rx_buffer->tail = (unsigned int)(_rx_buffer->tail + 1) % UART_BUFFER_SIZE;
 		return c;
 	}
-	osSemaphoreRelease(xSemaphoreUartRingBuffer);
 }
 
 void Uart_write(int c)
 {
-	osSemaphoreAcquire(xSemaphoreUartRingBuffer, osWaitForever);
 	if (c>=0)
 	{
 		int i = (_tx_buffer->head + 1) % UART_BUFFER_SIZE;
@@ -127,7 +118,6 @@ void Uart_write(int c)
 
 		__HAL_UART_ENABLE_IT(uart, UART_IT_TXE); // Enable UART transmission interrupt
 	}
-	osSemaphoreRelease(xSemaphoreUartRingBuffer);
 }
 
 int IsDataAvailable(void)

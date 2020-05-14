@@ -25,8 +25,6 @@
 
 #define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
-osSemaphoreId_t xSemaphoreUartRingBuffer;
-
 /**
  * @brief Function to send out one 8bit character
  * @param data
@@ -42,9 +40,15 @@ void send_character(uint8_t data) {
  */
 void hdlc_frame_handler(const uint8_t *data, uint16_t length)
 {
-	printf("received thru HLDC: %.*s\n\r", length, (char *)data);
+	jsonMessage_t msg;
 
-	//TODO: call JsonDecoder here then command center to decode commands
+	/* some cleanup */
+	memset(msg.json, 0, length+1);
+	strncpy(msg.json, (char *)data, length);
+	msg.msg_size = length;
+
+	/* straight to command service to be interpreted */
+	 osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
 }
 
 osMessageQueueId_t xQueueEspSerialTX;
@@ -69,7 +73,7 @@ static const osThreadAttr_t xEsp32TXSerialServiceTa_attributes = {
 
 static osThreadId_t xEsp32RXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32RXSerialServiceTaControlBlock;
-static uint32_t xEsp32RXSerialServiceTaBuffer[512];
+static uint32_t xEsp32RXSerialServiceTaBuffer[1024];
 static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
 		.name = "xEsp32RXSerialServiceTask",
 		.stack_mem = &xEsp32RXSerialServiceTaBuffer[0],
@@ -86,9 +90,9 @@ static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
  */
 void vEsp32TXSerialService_Start(void* vParameter)
 {
-	printf("Starting ESP32 Serial TX Service task...\n\r");
-	char *msg = "Ready to receive UART";
-	vSendFrame((uint8_t *)msg, strlen(msg));
+	//printf("Starting ESP32 Serial TX Service task...\n\r");
+	//char *msg = "Ready to receive UART";
+	//vSendFrame((uint8_t *)msg, strlen(msg));
 
 	for (;;)
 	{
@@ -113,13 +117,9 @@ void vEsp32RXSerialService_Start(void* vParameter)
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
 
 			char inChar = (char)Uart_read(); /* read one byte of data */
-			//printf("%c", inChar);
-			//Uart_write(inChar);
 
 			// Pass all incoming data to hdlc char receiver
 			vCharReceiver(inChar);
-
-
 
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
@@ -141,13 +141,13 @@ uint8_t uEsp32SerialServiceInit()
 		return (EXIT_FAILURE);
 	}
 
-	xQueueEspSerialTX = osMessageQueueNew(5, sizeof(jsonMessage_t), NULL);
+	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
 	if (xQueueEspSerialTX == NULL) {
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
 
-	xQueueEspSerialRX = osMessageQueueNew(5, sizeof(jsonMessage_t), NULL);
+	xQueueEspSerialRX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
 	if (xQueueEspSerialRX == NULL) {
 		Error_Handler();
 		return (EXIT_FAILURE);

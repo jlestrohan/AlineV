@@ -15,6 +15,8 @@
 #include "UartRingbuffer.h"
 #include "printf.h"
 #include "main.h"
+#include "jsmn.h"
+#include <stdbool.h>
 
 osMessageQueueId_t xQueueCommandParse;
 UART_HandleTypeDef hlpuart1;
@@ -22,7 +24,7 @@ UART_HandleTypeDef hlpuart1;
 typedef StaticTask_t osStaticThreadDef_t;
 static osThreadId_t xCommandParserServiceTaskHnd;
 static osStaticThreadDef_t xCommandParserServiceTaControlBlock;
-static uint32_t xCommandParserServiceTaBuffer[256];
+static uint32_t xCommandParserServiceTaBuffer[512];
 static const osThreadAttr_t xCommandParserServiceTa_attributes = {
 		.name = "xCommandParserServiceTask",
 		.stack_mem = &xCommandParserServiceTaBuffer[0],
@@ -31,7 +33,10 @@ static const osThreadAttr_t xCommandParserServiceTa_attributes = {
 		.cb_size = sizeof(xCommandParserServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_CMD_SERVICE, };
 
+jsmn_parser parser;
 
+/* function prototypes */
+void jsonDecode(const char *json, uint16_t length, bool reentry);
 
 /**
  * Main Task routine
@@ -43,12 +48,17 @@ void vCommandParserServiceTask(void *vParameter)
 	osStatus_t status = -1;
 	jsonMessage_t msgType;
 
+	jsmn_init(&parser);
+
 	for (;;)
 	{
 		/* wait for pure JSON string TODO: bug here FIXME::: */
 		status = osMessageQueueGet(xQueueCommandParse, &msgType, NULL, osWaitForever);
 		if (status == osOK) {
 			printf("received: %s\n\r", msgType.json);
+			jsonDecode(msgType.json, msgType.msg_size, false);
+			/* we just got the command, time to parse it and execute what has to be executed */
+
 		}
 
 		osDelay(50);
@@ -62,7 +72,7 @@ void vCommandParserServiceTask(void *vParameter)
  */
 uint8_t uCmdParseServiceInit()
 {
-	xQueueCommandParse = osMessageQueueNew(5, sizeof(jsonMessage_t), NULL);
+	xQueueCommandParse = osMessageQueueNew(2, sizeof(jsonMessage_t), NULL);
 	if (xQueueCommandParse == NULL) {
 		printf("Command Service Queue Initialization Failed\n\r");
 		Error_Handler();
@@ -85,8 +95,41 @@ uint8_t uCmdParseServiceInit()
  * Decodes JSON and starts parsing commands sent
  * @param type
  */
-void jsonDecode(jsonMessage_t *type ){
+void jsonDecode(const char *json, uint16_t length, bool reentry)
+{
+	int r;
+	jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * 256);
 
+	if (reentry && tokens) {
+		tokens = realloc(tokens, 512);
+	}
+
+	r = jsmn_parse(&parser, json, length, tokens, reentry ? 512 : 256);
+
+	switch (r) {
+	case JSMN_ERROR_INVAL:
+		printf("bad token, JSON string is corrupted\n\r");
+		Error_Handler(); //TODO remove this!!!
+		break;
+	case JSMN_ERROR_NOMEM:
+		printf("not enough tokens, JSON string is too large. Trying to reallocate\n\r");
+		if (!reentry) {
+			reentry = true;
+			jsonDecode(json, length, reentry); /* call self again let's try wioth a bigger buffer */
+		}
+		Error_Handler();
+		break;
+	case JSMN_ERROR_PART:
+		printf("JSON string is too short, expecting more JSON data\n\r");
+		Error_Handler();
+		break;
+	default:
+		printf("JSON Parsing ok... processing command..\n\r");
+		break;
+	}
+
+	vPortFree(tokens);
 }
+
 
 

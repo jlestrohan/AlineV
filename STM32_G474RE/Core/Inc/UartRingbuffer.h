@@ -18,8 +18,6 @@
  */
 #define UART_BUFFER_SIZE 256
 
-extern osSemaphoreId_t xSemaphoreUartRingBuffer;
-
 typedef struct
 {
   unsigned char buffer[UART_BUFFER_SIZE];

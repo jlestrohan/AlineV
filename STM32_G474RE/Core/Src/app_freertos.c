@@ -141,12 +141,12 @@ void MX_FREERTOS_Init(void) {
 	}
 #endif
 
-/*#ifdef DEBUG_SERVICE_CMD_PARSER
+#ifdef DEBUG_SERVICE_CMD_PARSER
 	if (uCmdParseServiceInit() == EXIT_FAILURE) {
 		printf("Error Initializing Command Parser Service\n\r");
 		Error_Handler();
 	}
-#endif*/
+#endif
 
 #ifdef DEBUG_SERVICE_ESP32_SERIAL
 	if (uEsp32SerialServiceInit() == EXIT_FAILURE) {
