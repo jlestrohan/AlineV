@@ -117,4 +117,4 @@ local.properties
 
 /Debug/
 
-WorkspaceConfig.code-workspace
+*.code-workspace

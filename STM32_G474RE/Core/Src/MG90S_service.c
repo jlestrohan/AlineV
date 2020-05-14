@@ -69,7 +69,6 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 	xServoPosition_t direction = SERVO_DIRECTION_CENTER;
 	uint8_t motion_status;
 	osStatus_t status;
-	HR04_SensorsActive_t active;
 
 	for (;;)
 	{
@@ -80,18 +79,39 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 			switch (xServoPosition) {
 			case SERVO_DIRECTION_LEFT45:
 				xServoPosition = SERVO_DIRECTION_CENTER;  /* go to the right place */
+				if (htim5.Instance->CCR1 == SERVO_DIRECTION_CENTER) { /* time for the servo to be on place */
+					HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_3); /* starts measuring */
+				}
 				direction = SERVO_DIRECTION_RIGHT45;
 				osDelay(200);
+				HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_3); /* stops measuring */
 				break;
 			case SERVO_DIRECTION_CENTER:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* stop the timer */
-				xServoPosition=(direction == SERVO_DIRECTION_RIGHT45 ? SERVO_DIRECTION_RIGHT45 : SERVO_DIRECTION_LEFT45);
+				if (direction == SERVO_DIRECTION_RIGHT45) {
+					xServoPosition = SERVO_DIRECTION_RIGHT45;
+					if (htim5.Instance->CCR1 == SERVO_DIRECTION_RIGHT45) { /* time for the servo to be on place */
+						HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_3); /* starts measuring */
+					}
+				} else {
+					xServoPosition = SERVO_DIRECTION_LEFT45;
+					if (htim5.Instance->CCR1 == SERVO_DIRECTION_LEFT45) { /* time for the servo to be on place */
+						HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_3); /* starts measuring */
+					}
+				}
+
+				osDelay(100); /* time for the servo to be on place */
+				HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_3); /* starts measuring */
 				osDelay(300);
-				 break;
+				HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_3); /* stops measuring */
+				break;
 			case SERVO_DIRECTION_RIGHT45: default:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3); /* stop the timer */
-				xServoPosition = SERVO_DIRECTION_CENTER; direction = SERVO_DIRECTION_LEFT45;
+				xServoPosition = SERVO_DIRECTION_CENTER;
+				direction = SERVO_DIRECTION_LEFT45;
+				if (htim5.Instance->CCR1 == SERVO_DIRECTION_CENTER) { /* time for the servo to be on place */
+					HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_3); /* starts measuring */
+				}
 				osDelay(200);
+				HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_3); /* stops measuring */
 				break;
 			}
 		}
@@ -123,24 +143,20 @@ void vFrontServo_Start(void* vParameters)
 
 			switch (xServopattern) {
 			case SERVO_PATTERN_IDLE: default:
-				HAL_TIM_PWM_Stop(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
 				motion_status = FLAG_MG90S_STATUS_IDLE;
 				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
 				break;
 			case SERVO_PATTERN_RETURN_CENTER:
 				motion_status = FLAG_MG90S_STATUS_CENTER;
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
 				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
 				htim5.Instance->CCR1 = SERVO_DIRECTION_CENTER;
 				break;
 			case SERVO_PATTERN_THREE_PROBES:
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
 				motion_status = FLAG_MG90S_STATUS_THREE_PROBES;
 				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);
 				break;
 			case SERVO_PATTERN_HALF_RADAR:
 				/* sets the starting position */
-				HAL_TIM_PWM_Start(HTIM_ULTRASONIC_FRONT, TIM_CHANNEL_3);
 				htim5.Instance->CCR1 = 25; /* to the right first */
 				motion_status = FLAG_MG90S_STATUS_HALF_RADAR;
 				osMessageQueuePut(xMessageQueueSensorMotionStatus, &motion_status, 0U, osWaitForever);

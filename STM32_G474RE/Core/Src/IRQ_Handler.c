@@ -37,9 +37,7 @@ osMessageQueueId_t xQueueEspSerialRX; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
-IrqHCSRAcquisition_t sensorData;
-
-uint32_t readVal;
+hcSensorsTimersValue_t hcValue;
 
 
 /**
@@ -83,23 +81,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	if (htim->Instance == TIM1) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
-			sensorData.last_capt_sensor = HR04_SONAR_REAR;
-			sensorData.last_capt_value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &sensorData, 0U, 0U);
+			hcValue.rear = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+			osMessageQueuePut(queue_HC_SR04Handle, &hcValue, 0U, 0U);
 		}
 	} else if (htim->Instance == TIM2) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
-			sensorData.last_capt_sensor = HR04_SONAR_FRONT;
-			sensorData.last_capt_value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &sensorData, 0x0U, 0U);
+			hcValue.front = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+			osMessageQueuePut(queue_HC_SR04Handle, &hcValue, 0x0U, 0U);
 		}
 	} else if (htim->Instance == TIM3) { /* HC-SR04 Sensor ONE */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
 		{
-			sensorData.last_capt_sensor = HR04_SONAR_BOTTOM;
-			sensorData.last_capt_value = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &sensorData, 0U, 0U);
+			hcValue.bottom = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
+			osMessageQueuePut(queue_HC_SR04Handle, &hcValue, 0U, 0U);
 		}
 	}
 }

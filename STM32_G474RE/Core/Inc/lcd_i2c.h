@@ -10,6 +10,7 @@
 #define LCD_HD44780_I2C_H 120
 
 #include "stm32g4xx_hal.h"
+#include <stdbool.h>
 
 #define LCD_BIT_RS                 ((uint8_t)0x01U)
 #define LCD_BIT_RW                 ((uint8_t)0x02U)
@@ -64,13 +65,6 @@
 #define lcdCursorDirToRight()      lcdCommand(LCD_CURSOR_DIR_RIGHT, LCD_PARAM_SET)
 #define lcdCursorDirToLeft()       lcdCommand(LCD_CURSOR_DIR_LEFT, LCD_PARAM_SET)
 #define lcdCursorHome()            lcdCommand(LCD_CURSOR_HOME, LCD_PARAM_SET)
-
-#ifndef bool
-typedef enum {
-    false,
-    true
-} bool;
-#endif
 
 typedef struct {
     I2C_HandleTypeDef * hi2c;  /* I2C Struct */

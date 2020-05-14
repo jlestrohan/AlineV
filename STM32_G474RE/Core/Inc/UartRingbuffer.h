@@ -11,11 +11,14 @@
 #define UARTRINGBUFFER_H_
 
 #include "stm32g4xx_hal.h"
+#include "cmsis_os2.h"
 
 /**
  * change the size of the buffer
  */
 #define UART_BUFFER_SIZE 256
+
+extern osSemaphoreId_t xSemaphoreUartRingBuffer;
 
 typedef struct
 {
@@ -27,7 +30,7 @@ typedef struct
 /**
  * Initialize the ring buffer
  */
-void Ringbuf_init(void);
+uint8_t Ringbuf_init(void);
 
 /**
  * reads the data in the rx_buffer and increment the tail count in rx_buffer

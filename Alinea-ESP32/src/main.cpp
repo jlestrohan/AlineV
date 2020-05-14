@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 07:15:38
+ * @ Modified time: 2020-05-12 21:28:09
  * @ Description:
  *******************************************************************************************/
 
@@ -25,6 +25,8 @@
 #include "buzzer_service.h"
 #include "command_service.h"
 #include "bluetooth_serial.h"
+#include "speed_service.h"
+#include "ledstrip_service.h"
 
 /* reemoving brownout detector */
 #include "soc/soc.h"
@@ -33,6 +35,7 @@
 #define GET_CHIPID() (ESP.getEfuseMac());
 
 RemoteDebug Debug;
+QueueHandle_t xLedStripCommandQueue;
 
 /**
  * @brief  Main program loop
@@ -56,6 +59,7 @@ void setup()
   Serial.begin(115200);
   DEBUG_SERIAL("Starting Program...");
 
+  uLedStripServiceInit();
   uSetupBuzzer();
   uSetupCmdParser();
   //setupBTSerial();
@@ -64,9 +68,20 @@ void setup()
   uSetupNTPService();
   uSetupSTM32SerialService();
   //uSetupOLED();
+  uSetupSpeedService();
   uSetupOTA();
+
+  lit_status_t ledstatus;
+  ledstatus.is_lit = true;
+  xQueueSend(xLedStripCommandQueue, &ledstatus, portMAX_DELAY);
 
   DEBUG_SERIAL("Ready UART");
 
+  /* let's inform the STM that we have just rebooted */
+  command_package_t cmd_rdyESP = {CMD_TRANSMIT, CMD_TYPE_TEXT, "ack restart"};
+  xQueueSend(xQueueCommandParse, &cmd_rdyESP, portMAX_DELAY);
+
   vPlayMelody(MelodyType_CommandReady);
 }
+
+// TODO: connect 2xI2C TOF https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/#7

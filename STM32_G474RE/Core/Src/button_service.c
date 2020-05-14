@@ -27,6 +27,8 @@
 #include <string.h>
 #include "lcdMenu_service.h"
 #include "navControl_service.h"
+#include "MG90S_service.h"
+#include "HCSR04_service.h"
 
 //temp
 #include "MotorsControl_service.h"
@@ -37,9 +39,11 @@ osMessageQueueId_t xQueueButtonEvent;
 
 osMessageQueueId_t xQueueEspSerialTX; /*extern */
 osEventFlagsId_t xEventFlagNavControlMainCom; /* extern */
+osMessageQueueId_t xQueuePWMControlHnd; /* extern */
 
 static MotorMotion_t motorMotion;
 typedef StaticTask_t osStaticThreadDef_t;
+osMessageQueueId_t xMessageQueueDecisionControlMainCom; /* extern */
 
 
 /**
@@ -95,30 +99,13 @@ static void vOnBoardButtonServiceTask(void *argument)
 
 					//FIXME:
 					if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
-
-						/* if we're not already in action, let's initiate the exploration sequence */
-						//osEventFlagsSet(xEventFlagNavControlMainCom, FLAG_NAV_STATUS_STARTING);
-
-						motorMotion = MOTOR_MOTION_FORWARD;
-						osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
-
-						if (xQueueEspSerialTX != NULL) {
-							osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
-						}
-					} else {
-						if (xQueueMotorMotionOrder != NULL) {
-
-							motorMotion = MOTOR_MOTION_IDLE;
-							osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
-
-							if (xQueueEspSerialTX != NULL) {
-								sprintf(msg, "Initiating exploration sequence... \n\r");
-								osMessageQueuePut(xQueueEspSerialTX, &msg, 0U, 0U);
-							}
-						}
+						NavSpecialEvent_t event = START_EVENT;
+						osMessageQueuePut(xMessageQueueDecisionControlMainCom, &event, 0U, 0U);
 					}
+				} else {
+					NavSpecialEvent_t event = STOP_EVENT;
+					osMessageQueuePut(xMessageQueueDecisionControlMainCom, &event, 0U, 0U);
 				}
-
 				break;
 
 			case BTN_BUTTON_EXT_PRESSED:

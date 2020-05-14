@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 20:56:14
+ * @ Modified time: 2020-05-12 21:37:29
  * @ Description: https://hieromon.github.io/AutoConnect/otaupdate.html
  * //https://hieromon.github.io/AutoConnect/howtoembed.html
  *******************************************************************************************/
@@ -17,6 +17,7 @@
 
 WebServer Server;
 AutoConnect Portal(Server);
+AutoConnectConfig acConfig;
 
 xTaskHandle xAutoConnectServiceTaskHandle = NULL;
 void vAutoConnectServiceTask(void *parameter);
@@ -35,6 +36,10 @@ void rootPage()
 uint8_t uSetupAutoConnect()
 {
   Server.on("/", rootPage);
+
+  /* change the AP label */
+  //acConfig.apid = "AlineV-" + ESP.getEfuseMac();
+  // Portal.config(acConfig);
 
   if (Portal.begin())
   {

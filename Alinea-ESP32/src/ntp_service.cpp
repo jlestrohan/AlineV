@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 23:19:45
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 20:34:23
+ * @ Modified time: 2020-05-13 23:01:28
  * @ Description:
  *******************************************************************************************/
 
@@ -16,6 +16,9 @@
 
 void vNtpServiceTask(void *parameter);
 xTaskHandle xNtpServiceTaskHandle;
+
+const long utcOffsetInSeconds = 3600;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
@@ -72,7 +75,8 @@ void vNtpServiceTask(void *parameter)
             DEBUG_SERIAL("Updating NTP...");
             if (timeClient.forceUpdate())
             {
-                DEBUG_SERIAL("NTP updated succesfully!");
+                debugD("NTP updated successfully!");
+                debugD("%s, %s\n\r", daysOfTheWeek[timeClient.getDay()], timeClient.getFormattedTime().c_str());
             }
             else
             {

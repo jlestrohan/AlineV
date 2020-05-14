@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:26
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 09:26:43
+ * @ Modified time: 2020-05-08 14:15:27
  * @ Description: Serial communications handler for all serial coms
  
  *     using UART2 to STM32 =>  RXD1 -> pin G16
@@ -15,8 +15,6 @@
 #include <stdint.h>
 #include <cstddef>
 #include <FreeRTOS.h>
-
-#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
 #define RXD2 16
 #define TXD2 17

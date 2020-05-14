@@ -182,7 +182,7 @@ uint8_t uSetupBuzzer()
 
     if (xBuzzerTask_handle == NULL)
     {
-        DEBUG_SERIAL("xBuzzerMelodyQueue ... Success!");
+        DEBUG_SERIAL("xBuzzerMelodyQueue ... Error!");
         return EXIT_FAILURE;
     }
 

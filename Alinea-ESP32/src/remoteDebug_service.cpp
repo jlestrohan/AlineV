@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-13 20:20:38
+ * @ Modified time: 2020-05-13 22:35:18
  * @ Description:
  *******************************************************************************************/
 
@@ -12,7 +12,6 @@
 #include "configuration_esp32.h"
 #include <stdlib.h>
 #include "command_service.h"
-#include "ledstrip_service.h"
 
 WiFiClass WiFi;
 
@@ -29,8 +28,8 @@ xTaskHandle xRemoteDebuggerTask_hnd = NULL;
 uint8_t uSetupRemoteDebug()
 {
     Debug.setResetCmdEnabled(true); // Enable the reset command
-    Debug.showProfiler(true);       // Profiler (Good to measure times, to optimize codes)
-    Debug.showColors(false);        // Colors
+    Debug.showProfiler(false);      // Profiler (Good to measure times, to optimize codes)
+    Debug.showColors(true);         // Colors
     Debug.begin(THINGNAME);         // Initialize the WiFi server
 
     String helpCmd = "****\n\rinfo wifi - information about the Wifi connexion\n\r";

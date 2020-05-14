@@ -25,12 +25,13 @@
 #include <FreeRTOS.h>
 #include <HCSR04_service.h>
 #include "MG90S_service.h"
+#include "IRQ_Handler.h"
 #include "tim.h"
 #include "printf.h"
 #include <string.h>
 #include <stdio.h>
 
-HR04_SensorsData_t HR04_SensorsData;
+HR04_SensorsData_t HR04_SensorsData, HR04_OldSensorsData;
 osMessageQueueId_t queue_HC_SR04Handle;
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
@@ -70,55 +71,52 @@ static void vHr04SensorTaskStart(void *argument)
 {
 	printf("Starting HCSR_04 Service task...\n\r");
 
-	IrqHCSRAcquisition_t sensorData;
+	hcSensorsTimersValue_t sensorCapuredData;
 
 	osStatus_t status = -1;
 
 	for (;;) {
 
-		status = osMessageQueueGet(queue_HC_SR04Handle, &sensorData, NULL, osWaitForever); /* wait for message */
+		status = osMessageQueueGet(queue_HC_SR04Handle, &sensorCapuredData, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
 
-			/* for the front sensor we store the right values at the right vars in HR04_SensorsData */
-			if (sensorData.last_capt_sensor == HR04_SONAR_FRONT) {
+			HR04_OldSensorsData = HR04_SensorsData;
 
-				/* need data smoothing here, running average for now, see bayesian later */
-				sensorData.last_capt_sensor = (sensorData.last_capt_sensor + HR04_SensorsData.dist_front)/2;
+			HR04_SensorsData.dist_bottom = sensorCapuredData.bottom;
+			HR04_SensorsData.dist_rear = sensorCapuredData.rear;
 
-				switch (htim5.Instance->CCR1) {
-				case SERVO_DIRECTION_LEFT45:
-					HR04_SensorsData.dist_left45 = sensorData.last_capt_value;
-#ifdef DEBUG_HCSR04_LEFT45
-					printf("%d\n\r", HR04_SensorsData.dist_left45); //TODO: put this var in register keyword
-#endif
-					break;
-				case SERVO_DIRECTION_CENTER:
-					HR04_SensorsData.dist_front = sensorData.last_capt_value;
-#ifdef DEBUG_HCSR04_FRONT
-					//printf("F: %0*dcm\n\r", 3,HR04_SensorsData.dist_front);
-					printf("%d\n\r", HR04_SensorsData.dist_front);
-#endif
-					break;
-				case SERVO_DIRECTION_RIGHT45:
-					HR04_SensorsData.dist_right45 = sensorData.last_capt_value;
-#ifdef DEBUG_HCSR04_RIGHT45
-					printf("%d\n\r", HR04_SensorsData.dist_right45);
-#endif
-					break;
-				default: break;
-				}
-			} else if (sensorData.last_capt_sensor ==  HR04_SONAR_BOTTOM) {
-				HR04_SensorsData.dist_bottom = sensorData.last_capt_value;
-#ifdef DEBUG_HCSR04_BOTTOM
-				printf("B: %0*dcm\n\r", 3, HR04_SensorsData.dist_bottom);
-#endif
-			} else if (sensorData.last_capt_sensor ==  HR04_SONAR_REAR) {
-				HR04_SensorsData.dist_rear = sensorData.last_capt_value;
-#ifdef DEBUG_HCSR04_REAR
-				printf("R: %0*dcm\n\r", 3,HR04_SensorsData.dist_rear);
-#endif
+			/* need to know where to store all the front values */
+			switch (htim5.Instance->CCR1) {
+			case SERVO_DIRECTION_LEFT45:
+				HR04_SensorsData.dist_left45 = sensorCapuredData.front;
+				break;
+			case SERVO_DIRECTION_CENTER:
+				HR04_SensorsData.dist_front = sensorCapuredData.front;
+				break;
+			case SERVO_DIRECTION_RIGHT45:
+				HR04_SensorsData.dist_right45 = sensorCapuredData.front;
+				break;
 			}
 
+#ifdef DEBUG_HCSR04_FRONT
+					//printf("F: %0*dcm\n\r", 3,HR04_SensorsData.dist_front);
+					printf("%d\n\r", sensorCapuredData.front);
+#endif
+
+#ifdef DEBUG_HCSR04_RIGHT45
+					//printf("%d\n\r", sensorCapuredData.dist_right45);
+#endif
+#ifdef DEBUG_HCSR04_LEFT45
+					//printf("%d\n\r", sensorCapuredData.dist_left45);
+#endif
+
+#ifdef DEBUG_HCSR04_BOTTOM
+				printf("B: %0*dcm\n\r", 3, sensorCapuredData.bottom);
+#endif
+
+#ifdef DEBUG_HCSR04_REAR
+				printf("rear: %0*d cm\n\r", 3,HR04_SensorsData.dist_rear);
+#endif
 		}
 
 		osDelay(20);
@@ -132,7 +130,7 @@ static void vHr04SensorTaskStart(void *argument)
  */
 uint8_t uHcsr04ServiceInit()
 {
-	queue_HC_SR04Handle = osMessageQueueNew(1, sizeof(HR04_SensorsData_t), NULL);
+	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(hcSensorsTimersValue_t), NULL);
 	if (!queue_HC_SR04Handle) {
 		printf("HR04 Sensor Queue Initialization Failed\n\r");
 		Error_Handler();

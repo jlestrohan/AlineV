@@ -9,12 +9,6 @@
  *	All reception is made on a different task triggered via an IRQ
  *******************************************************************/
 
-// check https://stm32f4-discovery.net/2017/07/stm32-tutorial-efficiently-receive-uart-data-using-dma/
-// see https://www.youtube.com/watch?v=wj427hpP81s
-// https://controllerstech.com/ring-buffer-using-head-and-tail-in-stm32/
-// https://www.youtube.com/watch?v=tWryJb2L0cU IMPORTANT!!
-// see https://github.com/MaJerle/stm32-usart-uart-dma-rx-tx/tree/master/projects
-
 #include "esp32serial_service.h"
 #include "configuration.h"
 #include "printf.h"
@@ -30,6 +24,8 @@
 #include "hdlc_protocol.h"
 
 #define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
+
+osSemaphoreId_t xSemaphoreUartRingBuffer;
 
 /**
  * @brief Function to send out one 8bit character
@@ -110,10 +106,6 @@ void vEsp32RXSerialService_Start(void* vParameter)
 {
 	printf("Starting ESP32 Serial RX Service task...\n\r");
 
-	//char Rx_Buffer[UART_BUFFER_SIZE]; /* will stay until power off so no heap frag... */
-	//int uartBufferPos = 0;
-	//jsonMessage_t msgType;
-
 	for (;;)
 	{
 		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
@@ -144,7 +136,10 @@ void vEsp32RXSerialService_Start(void* vParameter)
 uint8_t uEsp32SerialServiceInit()
 {
 	/* Initializes the Ring Buffer */
-	Ringbuf_init();
+	if (Ringbuf_init() == EXIT_FAILURE) {
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
 
 	xQueueEspSerialTX = osMessageQueueNew(5, sizeof(jsonMessage_t), NULL);
 	if (xQueueEspSerialTX == NULL) {
@@ -178,7 +173,7 @@ uint8_t uEsp32SerialServiceInit()
 				1. Character send function, to send out HDLC frame one byte at a time.
 				2. HDLC frame handler function for received frame.
 				3. Length of the longest frame used, to allocate buffer in memory */
-		uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
+	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 	printf("Initializing ESP32 Serial Service... Success!\n\r");
 	return EXIT_SUCCESS;

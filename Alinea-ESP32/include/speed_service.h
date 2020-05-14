@@ -1,18 +1,19 @@
 /*******************************************************************************************
  * @ Author: Jack Lestrohan
- * @ Create Time: 2020-04-22 23:19:39
+ * @ Create Time: 2020-05-09 10:35:19
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 13:48:45
+ * @ Modified time: 2020-05-09 10:44:36
  * @ Description:
+ 
+        Pinout ->   25-26 - Motor left
+                    27-14 - Motor Right
  *******************************************************************************************/
 
-#ifndef _IC_NTP_SERVICE_H
-#define _IC_NTP_SERVICE_H
+#ifndef _IC_SPEED_SERVICE_H
+#define _IC_SPEED_SERVICE_H
 
 #include <stdint.h>
 
-uint8_t uSetupNTPService();
+uint8_t uSetupSpeedService();
 
-uint32_t ulGetEpochTime();
-
-#endif /* _IC_NTP_SERVICE_H */
+#endif /* _IC_SPEED_SERVICE_H */

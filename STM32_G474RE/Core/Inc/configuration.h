@@ -23,20 +23,19 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
  */
 
 /** sensors loggers **/
-//#define DEBUG_HCSR04_LEFT45
+#//define DEBUG_HCSR04_LEFT45
 //#define DEBUG_HCSR04_RIGHT45
-#define DEBUG_HCSR04_FRONT
+//#define DEBUG_HCSR04_FRONT
 //#define DEBUG_HCSR04_BOTTOM
 //#define DEBUG_HCSR04_REAR
-//#define DEBUG_QMC5883
 //#define DEBUG_SYSTEMINFOS
+//#define DEBUG_BMP280
 
 /** service activation **/
 #define DEBUG_SERVICE_LCD_MENU
 #define DEBUG_SERVICE_BUTTON
 #define DEBUG_SERVICE_HCSR04
 #define DEBUG_SERVICE_MG90S
-//#define DEBUG_SERVICE_QMC5883
 #define DEBUG_SERVICE_ESP32_SERIAL
 #define DEBUG_SERVICE_MOTORS
 #define DEBUG_SERVICE_MPU6050
@@ -56,7 +55,9 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM			10
 
 /* what distance is considered by both angles of front distance sensing as "potential obstacle" */
-#define US_ANGLE_FRONT_MIN_DANGER_CM				40
+#define US_ANGLE_MIN_STOP_CM						20	/* obstacle stop */
+#define US_ANGLE_MIN_DANGER_CM						30	/* obstacle near danger */
+#define US_ANGLE_MIN_WARNING_CM						40	/* obstacle potentially near, warning */
 
 /* distance from which we stop the forward motion once an obstacle has been detected */
 #define US_FRONT_MIN_STOP_CM						20	/* obstacle stop */

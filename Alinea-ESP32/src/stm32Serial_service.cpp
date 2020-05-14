@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 13:22:05
+ * @ Modified time: 2020-05-12 02:35:55
  * @ Description:
  *******************************************************************************************/
 
@@ -14,23 +14,17 @@
 #include "command_service.h"
 #include "hdlc_protocol.h"
 
-/* Function to send out byte/char */
-void send_character(uint8_t data);
-
-/* Function to handle a valid HDLC frame */
-void hdlc_frame_handler(const uint8_t *data, uint16_t length);
-
-HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
+#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
 xTaskHandle xStm32TXSerialServiceTask_hnd = NULL; /* for TX */
 xTaskHandle xStm32RXSerialServiceTask_hnd = NULL; /* for RX */
 extern QueueHandle_t xQueueSerialServiceTX;
 
-/* Function to send out one 8bit character */
-void send_character(uint8_t data)
-{
-  Serial2.print((char)data);
-}
+/* function definitions */
+void hdlc_frame_handler(const uint8_t *data, uint16_t length);
+void send_character(uint8_t data);
+
+HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 /**
  * @brief   Serial 2 Listener task (from STM32)
@@ -47,9 +41,13 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
   {
     /* receiving queue for objects tro be sent over */
     xQueueReceive(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY);
-    /* we send the frame over */
-    hdlc.sendFrame((uint8_t *)&jsonMsg.json, jsonMsg.msg_size);
-    //debugI("Sending command thru TX now: %s", jsonMsg.json);
+
+    /* we send the json over */
+    debugI("SENT: %s", jsonMsg.json);
+    //Serial2.println(jsonMsg.json);
+
+    hdlc.sendFrame((uint8_t *)jsonMsg.json, strlen(jsonMsg.json));
+
     vTaskDelay(1);
   }
   vTaskDelete(xStm32TXSerialServiceTask_hnd);
@@ -63,23 +61,27 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
  */
 void vStm32RXSerialServiceTaskCode(void *pvParameters)
 {
-  String nom;
-  uint8_t c;
+  String RXJson;
 
   for (;;)
   {
     // Read some bytes from the USB serial port..
     if (Serial2.available() > 0)
     {
-      c = Serial2.read();
-      hdlc.charReceiver(c);
-      vPlayMelody(MelodyType_CommandFeedback);
-    }
-    vTaskDelay(10);
-  }
-  vTaskDelete(xStm32RXSerialServiceTask_hnd);
-}
+      //RXJson = Serial2.readString();
+      // get the new byte:
+      char inChar = (char)Serial2.read();
+      // debugI("%c", inChar);
+      // Pass all incoming data to hdlc char receiver
+      hdlc.charReceiver(inChar);
 
+      //debugI("%s", RXJson.c_str());
+
+      vTaskDelay(1);
+    }
+    vTaskDelete(xStm32RXSerialServiceTask_hnd);
+  }
+}
 /**
  * @brief  Main Serial Listener setup
  * @note   
@@ -88,7 +90,7 @@ void vStm32RXSerialServiceTaskCode(void *pvParameters)
 uint8_t uSetupSTM32SerialService()
 {
   /* setup UART communications to and from STM32 on UART2 port */
-  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+  Serial2.begin(230400, SERIAL_8N1, RXD2, TXD2);
 
   xQueueSerialServiceTX = xQueueCreate(20, sizeof(command_package_t));
   if (xQueueSerialServiceTX == NULL)
@@ -104,7 +106,7 @@ uint8_t uSetupSTM32SerialService()
       "vStm32TXSerialServiceTaskCode", /* String with name of task. */
       10000,                           /* Stack size in words. */
       NULL,                            /* Parameter passed as input of the task */
-      2,                               /* Priority of the task. */
+      5,                               /* Priority of the task. */
       &xStm32TXSerialServiceTask_hnd); /* Task handle. */
 
   /* check and deinit stuff if applicable */
@@ -138,12 +140,29 @@ uint8_t uSetupSTM32SerialService()
   return EXIT_SUCCESS;
 }
 
-/* Frame handler function. What to do with received data? */
+/**
+ * @brief  Function to send out one 8bit character
+ * @note   
+ * @param  data: 
+ * @retval None
+ */
+void send_character(uint8_t data)
+{
+  Serial2.print((char)data);
+}
+
+/**
+ * @brief   Frame handler function. What to do with received data? 
+ * @note   
+ * @param  *data: 
+ * @param  length: 
+ * @retval None
+ */
 void hdlc_frame_handler(const uint8_t *data, uint16_t length)
 {
-  char buf[512];
-  snprintf(buf, length + 1, (char *)data);
+  /*char buf[1024];
+  snprintf(buf, length + 1, (char *)data);*/
   // Do something with data that is in framebuffer
-  debugI("%s", buf);
-  Serial.println(buf);
+  debugV("RECEIVED: %s", data);
+  //Serial.println(buf);
 }
