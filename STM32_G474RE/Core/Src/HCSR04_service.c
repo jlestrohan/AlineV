@@ -60,7 +60,7 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
 
 /* functions definitions */
-HC_SR04_Result HC_SR04_StartupTimers();
+static HC_SR04_Result HC_SR04_StartupTimers();
 
 
 /**
@@ -70,6 +70,17 @@ HC_SR04_Result HC_SR04_StartupTimers();
 static void vHr04SensorTaskStart(void *argument)
 {
 	printf("Starting HCSR_04 Service task...\n\r");
+
+	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(hcSensorsTimersValue_t), NULL);
+	if (!queue_HC_SR04Handle) {
+		printf("HR04 Sensor Queue Initialization Failed\n\r");
+		Error_Handler();
+	}
+
+	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
+		printf("HC_SR04 Timers Initialization Failed\n\r");
+		Error_Handler();
+	}
 
 	hcSensorsTimersValue_t sensorCapuredData;
 
@@ -99,23 +110,23 @@ static void vHr04SensorTaskStart(void *argument)
 			}
 
 #ifdef DEBUG_HCSR04_FRONT
-					//printf("F: %0*dcm\n\r", 3,HR04_SensorsData.dist_front);
-					printf("%d\n\r", sensorCapuredData.front);
+			//printf("F: %0*dcm\n\r", 3,HR04_SensorsData.dist_front);
+			printf("%d\n\r", sensorCapuredData.front);
 #endif
 
 #ifdef DEBUG_HCSR04_RIGHT45
-					//printf("%d\n\r", sensorCapuredData.dist_right45);
+			//printf("%d\n\r", sensorCapuredData.dist_right45);
 #endif
 #ifdef DEBUG_HCSR04_LEFT45
-					//printf("%d\n\r", sensorCapuredData.dist_left45);
+			//printf("%d\n\r", sensorCapuredData.dist_left45);
 #endif
 
 #ifdef DEBUG_HCSR04_BOTTOM
-				printf("B: %0*dcm\n\r", 3, sensorCapuredData.bottom);
+			printf("B: %0*dcm\n\r", 3, sensorCapuredData.bottom);
 #endif
 
 #ifdef DEBUG_HCSR04_REAR
-				printf("rear: %0*d cm\n\r", 3,HR04_SensorsData.dist_rear);
+			printf("rear: %0*d cm\n\r", 3,HR04_SensorsData.dist_rear);
 #endif
 		}
 
@@ -130,23 +141,11 @@ static void vHr04SensorTaskStart(void *argument)
  */
 uint8_t uHcsr04ServiceInit()
 {
-	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(hcSensorsTimersValue_t), NULL);
-	if (!queue_HC_SR04Handle) {
-		printf("HR04 Sensor Queue Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
 
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
 	if (xHr04SensorTaskHandle == NULL) {
 		printf("HR04 Sensor Task Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
-		printf("HC_SR04 Timers Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -159,7 +158,7 @@ uint8_t uHcsr04ServiceInit()
  * Starts up the different timers
  * @return
  */
-HC_SR04_Result HC_SR04_StartupTimers()
+static HC_SR04_Result HC_SR04_StartupTimers()
 {
 	TIM_HandleTypeDef timHandlers[] = {htim1, htim2, htim3};
 

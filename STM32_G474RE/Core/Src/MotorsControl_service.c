@@ -53,6 +53,23 @@ static void motorSetMotionTurnLeft(MotorData_t *data, uint8_t speed_left, uint8_
  */
 static void vMotorsControlTaskStart(void *vParameters)
 {
+	printf("Starting Motors Control Task...");
+
+	xQueueMotorMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xQueueMotorMotionOrder == NULL) {
+		printf("Motors Message Queue Initialization Failed\n\r");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
+	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+
+	/* initializes PWM duties to 0 for now (idle) */
+	htim16.Instance->CCR1 = 0;
+	htim17.Instance->CCR1 = 0;
+
+
 	MotorMotion_t msgOrder;
 
 	for (;;)
@@ -106,27 +123,10 @@ static void vMotorsControlTaskStart(void *vParameters)
  */
 uint8_t uMotorsControlServiceInit()
 {
-	/* start Idle for now */
-	xQueueMotorMotionOrder = MOTOR_MOTION_IDLE;
-
-	xQueueMotorMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
-	if (xQueueMotorMotionOrder == NULL) {
-		printf("Motors Message Queue Initialization Failed");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-
-	/* initializes PWM duties to 0 for now (idle) */
-	htim16.Instance->CCR1 = 0;
-	htim17.Instance->CCR1 = 0;
-
 	/* creation of the MotorsControl_task */
 	xMotorsControlTaskHnd = osThreadNew(vMotorsControlTaskStart, NULL, &xMotorsControlTa_attributes);
 	if (xMotorsControlTaskHnd == NULL) {
-		printf("MotorsControl Task Initialization Failed");
+		printf("MotorsControl Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}

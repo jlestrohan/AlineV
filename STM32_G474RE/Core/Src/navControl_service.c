@@ -93,11 +93,17 @@ static const osThreadAttr_t xNavDecisionControlTa_attributes = {
  */
 void vNavControlNormalMotionTask(void *vParameters)
 {
-	printf("Starting navControl task...\n\r");
-	uint8_t avoidance = false; /* avoidance process ongoing ? */
-	uint8_t sensor_forward_values_ready = false; /* set true when all values for forward movement are > 0;
+	printf("Starting Navigation Control task...\n\r");
 
-	/* FINITE STATE MACHINE TO CLEAN UP AND REWRITE THE PROPER WAY !!! */
+	uint8_t avoidance = false; /* avoidance process ongoing ? */
+	uint8_t sensor_forward_values_ready = false; /* set true when all values for forward movement are > 0; */
+
+	xEventFlagNavControlMainCom = osEventFlagsNew(NULL);
+	if (xEventFlagNavControlMainCom == NULL) {
+		printf("Nav Control Event Flag Initialization Failed\n\r");
+		Error_Handler();
+	}
+
 
 	for (;;)
 	{
@@ -160,7 +166,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 			/* FRONT DERIVATION IF OBSTACLE IS DETECTED ON THE ANGLES */
 			/* once detected a warning zone, we try to follow a heading which is parallel to the obstacle detected at the angle */
 			/* FIXME: for now angle detection = stop motion! */
-//			/* WAITING FOR CMPS12 inertial sensor to make that better */
+			//			/* WAITING FOR CMPS12 inertial sensor to make that better */
 
 			if ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_WARNING_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_WARNING_CM)) {
 				motorMotion = MOTOR_SPEED_REDUCE_WARNING;
@@ -245,8 +251,16 @@ void vNavControlNormalMotionTask(void *vParameters)
  */
 static void vNavDecisionControlTask(void *vParameter)
 {
+	printf("Starting Navigation Decision Control Task...\n\r");
+
 	NavSpecialEvent_t special_event;
 	char msg[30];
+
+	xMessageQueueDecisionControlMainCom = osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xMessageQueueDecisionControlMainCom == NULL) {
+		printf("Decision Control MessageQueue Initialization Failed\n\r");
+		Error_Handler();
+	}
 
 	for(;;)
 	{
@@ -254,7 +268,7 @@ static void vNavDecisionControlTask(void *vParameter)
 
 		switch (special_event) {
 		case START_EVENT:
-			printf("Initiating disinfection program....");
+			printf("Initiating disinfection program....\n\r");
 			osDelay(500);
 			motorMotion = MOTOR_MOTION_FORWARD;
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
@@ -264,7 +278,7 @@ static void vNavDecisionControlTask(void *vParameter)
 			break;
 
 		case STOP_EVENT: default:
-			sprintf(msg, "Stopping disinfection program....");
+			sprintf(msg, "Stopping disinfection program....\n\r");
 			motorMotion = MOTOR_MOTION_IDLE;
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 			//if (xQueueEspSerialTX != NULL)
@@ -284,20 +298,6 @@ static void vNavDecisionControlTask(void *vParameter)
  */
 uint8_t uNavControlServiceInit()
 {
-	xMessageQueueDecisionControlMainCom = osMessageQueueNew(1, sizeof(uint8_t), NULL);
-	if (xMessageQueueDecisionControlMainCom == NULL) {
-		printf("Decision Control MessageQUeue Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	xEventFlagNavControlMainCom = osEventFlagsNew(NULL);
-	if (xEventFlagNavControlMainCom == NULL) {
-		printf("Nav Control Event Flag Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
 	/* creation of xNavControlNormalMotion Task */
 	xNavControlNormalMotionTaskHandle = osThreadNew(vNavControlNormalMotionTask, NULL, &NavControlNormalMotionTa_attributes);
 	if (xNavControlNormalMotionTaskHandle == NULL) {

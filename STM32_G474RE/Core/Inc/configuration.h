@@ -38,11 +38,11 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define DEBUG_SERVICE_MG90S
 #define DEBUG_SERVICE_ESP32_SERIAL
 #define DEBUG_SERVICE_MOTORS
-#define DEBUG_SERVICE_MPU6050
 #define DEBUG_SERVICE_NAVCONTROL
 #define DEBUG_SERVICE_UVLED
-#define DEBUG_SERVICE_CMD_PARSER
-#define DEBUG_SERVICE_BMP280
+//#define DEBUG_SERVICE_CMD_PARSER
+//#define DEBUG_SERVICE_BMP280
+#define DEBUG_SERVICE_CMPS12
 
 
 /**
@@ -124,7 +124,7 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define OSTASK_PRIORITY_BUTTON_ONBOARD					osPriorityBelowNormal1
 #define OSTASK_PRIORITY_NAVCONTROL_NORM_MOTION			osPriorityAboveNormal3
 #define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityAboveNormal4
-#define OSTASK_PRIORITY_NAVCONTROL_DECISION				osPriorityAboveNormal2
+#define OSTASK_PRIORITY_NAVCONTROL_DECISION				osPriorityBelowNormal2
 #define OSTASK_PRIORITY_BUTTON_ADD						osPriorityBelowNormal3
 #define OSTASK_PRIORITY_HCSR04							osPriorityHigh
 #define OSTASK_PRIORITY_HCSR04_CTL						osPriorityHigh
@@ -138,6 +138,7 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define OSTASK_PRIORITY_SYSTEMINFO						osPriorityLow6
 #define OSTASK_PRIORITY_UVLED							osPriorityBelowNormal4
 #define OSTASK_PRIORITY_CMD_SERVICE						osPriorityNormal3
+#define OSTASK_PRIORITY_CMD_INTERP_SERVICE				osPriorityNormal4
 #define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityHigh
 #define OSTASK_PRIORITY_BMP280							osPriorityLow5
 

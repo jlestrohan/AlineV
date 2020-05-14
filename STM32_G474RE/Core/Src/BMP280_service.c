@@ -46,8 +46,6 @@ BMP280_HandleTypedef bmp280;
 
 BMP280_Data_t BMP280_Data;
 
-//float pressure, temperature, humidity;
-
 static osThreadId_t xBMP280SensorTaskHandle;
 static osStaticThreadDef_t xBMP280SensorTaControlBlock;
 static uint32_t xBMP280SensorTaBuffer[256];
@@ -67,12 +65,18 @@ static void vBMP280SensorTaskStart(void *argument)
 {
 	printf("Starting BMP280 Service task...\n\r");
 
+	if (HAL_I2C_IsDeviceReady(&hi2c4, BMP280_I2C_ADDRESS_0 << 1, 2, 5) != HAL_OK) {
+		printf("BMP280 Device not ready\n\r");
+	} else {
+		printf("The BMP280 device has responded normally!\n\r");
+	}
+
 	bmp280_init_default_params(&bmp280.params);
 	bmp280.addr = BMP280_I2C_ADDRESS_0;
 	bmp280.i2c = &hi2c4;
 
 	if (!bmp280_init(&bmp280, &bmp280.params)) {
-		printf("BMP280 initialization failed\n");
+		printf("BMP280 initialization failed\n\r");
 		osThreadTerminate(NULL);
 		Error_Handler();
 	}
@@ -109,13 +113,6 @@ static void vBMP280SensorTaskStart(void *argument)
  */
 uint8_t uBmp280ServiceInit()
 {
-	if (HAL_I2C_IsDeviceReady(&hi2c4, BMP280_I2C_ADDRESS_0 << 1, 2, 5) != HAL_OK) {
-		printf("BMP280 Device not ready\n\r");
-		return (EXIT_FAILURE);
-	} else {
-		printf("The BMP280 device has responded normally!\n\r");
-	}
-
 	/* creation of BMP280Sensor1_task */
 	xBMP280SensorTaskHandle = osThreadNew(vBMP280SensorTaskStart, NULL, &xBMP280SensorTa_attributes);
 	if (xBMP280SensorTaskHandle == NULL) {
@@ -161,7 +158,7 @@ static bool read_register16(BMP280_HandleTypedef *dev, uint8_t addr, uint16_t *v
 
 }
 
-static inline int read_data(BMP280_HandleTypedef *dev, uint8_t addr, uint8_t *value,
+static uint8_t read_data(BMP280_HandleTypedef *dev, uint8_t addr, uint8_t *value,
 		uint8_t len) {
 	uint16_t tx_buff;
 	tx_buff = (dev->addr << 1);
@@ -271,7 +268,7 @@ bool bmp280_init(BMP280_HandleTypedef *dev, bmp280_params_t *params) {
 	}
 
 	uint8_t ctrl = (params->oversampling_temperature << 5)
-																					| (params->oversampling_pressure << 2) | (params->mode);
+																							| (params->oversampling_pressure << 2) | (params->mode);
 
 	if (dev->id == BME280_CHIP_ID) {
 		// Write crtl hum reg first, only active after write to BMP280_REG_CTRL.
@@ -343,7 +340,7 @@ static inline uint32_t compensate_pressure(BMP280_HandleTypedef *dev, int32_t ad
 	var2 = var2 + ((var1 * (int64_t) dev->dig_P5) << 17);
 	var2 = var2 + (((int64_t) dev->dig_P4) << 35);
 	var1 = ((var1 * var1 * (int64_t) dev->dig_P3) >> 8)
-																					+ ((var1 * (int64_t) dev->dig_P2) << 12);
+																							+ ((var1 * (int64_t) dev->dig_P2) << 12);
 	var1 = (((int64_t) 1 << 47) + var1) * ((int64_t) dev->dig_P1) >> 33;
 
 	if (var1 == 0) {
@@ -371,10 +368,10 @@ static inline uint32_t compensate_humidity(BMP280_HandleTypedef *dev, int32_t ad
 	v_x1_u32r = fine_temp - (int32_t) 76800;
 	v_x1_u32r = ((((adc_hum << 14) - ((int32_t) dev->dig_H4 << 20)
 			- ((int32_t) dev->dig_H5 * v_x1_u32r)) + (int32_t) 16384) >> 15)
-																					* (((((((v_x1_u32r * (int32_t) dev->dig_H6) >> 10)
-																							* (((v_x1_u32r * (int32_t) dev->dig_H3) >> 11)
-																									+ (int32_t) 32768)) >> 10) + (int32_t) 2097152)
-																							* (int32_t) dev->dig_H2 + 8192) >> 14);
+																							* (((((((v_x1_u32r * (int32_t) dev->dig_H6) >> 10)
+																									* (((v_x1_u32r * (int32_t) dev->dig_H3) >> 11)
+																											+ (int32_t) 32768)) >> 10) + (int32_t) 2097152)
+																									* (int32_t) dev->dig_H2 + 8192) >> 14);
 	v_x1_u32r = v_x1_u32r
 			- (((((v_x1_u32r >> 15) * (v_x1_u32r >> 15)) >> 7)
 					* (int32_t) dev->dig_H1) >> 4);

@@ -31,7 +31,6 @@
 #include "configuration.h"
 #include "string.h"
 #include "printf.h"
-#include "sensor_speed_service.h"
 #include "i2c.h"
 #include "Button_service.h"
 #include "sdcard_service.h"
@@ -40,11 +39,13 @@
 #include "lcdMenu_service.h"
 #include "HCSR04_service.h"
 #include "MotorsControl_service.h"
+#include "command_service.h"
 #include "MG90S_service.h"
 #include "navControl_service.h"
 #include "esp32serial_service.h"
 #include "SystemInfos.h"
 #include "uvLed_service.h"
+#include "CMPS12_service.h"
 
 /* USER CODE END Includes */
 
@@ -162,6 +163,13 @@ void MX_FREERTOS_Init(void) {
 	}
 #endif
 
+#ifdef DEBUG_SERVICE_CMPS12
+	if (uBmp280ServiceInit() == EXIT_FAILURE) {
+		printf("Error Initializing CMPS12 Service\n\r");
+		Error_Handler();
+	}
+#endif
+
 	/*if (uSdCardServiceInit() == EXIT_FAILURE) {
 		loggerE("Error Initializing SD Card Service");
 		Error_Handler();
@@ -242,13 +250,23 @@ void StartSupervisorTask(void *argument)
 {
   /* USER CODE BEGIN StartSupervisorTask */
 	/* USER CODE BEGIN StartDefaultTask */
-	osDelay(5000);
-
+	char infobuf[100];
+	osVersion_t osv;
+	osStatus_t status;
+	status = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
+	if(status == osOK) {
+		printf("------------------------------------------\r\n");
+		printf("Kernel Information: %s\r\n", infobuf);
+		printf("Kernel Version    : %d\r\n", osv.kernel);
+		printf("Kernel API Version: %d\r\n", osv.api);
+	}
 	/* Infinite loop */
 	for(;;)
 	{
 
-		osDelay(100);
+
+
+		osDelay(1000);
 	}
   /* USER CODE END StartSupervisorTask */
 }

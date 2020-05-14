@@ -23,18 +23,16 @@
 #define UART_DMA_BUFFER_SIZE 2048
 #define PARSER_MESSAGE_LIST_SIZE 8
 #define PARSER_MESSAGE_SIZE 1024
-#define MAX_JSON_MSG_SIZE 512
+#define MAX_JSON_MSG_SIZE 256
 
 extern osMessageQueueId_t xQueueEspSerialTX;
 extern osMessageQueueId_t xQueueEspSerialRX;
 
 extern uint8_t UART_DMA_BUF[UART_DMA_BUFFER_SIZE];
 
-
-
 typedef struct
 {
-	char json[MAX_JSON_MSG_SIZE];
+	char json[100];
     uint16_t msg_size;
 } jsonMessage_t;
 //extern jsonMessage_t JsonMsg;

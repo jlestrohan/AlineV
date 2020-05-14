@@ -70,6 +70,16 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 	uint8_t motion_status;
 	osStatus_t status;
 
+	xMessageQueueSensorMotionStatus =  osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xMessageQueueSensorMotionStatus == NULL) {
+		printf("Front Servo MotionStatus Queue Initialization Failed\n\r");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
+	/* sets to center */
+	htim5.Instance->CCR1 = SERVO_DIRECTION_CENTER;
+
 	for (;;)
 	{
 		status = osMessageQueueGet(xMessageQueueSensorMotionStatus, &motion_status, 0U, 0U);
@@ -136,6 +146,19 @@ void vFrontServo_Start(void* vParameters)
 	osStatus_t status;
 	uint8_t motion_status;
 
+	xQueueMg90sMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xQueueMg90sMotionOrder == NULL) {
+		printf("Front Servo Message Queue Initialization Failed\n\r");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
+	if (HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1) != HAL_OK) {
+		printf("Cannot start MG90 pwm Timer\n\r");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
 	for (;;) {
 
 		status = osMessageQueueGet(xQueueMg90sMotionOrder, &xServopattern, NULL, osWaitForever); // no wait
@@ -188,20 +211,6 @@ void vFrontServo_Start(void* vParameters)
  */
 uint8_t uMg90sServiceInit()
 {
-	xQueueMg90sMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
-	if (xQueueMg90sMotionOrder == NULL) {
-		printf("Front Servo Message Queue Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	xMessageQueueSensorMotionStatus =  osMessageQueueNew(10, sizeof(uint8_t), NULL);
-	if (xMessageQueueSensorMotionStatus == NULL) {
-		printf("Front Servo MotionStatus Queue Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
 	/* creation of xFrontServo_task */
 	xFrontServoTaskHnd = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
 	if (xFrontServoTaskHnd == NULL) {
@@ -217,19 +226,6 @@ uint8_t uMg90sServiceInit()
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
-
-	if (HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1) != HAL_OK) {
-		printf("Cannot start MG90 pwm Timer\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	/* sets to center */
-	htim5.Instance->CCR1 = 75;
-
-	/* suspending for now
-	 * Will resume when motion forward */
-	//osThreadSuspend(xFrontServo_taskHandle);
 
 	printf("Initializing Front Servo... Success!\n\r");
 	return (EXIT_SUCCESS);

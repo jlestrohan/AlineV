@@ -48,7 +48,7 @@ void hdlc_frame_handler(const uint8_t *data, uint16_t length)
 	msg.msg_size = length;
 
 	/* straight to command service to be interpreted */
-	 osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
+	osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
 }
 
 osMessageQueueId_t xQueueEspSerialTX;
@@ -90,9 +90,13 @@ static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
  */
 void vEsp32TXSerialService_Start(void* vParameter)
 {
-	//printf("Starting ESP32 Serial TX Service task...\n\r");
-	//char *msg = "Ready to receive UART";
-	//vSendFrame((uint8_t *)msg, strlen(msg));
+	printf("Starting ESP32 Serial TX Service task...\n\r");
+
+	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
+	if (xQueueEspSerialTX == NULL) {
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
 
 	for (;;)
 	{
@@ -109,6 +113,25 @@ void vEsp32TXSerialService_Start(void* vParameter)
 void vEsp32RXSerialService_Start(void* vParameter)
 {
 	printf("Starting ESP32 Serial RX Service task...\n\r");
+
+	/* Initializes the RX Ring Buffer */
+	if (Ringbuf_init() == EXIT_FAILURE) {
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
+	xQueueEspSerialRX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
+	if (xQueueEspSerialRX == NULL) {
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
+	/* Initialize Arduhdlc library with three parameters.
+					1. Character send function, to send out HDLC frame one byte at a time.
+					2. HDLC frame handler function for received frame.
+					3. Length of the longest frame used, to allocate buffer in memory */
+	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
+
 
 	for (;;)
 	{
@@ -135,24 +158,6 @@ void vEsp32RXSerialService_Start(void* vParameter)
  */
 uint8_t uEsp32SerialServiceInit()
 {
-	/* Initializes the Ring Buffer */
-	if (Ringbuf_init() == EXIT_FAILURE) {
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
-	if (xQueueEspSerialTX == NULL) {
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	xQueueEspSerialRX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
-	if (xQueueEspSerialRX == NULL) {
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
 	/* creation of TX Serial Task */
 	xEsp32TXSerialServiceTaskHandle = osThreadNew(vEsp32TXSerialService_Start, NULL, &xEsp32TXSerialServiceTa_attributes);
 	if (xEsp32TXSerialServiceTaskHandle == NULL) {
@@ -168,12 +173,6 @@ uint8_t uEsp32SerialServiceInit()
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
-
-	/* Initialize Arduhdlc library with three parameters.
-				1. Character send function, to send out HDLC frame one byte at a time.
-				2. HDLC frame handler function for received frame.
-				3. Length of the longest frame used, to allocate buffer in memory */
-	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 	printf("Initializing ESP32 Serial Service... Success!\n\r");
 	return EXIT_SUCCESS;

@@ -20,7 +20,6 @@
 #include "cmsis_os2.h"
 #include "gpio.h"
 #include "tim.h"
-#include "sensor_speed_service.h"
 #include "SystemInfos.h"
 #include "MG90S_service.h"
 

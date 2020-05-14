@@ -86,6 +86,12 @@ static void vOnBoardButtonServiceTask(void *argument)
 	uint32_t uOnboardBtnLastPressedTick = HAL_GetTick();
 	uint32_t uExternalBtnLastPressedTick = HAL_GetTick();
 
+	xQueueButtonEvent = osMessageQueueNew(1, sizeof(uint8_t), NULL);
+	if (xQueueButtonEvent == NULL) {
+		printf("Button Service Queue initialization failed!\n\r");
+		Error_Handler();
+	}
+
 	for (;;)
 	{
 		status = osMessageQueueGet(xQueueButtonEvent, &btn_event, 0U, osWaitForever);
@@ -101,10 +107,10 @@ static void vOnBoardButtonServiceTask(void *argument)
 					if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
 						NavSpecialEvent_t event = START_EVENT;
 						osMessageQueuePut(xMessageQueueDecisionControlMainCom, &event, 0U, 0U);
+					} else {
+						NavSpecialEvent_t event = STOP_EVENT;
+						osMessageQueuePut(xMessageQueueDecisionControlMainCom, &event, 0U, 0U);
 					}
-				} else {
-					NavSpecialEvent_t event = STOP_EVENT;
-					osMessageQueuePut(xMessageQueueDecisionControlMainCom, &event, 0U, 0U);
 				}
 				break;
 
@@ -131,12 +137,6 @@ static void vOnBoardButtonServiceTask(void *argument)
  */
 uint8_t uButtonServiceInit()
 {
-	xQueueButtonEvent = osMessageQueueNew(1, sizeof(uint8_t), NULL);
-	if (xQueueButtonEvent == NULL) {
-		printf("Button Service Queue initialization failed!\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
 
 	xOnboardButtonServiceTaskHandle = osThreadNew(vOnBoardButtonServiceTask, NULL, &xOnBoardButtonServiceTask_attributes);
 	if (xOnboardButtonServiceTaskHandle == NULL) {

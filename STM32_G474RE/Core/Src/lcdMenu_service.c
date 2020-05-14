@@ -39,11 +39,15 @@ MENUITEMS_t MenuItem_Boot;
 osEventFlagsId_t xEventMenuNavButton;
 
 static osThreadId_t xLcdMenuServiceTaskHandle;
+static osStaticThreadDef_t xLcdMenuServiceTaControlBlock;
+static uint32_t xLcdMenuServiceTaBuffer[256];
 static const osThreadAttr_t xLcdMenuServiceTa_attributes = {
-		.name = "xLcdMenuServiceTask",
-		.stack_size = 512,
-		.priority = (osPriority_t)OSTASK_PRIORITY_LCDMENU
-};
+		.name = "xLcdMenuServiceServiceTask",
+		.stack_mem = &xLcdMenuServiceTaBuffer[0],
+		.stack_size = sizeof(xLcdMenuServiceTaBuffer),
+		.cb_mem = &xLcdMenuServiceTaControlBlock,
+		.cb_size = sizeof(xLcdMenuServiceTaControlBlock),
+		.priority = (osPriority_t) OSTASK_PRIORITY_LCDMENU };
 
 void fc_menu_ready()
 {
@@ -70,7 +74,11 @@ void vLcdMenuServiceTask(void *argument)
 	pCurrentItem = &MenuItem_Ready;
 	vShowLCDText();
 
-	//osDelay(2000);
+	xEventMenuNavButton = osEventFlagsNew(NULL);
+	if (xEventMenuNavButton == NULL) {
+		printf("LCD Menu Service Event Flags object not created!\n\r");
+		Error_Handler();
+	}
 
 	for (;;) {
 
@@ -105,30 +113,15 @@ uint8_t uLcdMenuServiceInit()
 		return (EXIT_FAILURE);
 	}*/
 
-
-	xEventMenuNavButton = osEventFlagsNew(NULL);
-	if (xEventMenuNavButton == NULL) {
-		Error_Handler();
-		printf("LCD Menu Service Event Flags object not created!\n\r");
-		return EXIT_FAILURE;
-	}
-
 	/* creation of LoggerServiceTask */
-	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, NULL); //&xLcdMenuServiceTa_attributes);
+	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, &xLcdMenuServiceTa_attributes);
 	if (xLcdMenuServiceTaskHandle == NULL) {
 		printf("Initializing LCD Menu Service - Failed\n\r");
 		return (EXIT_FAILURE);
 	}
 
-	/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
-	lcd_send_string(MenuItem_Home.first_line);
-	lcd_put_cur(1, 0);
-	lcd_send_string(MenuItem_Home.second_line);
-	osSemaphoreRelease(sem_lcdService);*/
-
 	printf("Initializing LCD Menu Service - Success!\n\r");
 	return (EXIT_SUCCESS);
-
 }
 
 /**
