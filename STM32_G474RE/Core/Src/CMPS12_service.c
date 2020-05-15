@@ -11,7 +11,55 @@
  */
 
 #include "CMPS12_service.h"
+#include "i2c.h"
+#include "main.h"
+#include "configuration.h"
+#include "cmsis_os2.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include "printf.h"
+
+/** main data struct */
+CMPS12_SensorData_t CMPS12_SensorData;
+
+/* functions definitions */
+void vCMPS12_CalibrationStatus();
+static uint8_t _read_register16(uint8_t addr, uint16_t *value);
+static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len);
+static uint8_t _write_register8(uint8_t addr, uint8_t value);
+static uint8_t _populate_values();
+
+
+I2C_HandleTypeDef hi2c2;
+
+//osMessageQueueId_t xBMP280SensorTaskHandle;
+
+static osThreadId_t xCMPS12SensorTaskHandle;
+static osStaticThreadDef_t xCMPS12SensorTaControlBlock;
+static uint32_t xCMPS12SensorTaBuffer[256];
+static const osThreadAttr_t xCMPS12SensorTa_attributes = {
+		.stack_mem = &xCMPS12SensorTaBuffer[0],
+		.stack_size = sizeof(xCMPS12SensorTaBuffer),
+		.name = "xCMPS12SensorServiceTask",
+		.cb_size = sizeof(xCMPS12SensorTaControlBlock),
+		.cb_mem = &xCMPS12SensorTaControlBlock,
+		.priority = (osPriority_t) OSTASK_PRIORITY_CMPS12 };
+
+/**
+ * Main CMPS12 Polling task
+ * @param vParameters
+ */
+void vCMPS12SensorTaskStart(void *vParameters)
+{
+	for (;;)
+	{
+		_populate_values();
+		printf("Bearing: %lu° \n\r", CMPS12_SensorData.CompassBearing);
+
+		osDelay(10);
+	}
+	osThreadTerminate(xCMPS12SensorTaskHandle);
+}
 
 /**
  * Main Service Initialization file
@@ -19,6 +67,95 @@
  */
 uint8_t uCmps12ServiceInit()
 {
+	/* creation of CMPS12 task */
+	xCMPS12SensorTaskHandle = osThreadNew(vCMPS12SensorTaskStart, NULL, &xCMPS12SensorTa_attributes);
+	if (xCMPS12SensorTaskHandle == NULL) {
+		printf("CMPS12 Sensor Task Initialization Failed\n\r");
+		Error_Handler();
+		return (EXIT_FAILURE);
+	}
+
+	if (HAL_I2C_IsDeviceReady(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, 2, 5) != HAL_OK) {
+		printf("CMPS12 Device not ready\n\r");
+		//Error_Handler();
+		return (EXIT_FAILURE);
+	} else {
+		printf("The CMPS12 device has responded normally!\n\r");
+	}
 
 	return EXIT_SUCCESS;
+}
+
+/**
+ * Refreshes the CMPS12 values struct
+ * @return
+ */
+static uint8_t _populate_values()
+{
+	_read_register16(CMPS12_REGISTER_SENSOR_TEMP_16, &CMPS12_SensorData.Temperature);
+	_read_register16(CMPS12_REGISTER_COMPASS_BEARING2_16, &CMPS12_SensorData.CompassBearing);
+
+	CMPS12_SensorData.CompassBearing += CMPS12_DEVICE_MAGNETO_OFFSET; /* offset adjustment */
+	CMPS12_SensorData.CompassBearing /= 16; /* must do to get a real bearing in degrees */
+
+	return EXIT_SUCCESS;
+}
+
+
+/**
+ * Reads the register memory and puts the value in *value
+ * @param dev
+ * @param addr
+ * @param value
+ * @return
+ */
+static uint8_t _read_register16(uint8_t addr, uint16_t *value)
+{
+	uint8_t rx_buff[2];
+	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 2, 5000)
+			== HAL_OK) {
+		*value = (uint16_t) ((rx_buff[0] << 8) | rx_buff[1]);
+		return EXIT_SUCCESS;
+	}
+	return EXIT_FAILURE;
+}
+
+/**
+ * Read 8 bits data
+ * @param dev
+ * @param addr
+ * @param value
+ * @param len
+ * @return
+ */
+static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len)
+{
+	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, value, len, 5000) == HAL_OK) {
+		return EXIT_SUCCESS;
+	}
+	return EXIT_FAILURE;
+}
+
+/**
+ * Write 8 bits of data
+ * @param dev
+ * @param addr
+ * @param value
+ * @return
+ */
+static uint8_t _write_register8(uint8_t addr, uint8_t value)
+{
+
+	if (HAL_I2C_Mem_Write(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, &value, 1, 10000) == HAL_OK)
+		return EXIT_SUCCESS;
+
+	return EXIT_FAILURE;
+}
+
+/**
+ * Returns the sensor calibration status
+ */
+void vCMPS12_CalibrationStatus()
+{
+
 }

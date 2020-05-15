@@ -23,13 +23,13 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
  */
 
 /** sensors loggers **/
-#//define DEBUG_HCSR04_LEFT45
-//#define DEBUG_HCSR04_RIGHT45
-//#define DEBUG_HCSR04_FRONT
+//#define DEBUG_HCSR04_ALL_FRONT
 //#define DEBUG_HCSR04_BOTTOM
 //#define DEBUG_HCSR04_REAR
 //#define DEBUG_SYSTEMINFOS
 //#define DEBUG_BMP280
+//#define DEBUG_MG90S
+#define DEBUG_CMPS12
 
 /** service activation **/
 #define DEBUG_SERVICE_LCD_MENU
@@ -126,12 +126,12 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityAboveNormal4
 #define OSTASK_PRIORITY_NAVCONTROL_DECISION				osPriorityBelowNormal2
 #define OSTASK_PRIORITY_BUTTON_ADD						osPriorityBelowNormal3
-#define OSTASK_PRIORITY_HCSR04							osPriorityHigh
+#define OSTASK_PRIORITY_HCSR04							osPriorityHigh1
 #define OSTASK_PRIORITY_HCSR04_CTL						osPriorityHigh
-#define OSTASK_PRIORITY_MG90S							osPriorityBelowNormal5
-#define OSTASK_PRIORITY_MG90S_3PROBES					osPriorityBelowNormal6
+#define OSTASK_PRIORITY_MG90S							osPriorityBelowNormal6
+#define OSTASK_PRIORITY_MG90S_3PROBES					osPriorityBelowNormal7
 #define OSTASK_PRIORITY_QMC5883							osPriorityBelowNormal2
-#define OSTASK_PRIORITY_MPU6050							osPriorityLow7
+#define OSTASK_PRIORITY_CMPS12							osPriorityLow7
 #define OSTASK_PRIORITY_LCDMENU							osPriorityAboveNormal
 #define OSTASK_PRIORITY_ESP32_TX						osPriorityNormal1
 #define OSTASK_PRIORITY_ESP32_RX						osPriorityNormal2
@@ -139,7 +139,8 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define OSTASK_PRIORITY_UVLED							osPriorityBelowNormal4
 #define OSTASK_PRIORITY_CMD_SERVICE						osPriorityNormal3
 #define OSTASK_PRIORITY_CMD_INTERP_SERVICE				osPriorityNormal4
-#define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityHigh
+#define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityHigh2
 #define OSTASK_PRIORITY_BMP280							osPriorityLow5
+
 
 #endif /* INC_CONFIGURATION_H_ */

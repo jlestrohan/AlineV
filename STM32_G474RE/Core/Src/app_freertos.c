@@ -164,9 +164,9 @@ void MX_FREERTOS_Init(void) {
 #endif
 
 #ifdef DEBUG_SERVICE_CMPS12
-	if (uBmp280ServiceInit() == EXIT_FAILURE) {
+	if (uCmps12ServiceInit() == EXIT_FAILURE) {
 		printf("Error Initializing CMPS12 Service\n\r");
-		Error_Handler();
+		//Error_Handler();
 	}
 #endif
 
