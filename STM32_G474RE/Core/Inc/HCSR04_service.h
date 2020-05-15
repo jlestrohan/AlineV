@@ -36,7 +36,9 @@ typedef enum {
 typedef struct {
 	uint8_t		dist_front;
 	uint8_t		dist_left45;
+	uint8_t		dist_left90;
 	uint8_t		dist_right45;
+	uint8_t		dist_right90;
 	uint8_t 	dist_bottom;
 	uint8_t		dist_rear;
 	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */

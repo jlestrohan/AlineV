@@ -97,7 +97,7 @@ static void vHr04SensorTaskStart(void *argument)
 			HR04_SensorsData.dist_rear = sensorCapuredData.rear;
 
 			/* need to know where to store all the front values */
-			switch (htim5.Instance->CCR1) {
+			switch (xServoPosition) {
 			case SERVO_DIRECTION_LEFT45:
 				HR04_SensorsData.dist_left45 = sensorCapuredData.front;
 				break;
@@ -107,22 +107,19 @@ static void vHr04SensorTaskStart(void *argument)
 			case SERVO_DIRECTION_RIGHT45:
 				HR04_SensorsData.dist_right45 = sensorCapuredData.front;
 				break;
+			case SERVO_DIRECTION_LEFT90:
+				HR04_SensorsData.dist_left90 = sensorCapuredData.front;
+				break;
+			case SERVO_DIRECTION_RIGHT90:
+				HR04_SensorsData.dist_right90 = sensorCapuredData.front;
+				break;
 			}
-
-#ifdef DEBUG_HCSR04_FRONT
-			//printf("F: %0*dcm\n\r", 3,HR04_SensorsData.dist_front);
-			printf("%d\n\r", sensorCapuredData.front);
-#endif
-
-#ifdef DEBUG_HCSR04_RIGHT45
-			//printf("%d\n\r", sensorCapuredData.dist_right45);
-#endif
-#ifdef DEBUG_HCSR04_LEFT45
-			//printf("%d\n\r", sensorCapuredData.dist_left45);
+#ifdef DEBUG_HCSR04_ALL_FRONT
+			printf("left45: %0*dcm center: %0*dcm  right45: %0*dcm \n\r", 3,HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45);
 #endif
 
 #ifdef DEBUG_HCSR04_BOTTOM
-			printf("B: %0*dcm\n\r", 3, sensorCapuredData.bottom);
+			printf("B: %0*dcm\n\r", 3, HR04_SensorsData.bottom);
 #endif
 
 #ifdef DEBUG_HCSR04_REAR
