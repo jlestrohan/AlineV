@@ -21,6 +21,7 @@
 
 #define CMPS12_DEVICE_I2C_ADDRESS				0x60
 #define CMPS12_DEVICE_MAGNETO_OFFSET			-8		/* offset in degrees according to the placement of the sensor, must be checked */
+#define CMPS12_DEVICE_ROLLANGLE_OFFSET			-5		/* offset to Roll Angle */
 
 /** I2C MODE REGISTER VALUES **/
 #define CMPS12_REGISTER_COMMAND					0x00	/* Command register (write) / Software version (read) */
@@ -59,9 +60,22 @@ typedef enum {
  * Main Sensor data
  */
 typedef struct {
-	uint16_t Temperature;
-	uint16_t CompassBearing;
-	uint16_t PitchAngle;
+	uint8_t CalibGyro_OK;		/* set to true if ok, false otherwise */
+	uint8_t CalibMagneto_OK;	/* set to true if ok, false otherwise */
+	uint8_t CalibAccel_OK;		/* set to true if ok, false otherwise */
+	uint16_t Temperature;		/* This is the core mcu temperature of the sensor */
+	uint16_t CompassBearing;	/* 0 - 360 ready to be read as is */
+	int16_t PitchAngle;
+	uint8_t	RollAngle;
+	int16_t GyroX;
+	int16_t GyroY;
+	int16_t GyroZ;
+	int16_t AccelX;
+	int16_t AccelY;
+	int16_t AccelZ;
+	int16_t	MagnetoX;
+	int16_t	MagnetoY;
+	int16_t	MagnetoZ;
 	uint8_t Calibration_State_Flags;
 } CMPS12_SensorData_t;
 

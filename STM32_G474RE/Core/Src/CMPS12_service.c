@@ -25,6 +25,8 @@ CMPS12_SensorData_t CMPS12_SensorData;
 /* functions definitions */
 void vCMPS12_CalibrationStatus();
 static uint8_t _read_register16(uint8_t addr, uint16_t *value);
+static uint8_t _read_signed_register16(uint8_t addr, int16_t *value);
+static uint8_t _read_register8(uint8_t addr, uint8_t *value);
 static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len);
 static uint8_t _write_register8(uint8_t addr, uint8_t value);
 static uint8_t _populate_values();
@@ -54,8 +56,17 @@ void vCMPS12SensorTaskStart(void *vParameters)
 	for (;;)
 	{
 		_populate_values();
-		printf("Bearing: %lu° \n\r", CMPS12_SensorData.CompassBearing);
+		printf("Roll:  %0*d°", 3,CMPS12_SensorData.RollAngle);
+		printf("Pitch:  %0*ld°",  3, CMPS12_SensorData.PitchAngle);
+		printf("gx:%0*ld, gy:%0*ld, gz:%0*ld, accx: %0*ld, accy:%0*ld, accz:%0*ld",
+				3,CMPS12_SensorData.GyroX,
+				3,CMPS12_SensorData.GyroY,
+				3,CMPS12_SensorData.GyroZ,
+				3,CMPS12_SensorData.AccelX,
+				3,CMPS12_SensorData.AccelY,
+				3,CMPS12_SensorData.AccelZ);
 
+		printf("\n\r");
 		osDelay(10);
 	}
 	osThreadTerminate(xCMPS12SensorTaskHandle);
@@ -92,15 +103,59 @@ uint8_t uCmps12ServiceInit()
  */
 static uint8_t _populate_values()
 {
+	/* sensor mcu core temperature */
 	_read_register16(CMPS12_REGISTER_SENSOR_TEMP_16, &CMPS12_SensorData.Temperature);
-	_read_register16(CMPS12_REGISTER_COMPASS_BEARING2_16, &CMPS12_SensorData.CompassBearing);
 
+	/* compass bearing */
+	_read_register16(CMPS12_REGISTER_COMPASS_BEARING2_16, &CMPS12_SensorData.CompassBearing);
 	CMPS12_SensorData.CompassBearing += CMPS12_DEVICE_MAGNETO_OFFSET; /* offset adjustment */
 	CMPS12_SensorData.CompassBearing /= 16; /* must do to get a real bearing in degrees */
+
+	/* pitch angle */
+	_read_signed_register16(CMPS12_REGISTER_PITCH_ANGLE_16, &CMPS12_SensorData.PitchAngle);
+
+	/* Magneto Axis */
+	_read_signed_register16(CMPS12_REGISTER_MAGNETO_AXIS_X_16, &CMPS12_SensorData.MagnetoX);
+	_read_signed_register16(CMPS12_REGISTER_MAGNETO_AXIS_Y_16, &CMPS12_SensorData.MagnetoY);
+	_read_signed_register16(CMPS12_REGISTER_MAGNETO_AXIS_Z_16, &CMPS12_SensorData.MagnetoZ);
+
+	/* Accel Axis */
+	_read_signed_register16(CMPS12_REGISTER_ACCEL_AXIS_X_16, &CMPS12_SensorData.AccelX);
+	_read_signed_register16(CMPS12_REGISTER_ACCEL_AXIS_Y_16, &CMPS12_SensorData.AccelY);
+	_read_signed_register16(CMPS12_REGISTER_ACCEL_AXIS_Z_16, &CMPS12_SensorData.AccelZ);
+
+	/* Gyro Axis */
+	_read_signed_register16(CMPS12_REGISTER_GYRO_AXIS_X_16, &CMPS12_SensorData.GyroX);
+	_read_signed_register16(CMPS12_REGISTER_GYRO_AXIS_Y_16, &CMPS12_SensorData.GyroY);
+	_read_signed_register16(CMPS12_REGISTER_GYRO_AXIS_Z_16, &CMPS12_SensorData.GyroZ);
+
+	/* Roll Angle */
+	_read_register8(CMPS12_REGISTER_ROLL_ANGLE_8, &CMPS12_SensorData.RollAngle);
+	CMPS12_SensorData.RollAngle += CMPS12_DEVICE_ROLLANGLE_OFFSET;
+	CMPS12_SensorData.RollAngle = CMPS12_SensorData.RollAngle <= 180 ? CMPS12_SensorData.RollAngle :
+			-(255-CMPS12_SensorData.RollAngle);
+
 
 	return EXIT_SUCCESS;
 }
 
+/**
+ * Reads the register memory and puts the value in *value
+ * @param dev
+ * @param addr
+ * @param value
+ * @return
+ */
+static uint8_t _read_register8(uint8_t addr, uint8_t *value)
+{
+	uint8_t rx_buff[1];
+	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 1, 5000)
+			== HAL_OK) {
+		*value = (uint8_t) (rx_buff[0]);
+		return EXIT_SUCCESS;
+	}
+	return EXIT_FAILURE;
+}
 
 /**
  * Reads the register memory and puts the value in *value
@@ -115,6 +170,24 @@ static uint8_t _read_register16(uint8_t addr, uint16_t *value)
 	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 2, 5000)
 			== HAL_OK) {
 		*value = (uint16_t) ((rx_buff[0] << 8) | rx_buff[1]);
+		return EXIT_SUCCESS;
+	}
+	return EXIT_FAILURE;
+}
+
+/**
+ * Reads the register memory and puts the value in *value
+ * @param dev
+ * @param addr
+ * @param value
+ * @return
+ */
+static uint8_t _read_signed_register16(uint8_t addr, int16_t *value)
+{
+	uint8_t rx_buff[2];
+	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 2, 5000)
+			== HAL_OK) {
+		*value = (int16_t) ((rx_buff[0] << 8) | rx_buff[1]);
 		return EXIT_SUCCESS;
 	}
 	return EXIT_FAILURE;
