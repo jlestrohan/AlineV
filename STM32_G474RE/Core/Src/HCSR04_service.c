@@ -31,7 +31,10 @@
 #include <string.h>
 #include <stdio.h>
 
+/* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData, HR04_OldSensorsData;
+osMutexId_t mHR04_SensorsDataMutex;
+
 osMessageQueueId_t queue_HC_SR04Handle;
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
@@ -71,6 +74,9 @@ static void vHr04SensorTaskStart(void *argument)
 {
 	printf("Starting HCSR_04 Service task...\n\r");
 
+	/* create mutex for struct protection */
+	mHR04_SensorsDataMutex = osMutexNew(NULL);
+
 	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(hcSensorsTimersValue_t), NULL);
 	if (!queue_HC_SR04Handle) {
 		printf("HR04 Sensor Queue Initialization Failed\n\r");
@@ -91,6 +97,7 @@ static void vHr04SensorTaskStart(void *argument)
 		status = osMessageQueueGet(queue_HC_SR04Handle, &sensorCapuredData, NULL, osWaitForever); /* wait for message */
 		if (status == osOK) {
 
+			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 			HR04_OldSensorsData = HR04_SensorsData;
 
 			HR04_SensorsData.dist_bottom = sensorCapuredData.bottom;
@@ -125,6 +132,7 @@ static void vHr04SensorTaskStart(void *argument)
 #ifdef DEBUG_HCSR04_REAR
 			printf("rear: %0*d cm\n\r", 3,HR04_SensorsData.dist_rear);
 #endif
+			osMutexRelease(mHR04_SensorsDataMutex);
 		}
 
 		osDelay(20);

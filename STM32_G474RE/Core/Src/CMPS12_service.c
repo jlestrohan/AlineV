@@ -14,13 +14,13 @@
 #include "i2c.h"
 #include "main.h"
 #include "configuration.h"
-#include "cmsis_os2.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "printf.h"
 
 /** main data struct */
 CMPS12_SensorData_t CMPS12_SensorData;
+osMutexId_t mCMPS12_SensorDataMutex;
 
 /* functions definitions */
 void vCMPS12_CalibrationStatus();
@@ -53,9 +53,15 @@ static const osThreadAttr_t xCMPS12SensorTa_attributes = {
  */
 void vCMPS12SensorTaskStart(void *vParameters)
 {
+	mCMPS12_SensorDataMutex = osMutexNew(NULL);
+
 	for (;;)
 	{
+		/* IMPORTANT leave that here !! */
+		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
 		_populate_values();
+
+#ifdef DEBUG_CMPS12
 		printf("Roll:  %0*d°", 3,CMPS12_SensorData.RollAngle);
 		printf("Pitch:  %0*ld°",  3, CMPS12_SensorData.PitchAngle);
 		printf("gx:%0*ld, gy:%0*ld, gz:%0*ld, accx: %0*ld, accy:%0*ld, accz:%0*ld",
@@ -67,6 +73,9 @@ void vCMPS12SensorTaskStart(void *vParameters)
 				3,CMPS12_SensorData.AccelZ);
 
 		printf("\n\r");
+#endif
+
+		osMutexRelease(mCMPS12_SensorDataMutex);
 		osDelay(10);
 	}
 	osThreadTerminate(xCMPS12SensorTaskHandle);

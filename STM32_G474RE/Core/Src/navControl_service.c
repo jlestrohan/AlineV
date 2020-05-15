@@ -14,6 +14,7 @@
 #include "MG90S_service.h"
 #include "printf.h"
 #include "MotorsControl_service.h"
+#include "CMPS12_service.h"
 #include "uvLed_service.h"
 #include <stdio.h>
 #include <stdbool.h>
@@ -37,10 +38,17 @@ static NavigationStatus_t xCurrentNavStatus;
  * Extern variables from the different sensors and devices
  */
 MotorData_t MotorData; /* extern */
+
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
-xServoPosition_t xServoPosition; /* extern */
+
 osMessageQueueId_t xMessageQueueMotorMotion; /* extern */
+
+/* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData; /* extern */
+osMutexId_t mHR04_SensorsDataMutex; /* extern */
+
+CMPS12_SensorData_t CMPS12_SensorData; /* extern */
+osMutexId_t mCMPS12_SensorDataMutex; /* extern */
 
 /********************************************************************/
 
@@ -140,10 +148,12 @@ void vNavControlNormalMotionTask(void *vParameters)
 			/** GROUND HOLE AVOIDANCE CONTROL
 			 */
 			if (MC_MOTORS_FORWARD) {
+				osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 				if (HR04_SensorsData.dist_bottom > US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM) {
 					motorMotion = MOTOR_MOTION_IDLE;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
 				}
+				osMutexRelease(mHR04_SensorsDataMutex);
 			}
 
 
@@ -159,6 +169,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 			if (MC_MOTORS_FORWARD)  { /* forward and not already avoiding ? */
 
 				if (HR04_SensorsData.dist_front < US_FRONT_MIN_WARNING_CM) {
+				osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 					motorMotion = MOTOR_SPEED_REDUCE_WARNING;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
 					//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
@@ -196,6 +207,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 					printf("incident found angles, servo %lu, distL: %d, distR: %d\n\r", htim5.Instance->CCR1, HR04_SensorsData.dist_left45, HR04_SensorsData.dist_right45);
 					xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
 				}
+				osMutexRelease(mHR04_SensorsDataMutex);
 
 			}
 			break;
@@ -223,6 +235,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 			/* tru to determine if angle right obstacle is nearer that left */
 			//uint8_t direction = _vMotionSeekEscapePath();
 			//if (direction == 0) {
+			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 			if (HR04_SensorsData.dist_left45 < HR04_SensorsData.dist_right45) { //FIXME Inverted here seek why
 				printf("Detected More space to the right, turning right...");
 				osDelay(1000);
@@ -231,6 +244,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 				printf("Detected More space to the left, turning left...");
 				osDelay(1000); motorMotion = MOTOR_MOTION_TURN_LEFT;
 			}
+			osMutexRelease(mHR04_SensorsDataMutex);
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 			osDelay(1000);
 
@@ -256,6 +270,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 
 		case NAV_STATUS_STARTING:
 			/* we wait for all data from the 3 front sensors are collected */
+			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 			if (HR04_SensorsData.dist_left45 > 0 && HR04_SensorsData.dist_right45 > 0 && HR04_SensorsData.dist_front > 0)
 			{
 				/* at this condition we can change special event status to "exploring */
@@ -265,6 +280,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 				/* we have initiated the start sequence, time to switch to explore mode */
 				xCurrentNavStatus = NAV_STATUS_EXPLORING;
 			}
+			osMutexRelease(mHR04_SensorsDataMutex);
 			break;
 
 		case NAV_STATUS_IDLE:

@@ -44,9 +44,12 @@ typedef struct {
 	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */
 } HR04_SensorsData_t;
 
+
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */
 extern HR04_SensorsData_t HR04_SensorsData;		/* always hold the current values on every field */
+extern osMutexId_t mHR04_SensorsDataMutex;
+
 extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous values on every field */
 /********************************************************/
 

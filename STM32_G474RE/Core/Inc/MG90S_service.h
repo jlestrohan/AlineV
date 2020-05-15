@@ -36,6 +36,8 @@ typedef enum {
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */
 extern xServoPosition_t xServoPosition;
+extern osMutexId_t mServoPositionMutex;
+
 extern osMessageQueueId_t xQueueMg90sMotionOrder;
 /********************************************************/
 

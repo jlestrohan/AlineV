@@ -18,6 +18,7 @@
 #define INC_CMPS12_SERVICE_H_
 
 #include <stdint.h>
+#include "cmsis_os2.h"
 
 #define CMPS12_DEVICE_I2C_ADDRESS				0x60
 #define CMPS12_DEVICE_MAGNETO_OFFSET			-8		/* offset in degrees according to the placement of the sensor, must be checked */
@@ -83,6 +84,7 @@ typedef struct {
 /****************************************************
  * Public entry point */
 extern CMPS12_SensorData_t CMPS12_SensorData;
+extern  osMutexId_t mCMPS12_SensorDataMutex;
 /****************************************************/
 
 uint8_t uCmps12ServiceInit();
