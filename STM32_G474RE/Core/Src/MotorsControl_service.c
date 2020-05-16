@@ -7,6 +7,7 @@
  *******************************************************************/
 
 #include <FreeRTOS.h>
+#include "cmsis_os2.h"
 #include "configuration.h"
 #include <stdlib.h>
 #include "MotorsControl_service.h"
@@ -30,13 +31,12 @@ static const osThreadAttr_t xMotorsControlTa_attributes = {
 		.cb_size = sizeof(xMotorsControlTaControlBlock),
 };
 
+/* extern variables */
 osMessageQueueId_t xQueueMotorMotionOrder;
-
-/**
- * Main DataStruct accessible from everywhere
- */
-extern MotorData_t MotorData, lastMotorData;
+osMutexId_t mMotorDataMutex, mLastMotorDataMutex;
 MotorData_t MotorData, lastMotorData = {MOTOR_MOTION_IDLE, MOTOR_MOTION_IDLE, 0,0};
+
+
 
 /* functions definitions */
 static void motorsSetMotionIdle(MotorData_t *data);
@@ -54,6 +54,9 @@ static void motorSetMotionTurnLeft(MotorData_t *data, uint8_t speed_left, uint8_
 static void vMotorsControlTaskStart(void *vParameters)
 {
 	printf("Starting Motors Control Task...");
+
+	mMotorDataMutex = osMutexNew(NULL);
+	mLastMotorDataMutex = osMutexNew(NULL);
 
 	xQueueMotorMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
 	if (xQueueMotorMotionOrder == NULL) {
@@ -161,9 +164,14 @@ static void MotorSetSpeed(MotorData_t *data, uint8_t speed_left, uint8_t speed_r
 	}
 
 	/* save the current values into the data struct */
+	osMutexAcquire(mLastMotorDataMutex, osWaitForever);
 	lastMotorData = *data; /* backup the data into the last known values struct */
+	osMutexRelease(mLastMotorDataMutex);
+
+	osMutexAcquire(mMotorDataMutex, osWaitForever);
 	data->currentSpeedLeft = speed_left; /* records the current speed */
 	data->currentSpeedRight = speed_right;
+	osMutexRelease(mMotorDataMutex);
 }
 
 /**
@@ -178,9 +186,14 @@ static void motorSetMotionForward(MotorData_t *data, uint8_t speed)
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
 
 	/* now we set the right values into the main motors control struct */
+	osMutexAcquire(mLastMotorDataMutex, osWaitForever);
 	lastMotorData = *data; /* backup the data into the last known values struct */
+	osMutexRelease(mLastMotorDataMutex);
+
+	osMutexAcquire(mMotorDataMutex, osWaitForever);
 	data->motorMotion_Left = MOTOR_MOTION_FORWARD;
 	data->motorMotion_Right = MOTOR_MOTION_FORWARD;
+	osMutexRelease(mMotorDataMutex);
 
 	/* set the required speed */
 	MotorSetSpeed(data, speed, speed);
@@ -198,9 +211,14 @@ static void motorSetMotionBackward(MotorData_t *data, uint8_t speed)
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
 
 	/* now we set the right values into the main motors control struct */
+	osMutexAcquire(mLastMotorDataMutex, osWaitForever);
 	lastMotorData = *data; /* backup the data into the last known values struct */
+	osMutexRelease(mLastMotorDataMutex);
+
+	osMutexAcquire(mMotorDataMutex, osWaitForever);
 	data->motorMotion_Left = MOTOR_MOTION_BACKWARD;
 	data->motorMotion_Right = MOTOR_MOTION_BACKWARD;
+	osMutexRelease(mMotorDataMutex);
 
 	MotorSetSpeed(data, speed, speed);
 }
@@ -218,9 +236,14 @@ static void motorSetMotionTurnLeft(MotorData_t *data, uint8_t speed_left, uint8_
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_SET);
 
 	/* now we set the right values into the main motors control struct */
+	osMutexAcquire(mLastMotorDataMutex, osWaitForever);
 	lastMotorData = *data; /* backup the data into the last known values struct */
+	osMutexRelease(mLastMotorDataMutex);
+
+	osMutexAcquire(mMotorDataMutex, osWaitForever);
 	data->motorMotion_Left = MOTOR_MOTION_BACKWARD;
 	data->motorMotion_Right = MOTOR_MOTION_FORWARD;
+	osMutexRelease(mMotorDataMutex);
 
 	MotorSetSpeed(&MotorData, speed_left, speed_right);
 }
@@ -236,9 +259,14 @@ static void motorSetMotionTurnRight(MotorData_t *data, uint8_t speed_left, uint8
 	HAL_GPIO_WritePin(GPIOD, MOTOR2_IN4_Pin, GPIO_PIN_RESET);
 
 	/* now we set the right values into the main motors control struct */
+	osMutexAcquire(mLastMotorDataMutex, osWaitForever);
 	lastMotorData = *data; /* backup the data into the last known values struct */
+	osMutexRelease(mLastMotorDataMutex);
+
+	osMutexAcquire(mMotorDataMutex, osWaitForever);
 	data->motorMotion_Left = MOTOR_MOTION_FORWARD;
 	data->motorMotion_Right = MOTOR_MOTION_BACKWARD;
+	osMutexRelease(mMotorDataMutex);
 
 	MotorSetSpeed(&MotorData, speed_left, speed_right);
 }
@@ -252,10 +280,14 @@ static void motorsSetMotionIdle(MotorData_t *data)
 	htim16.Instance->CCR1 = 0;
 	htim17.Instance->CCR1 = 0;
 
+	osMutexAcquire(mLastMotorDataMutex, osWaitForever);
 	lastMotorData = *data; /* backup the data into the last known values struct */
+	osMutexRelease(mLastMotorDataMutex);
 
+	osMutexAcquire(mMotorDataMutex, osWaitForever);
 	data->motorMotion_Left = MOTOR_MOTION_IDLE;
 	data->motorMotion_Right = MOTOR_MOTION_IDLE;
+	osMutexRelease(mMotorDataMutex);
 
 	MotorSetSpeed(data, 0, 0);
 }

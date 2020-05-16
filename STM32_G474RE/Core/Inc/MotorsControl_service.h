@@ -62,6 +62,7 @@ typedef struct {
 } MotorData_t;
 
 extern osMessageQueueId_t xQueueMotorMotionOrder;
+extern osMutexId_t mMotorDataMutex, mLastMotorDataMutex;
 
 /**
  * @brief  MPU6050 result enumeration

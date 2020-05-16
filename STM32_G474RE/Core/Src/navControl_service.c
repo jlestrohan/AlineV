@@ -133,7 +133,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 			/*******************************************************************************************************************/
 			/** FRONT SERVO CONTROL + HCVSR ACTIVATION
 			 */
-
+			osMutexAcquire(mMotorDataMutex, osWaitForever);
 			if (MC_MOTORS_FORWARD) {
 				_vServoLedMotionForwardRules(); /* only sensors and servos */
 			}
@@ -143,10 +143,12 @@ void vNavControlNormalMotionTask(void *vParameters)
 			if (MC_MOTORS_IDLE) {
 				_vServoLedMotionIdleRules();/* only sensors and servos */
 			}
+			osMutexRelease(mMotorDataMutex);
 
 			/*******************************************************************************************************************/
 			/** GROUND HOLE AVOIDANCE CONTROL
 			 */
+			osMutexAcquire(mMotorDataMutex, osWaitForever);
 			if (MC_MOTORS_FORWARD) {
 				osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 				if (HR04_SensorsData.dist_bottom > US_BOTTOM_SENSOR_HOLE_MIN_STOP_CM) {
@@ -155,6 +157,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 				}
 				osMutexRelease(mHR04_SensorsDataMutex);
 			}
+			osMutexRelease(mMotorDataMutex);
 
 
 			/*******************************************************************************************************************/
@@ -166,7 +169,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 
 
 			/* FRONT SENSOR BEHAVIOUR */
-			if (MC_MOTORS_FORWARD)  { /* forward and not already avoiding ? */
+			osMutexAcquire(mMotorDataMutex, osWaitForever);
 
 				if (HR04_SensorsData.dist_front < US_FRONT_MIN_WARNING_CM) {
 				osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
@@ -210,6 +213,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 				osMutexRelease(mHR04_SensorsDataMutex);
 
 			}
+			osMutexRelease(mMotorDataMutex);
 			break;
 
 
@@ -253,6 +257,11 @@ void vNavControlNormalMotionTask(void *vParameters)
 			motorMotion = MOTOR_MOTION_IDLE;
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 
+			/* saves the current bearing */
+			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+			currentBearing = CMPS12_SensorData.CompassBearing;
+			osMutexRelease(mCMPS12_SensorDataMutex);
+
 			xCurrentNavStatus = NAV_STATUS_EXPLORING;
 
 			/* Formward Rules */
@@ -276,6 +285,11 @@ void vNavControlNormalMotionTask(void *vParameters)
 				/* at this condition we can change special event status to "exploring */
 				motorMotion = MOTOR_MOTION_FORWARD;
 				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+				/* saves the current bearing */
+				osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+				currentBearing = CMPS12_SensorData.CompassBearing;
+				osMutexRelease(mCMPS12_SensorDataMutex);
 
 				/* we have initiated the start sequence, time to switch to explore mode */
 				xCurrentNavStatus = NAV_STATUS_EXPLORING;
@@ -325,6 +339,11 @@ static void vNavDecisionControlTask(void *vParameter)
 		case START_EVENT:
 			printf("Initiating disinfection program....\n\r");
 			xCurrentNavStatus = NAV_STATUS_STARTING;
+
+			/* we save the current bearing to the bearing we wish to go */
+			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+			currentBearing = CMPS12_SensorData.CompassBearing;
+			osMutexRelease(mCMPS12_SensorDataMutex);
 
 			/* first we start the motion sensor + front HCSR04 tro fill up the values */
 			xSrvpattrn = SERVO_PATTERN_THREE_PROBES;
