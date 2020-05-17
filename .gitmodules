@@ -1,0 +1,6 @@
+[submodule "STM32_G474RE/submodules/tiny-json"]
+	path = STM32_G474RE/submodules/tiny-json
+	url = https://github.com/rafagafe/tiny-json
+[submodule "STM32_G474RE/submodules/json-maker"]
+	path = STM32_G474RE/submodules/json-maker
+	url = https://github.com/rafagafe/json-maker
