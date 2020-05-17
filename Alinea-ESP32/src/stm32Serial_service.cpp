@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-17 06:56:49
+ * @ Modified time: 2020-05-17 14:14:44
  * @ Description:
  *******************************************************************************************/
 
@@ -159,6 +159,6 @@ void send_character(uint8_t data)
 void hdlc_frame_handler(const uint8_t *data, uint16_t length)
 {
   // Do something with data that is in framebuffer
-  debugV("RECEIVED: %.*s", length, (char *)data);
+  debugV("RECEIVED: %.*s for %d bytes", length, (char *)data, length);
   //Serial.println(buf);
 }

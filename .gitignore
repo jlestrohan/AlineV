@@ -118,3 +118,5 @@ local.properties
 /Debug/
 
 *.code-workspace
+
+STM32_G474RE/submodules/

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-13 22:35:18
+ * @ Modified time: 2020-05-17 13:14:49
  * @ Description:
  *******************************************************************************************/
 
@@ -84,7 +84,7 @@ void vProcessCmdRemoteDebug()
 
     /* we prepare a cmd_pack for any command if needed, as we expect to be sending a command to the STM32 */
     command_package_t cmd_pack;
-    cmd_pack.cmd_type = CMD_TYPE_TEXT;
+    cmd_pack.cmd_type = CMD_TYPE_JSON_TEXT; /* command comes from text telnet */
     cmd_pack.cmd_route = CMD_TRANSMIT;
 
     strcpy(cmd_pack.txtCommand, lastCmd.c_str());

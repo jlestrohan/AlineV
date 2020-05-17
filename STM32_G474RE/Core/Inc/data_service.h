@@ -8,6 +8,12 @@
  *	and forward that to the esp32serial to be sent to the esp32
  *******************************************************************/
 
+#ifndef DATASERVICE_H_
+#define DATASERVICE_H_
+
+#include <stdint.h>
+#include "configuration.h"
+
 /* RULES */
 /*
  * Every time the vehicle is making a special move (stop, avoiding, turn etc...) tghe data service sends the espService queue
@@ -45,7 +51,7 @@
  * 				}
  * 			}
  *
- * 	Every 2 seconds the vehicle sends the following datas
+ * 	Every 30 seconds the vehicle sends the following datas
  *
  * 		UUID STM32
  * 		UUID ESP32
@@ -70,3 +76,11 @@
  *			Ram, heap stack on stm32, esp32 etc...)
  *		}
  */
+
+/**
+ * Main Initialization Routine
+ * @return
+ */
+uint8_t uDataServiceinit();
+
+#endif

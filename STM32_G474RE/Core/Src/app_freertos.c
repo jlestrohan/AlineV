@@ -46,6 +46,7 @@
 #include "SystemInfos.h"
 #include "uvLed_service.h"
 #include "CMPS12_service.h"
+#include "data_service.h"
 
 /* USER CODE END Includes */
 
@@ -204,6 +205,13 @@ void MX_FREERTOS_Init(void) {
 #ifdef DEBUG_SERVICE_UVLED
 	if (uUvLedServiceInit() == EXIT_FAILURE) {
 		printf("Error Initializing UV Led Service");
+		Error_Handler();
+	}
+#endif
+
+#ifdef DEBUG_SERVICE_DATA_CTRL
+	if (uDataServiceinit() == EXIT_FAILURE) {
+		printf("Error Initializing Data Control Service");
 		Error_Handler();
 	}
 #endif

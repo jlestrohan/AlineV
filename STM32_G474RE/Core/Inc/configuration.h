@@ -29,7 +29,7 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 //#define DEBUG_SYSTEMINFOS
 //#define DEBUG_BMP280
 //#define DEBUG_MG90S
-#define DEBUG_CMPS12
+//#define DEBUG_CMPS12
 
 /** service activation **/
 #define DEBUG_SERVICE_LCD_MENU
@@ -40,9 +40,10 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define DEBUG_SERVICE_MOTORS
 #define DEBUG_SERVICE_NAVCONTROL
 #define DEBUG_SERVICE_UVLED
-//#define DEBUG_SERVICE_CMD_PARSER
-//#define DEBUG_SERVICE_BMP280
+#define DEBUG_SERVICE_CMD_PARSER
+#define DEBUG_SERVICE_BMP280
 #define DEBUG_SERVICE_CMPS12
+#define DEBUG_SERVICE_DATA_CTRL
 
 
 /**
@@ -141,6 +142,7 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define OSTASK_PRIORITY_CMD_INTERP_SERVICE				osPriorityNormal4
 #define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityHigh2
 #define OSTASK_PRIORITY_BMP280							osPriorityLow5
-
+#define OSTASK_PRIORITY_DATA_CTRL						osPriorityBelowNormal5
+#define OSTASK_PRIORITY_DATA_ATMOS						osPriorityLow
 
 #endif /* INC_CONFIGURATION_H_ */

@@ -25,7 +25,7 @@
 #define PARSER_MESSAGE_SIZE 1024
 #define MAX_JSON_MSG_SIZE 512
 
-#define MAX_HDLC_FRAME_LENGTH 1024 /* this is the main frame length available */
+#define MAX_HDLC_FRAME_LENGTH 256 /* this is the main frame length available */
 
 extern osMessageQueueId_t xQueueEspSerialTX;
 
@@ -34,7 +34,7 @@ extern uint8_t UART_DMA_BUF[UART_DMA_BUFFER_SIZE];
 typedef struct
 {
 	uint8_t json[MAX_JSON_MSG_SIZE];
-    uint16_t msg_size;
+    uint8_t msg_size;
 } jsonMessage_t;
 //extern jsonMessage_t JsonMsg;
 

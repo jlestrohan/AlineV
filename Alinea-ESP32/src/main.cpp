@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-12 21:28:09
+ * @ Modified time: 2020-05-17 13:15:29
  * @ Description:
  *******************************************************************************************/
 
@@ -78,7 +78,7 @@ void setup()
   DEBUG_SERIAL("Ready UART");
 
   /* let's inform the STM that we have just rebooted */
-  command_package_t cmd_rdyESP = {CMD_TRANSMIT, CMD_TYPE_TEXT, "ack restart"};
+  command_package_t cmd_rdyESP = {CMD_TRANSMIT, CMD_TYPE_JSON_TEXT, "ack restart"};
   xQueueSend(xQueueCommandParse, &cmd_rdyESP, portMAX_DELAY);
 
   vPlayMelody(MelodyType_CommandReady);

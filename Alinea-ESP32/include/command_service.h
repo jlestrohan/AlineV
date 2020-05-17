@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:10
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-13 21:16:43
+ * @ Modified time: 2020-05-17 13:09:34
  * @ Description:   General command parser, check if any command string given to the main
  *                  entry point is valid and then dispatches accordingly
  *******************************************************************************************/
@@ -28,7 +28,8 @@ typedef enum
     CMD_TYPE_JSON_CMD,
     CMD_TYPE_JSON_SYN,
     CMD_TYPE_JSON_ACK,
-    CMD_TYPE_TEXT
+    CMD_TYPE_JSON_TEXT,
+    CMD_TYPE_JSON_DTA
 } command_type_t;
 
 /* this will be sent out thru xCommandQueue, can be anything from JSON to a simple text command coming from telnet */

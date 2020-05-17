@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-17 06:18:57
+ * @ Modified time: 2020-05-17 13:37:32
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -160,6 +160,7 @@ void cmd_process(command_package_t *command_pack)
   }
 }
 
+/* --------------------- SPLIT STRING UTILITY FUNCTIONS --------------------- */
 /**
  * @brief  Generic function to split a string
  * @note   
@@ -244,9 +245,9 @@ void vCmdtype_text(command_type_t type, char *buffer)
   case CMD_TYPE_JSON_SYN:
     strcpy(buffer, "SYN");
     break;
-  case CMD_TYPE_JSON_ACK:
+  case CMD_TYPE_JSON_ACK: /* acknowledge from STM32 */
     strcpy(buffer, "ACK");
-  case CMD_TYPE_TEXT:
+  case CMD_TYPE_JSON_TEXT: /* command coming from text telnet */
     strcpy(buffer, "TXT");
     break;
   default:
@@ -254,6 +255,7 @@ void vCmdtype_text(command_type_t type, char *buffer)
   }
 }
 
+/* -------- CHECK IF ESP32 COMMAND (Or must be sent ovber by airlone) ------- */
 /**
  * @brief   This function checks if the entered first command (first word of the command string) belongs to the ESP32
             or the STM32. 
@@ -280,6 +282,7 @@ uint8_t uCheckESP32Command(char **tokens, uint8_t count)
   return EXIT_SUCCESS;
 }
 
+/* ------------------------------ HELP COMMAND ------------------------------ */
 /**
  * @brief  HELP Command - Displays a Help console for all the commands available (include STM32 ones too)
  * @note   
@@ -297,6 +300,7 @@ uint8_t _cmd_help(char **tokens, uint8_t count)
   debugD("----------------------------------------------------------------\n\r");
 }
 
+/* ----------------------------- STATUS COMMAND ----------------------------- */
 /**
  * @brief  STATUS command
  * @note   
@@ -306,24 +310,28 @@ uint8_t _cmd_help(char **tokens, uint8_t count)
  */
 uint8_t _cmd_status(char **tokens, uint8_t count)
 {
-  if (strcmp(tokens[1], "wifi"))
+  if (tokens[1])
   {
-    debugI("---------------- WIFI INFO -------------------------------------\n\r");
-    debugI("Connected to WiFi AP: %s\n\r", WiFi.SSID().c_str());
-    debugI("IP: %s\n\r", WiFi.localIP().toString().c_str());
-    debugI("IPv6: %s\n\r", WiFi.localIPv6().toString().c_str());
-    debugI("MAC: %s\n\r", WiFi.macAddress().c_str());
-    debugI("RSSI: %d%%\n\r", (uint8_t)abs(WiFi.RSSI()));
-    debugI("Hostname: %s\n\r", WiFi.getHostname());
-    debugI("----------------------------------------------------------------\n\r");
-  }
-  else
-  {
-    debugE("Command argument not valid... \n\r");
+    if (strcmp(tokens[1], "wifi") == 0)
+    {
+      debugI("---------------- WIFI INFO -------------------------------------");
+      debugI("Connected to WiFi AP: %s", WiFi.SSID().c_str());
+      debugI("IP: %s", WiFi.localIP().toString().c_str());
+      debugI("IPv6: %s", WiFi.localIPv6().toString().c_str());
+      debugI("MAC: %s", WiFi.macAddress().c_str());
+      debugI("RSSI: %d%%", (uint8_t)abs(WiFi.RSSI()));
+      debugI("Hostname: %s", WiFi.getHostname());
+      debugI("----------------------------------------------------------------");
+    }
+    else
+    {
+      debugE("Command argument not valid... \n\r");
+    }
   }
   return EXIT_SUCCESS;
 }
 
+/* ---------------------------- LEDSTRIP COMMAND ---------------------------- */
 /**
  * @brief  LEDSTRIP command
  * @note   
@@ -335,6 +343,7 @@ uint8_t _cmd_ledstrip(char **tokens, uint8_t count)
 {
   lit_status_t ledstatus;
   if (tokens[1])
+  {
     if (strcmp(tokens[1], "on") == 0)
     {
       ledstatus.is_lit = true;
@@ -351,6 +360,6 @@ uint8_t _cmd_ledstrip(char **tokens, uint8_t count)
     {
       debugE("Command argument not valid\n\r");
     }
-
+  }
   return EXIT_SUCCESS;
 }

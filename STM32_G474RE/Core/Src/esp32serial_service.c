@@ -28,6 +28,7 @@ osMessageQueueId_t xQueueCommandParse; /* extern */
 
 UART_HandleTypeDef huart3;
 
+/** SERIAL TX TASK **/
 static osThreadId_t xEsp32TXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32TXSerialServiceTaControlBlock;
 static uint32_t xEsp32TXSerialServiceTaBuffer[512];
@@ -40,6 +41,7 @@ static const osThreadAttr_t xEsp32TXSerialServiceTa_attributes = {
 		.priority = (osPriority_t) OSTASK_PRIORITY_ESP32_TX
 };
 
+/** SERIAL RX TASK **/
 static osThreadId_t xEsp32RXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32RXSerialServiceTaControlBlock;
 static uint32_t xEsp32RXSerialServiceTaBuffer[512];
@@ -51,8 +53,6 @@ static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
 		.cb_size = sizeof(xEsp32RXSerialServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_ESP32_RX
 };
-
-
 
 /**
  * @brief Function to send out one 8bit character
@@ -83,7 +83,6 @@ static void hdlc_frame_handler(uint8_t *data, uint8_t length)
 	osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
 }
 
-
 /**
  * Main SERIAL TX Task
  * @return
@@ -92,22 +91,24 @@ void vEsp32TXSerialService_Start(void* vParameter)
 {
 	printf("Starting ESP32 Serial TX Service task...\n\r");
 
-	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
+	osStatus_t status;
+	jsonMessage_t msg_packet;
+
+	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(jsonMessage_t), NULL);
 	if (xQueueEspSerialTX == NULL) {
 		Error_Handler();
 	}
 
-	char *msg = "test frame";
-
 	for (;;)
 	{
 		/* awaits for the frame to send */
-		printf("sending frame: %s\n\r", msg);
-		//HAL_UART_Transmit_IT(&huart3, (uint8_t*)msg, strlen(msg));
-		vSendFrame((uint8_t *)msg, strlen(msg));
+		status = osMessageQueueGet(xQueueEspSerialTX, &msg_packet, 0U, osWaitForever);
+		if (status == osOK) {
+			//printf("sending hdlc frame for %d bytes", msg_packet.msg_size);
+			vSendFrame(msg_packet.json, msg_packet.msg_size);
+		}
 
-
-		osDelay(5000); /* every 5 seconds we send a test command */
+		osDelay(1); /* every 5 seconds we send a test command */
 	}
 	osThreadTerminate(xEsp32TXSerialServiceTaskHandle);
 }
@@ -126,10 +127,8 @@ void vEsp32RXSerialService_Start(void* vParameter)
 		Error_Handler();
 	}
 
-
 	for (;;)
 	{
-
 		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
 		{
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
@@ -141,7 +140,6 @@ void vEsp32RXSerialService_Start(void* vParameter)
 
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
-
 		osDelay(1);
 	}
 	osThreadTerminate(xEsp32RXSerialServiceTaskHandle);
@@ -173,7 +171,7 @@ uint8_t uEsp32SerialServiceInit()
 						1. Character send function, to send out HDLC frame one byte at a time.
 						2. HDLC frame handler function for received frame.
 						3. Length of the longest frame used, to allocate buffer in memory */
-		uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
+	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 	printf("Initializing ESP32 Serial Service... Success!\n\r");
 	return EXIT_SUCCESS;

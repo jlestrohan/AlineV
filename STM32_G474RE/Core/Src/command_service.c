@@ -15,8 +15,7 @@
 #include "UartRingbuffer.h"
 #include "printf.h"
 #include "main.h"
-#include "tiny-json.h"
-
+#include <tiny-json.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -199,7 +198,7 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 
 	//TODO: nested command: https://github.com/rafagafe/tiny-json
 
-	printf("done!");
+	printf("done!\n\r");
 	//osMessageQueuePut(xQueueCommandInterpreter, &tokens,  0U, osWaitForever);
 	/* we're done here */
 
