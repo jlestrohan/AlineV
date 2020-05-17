@@ -71,17 +71,17 @@ void vStm32RXSerialServiceTaskCode(void *pvParameters)
       //RXJson = Serial2.readString();
       // get the new byte:
       char inChar = (char)Serial2.read();
-      // debugI("%c", inChar);
+      //debugI("%c", inChar);
       // Pass all incoming data to hdlc char receiver
       hdlc.charReceiver(inChar);
 
       //debugI("%s", RXJson.c_str());
-
-      vTaskDelay(1);
     }
-    vTaskDelete(xStm32RXSerialServiceTask_hnd);
+    vTaskDelay(1);
   }
+  vTaskDelete(NULL);
 }
+
 /**
  * @brief  Main Serial Listener setup
  * @note   
