@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-13 22:59:27
+ * @ Modified time: 2020-05-17 06:18:57
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -223,13 +223,14 @@ void encodeJsonCommand(char **tokens, uint8_t count, command_type_t type)
   {
     data_arguments.add(tokens[i]);
   }
+
   char output[capacity + 50];
-  serializeJson(doc, output);
+  uint8_t length = serializeJson(doc, output);
 
   /* let's send that json document direct to the Serial Service for immediate sending */
   jsonMessage_t jsonMsg;
-  jsonMsg.msg_size = capacity;
-  strcpy(jsonMsg.json, output);
+  jsonMsg.msg_size = length;
+  memcpy(jsonMsg.json, output, length);
   xQueueSend(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY); /* send directly to the serial TX service, the post office */
 }
 

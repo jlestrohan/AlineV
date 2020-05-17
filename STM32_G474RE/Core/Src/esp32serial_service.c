@@ -23,41 +23,10 @@
 #include "UartRingbuffer.h"
 #include "hdlc_protocol.h"
 
-#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
-
-/**
- * @brief Function to send out one 8bit character
- * @param data
- */
-void send_character(uint8_t data) {
-	Uart_write(data);
-}
-
-/**
- * @brief Frame handler function. What to do with received data?
- * @param data
- * @param length
- */
-void hdlc_frame_handler(const uint8_t *data, uint16_t length)
-{
-	jsonMessage_t msg;
-
-	/* some cleanup */
-	memset(msg.json, 0, length+1);
-	strncpy(msg.json, (char *)data, length);
-	msg.msg_size = length;
-
-	/* straight to command service to be interpreted */
-	osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
-}
-
 osMessageQueueId_t xQueueEspSerialTX;
-osMessageQueueId_t xQueueEspSerialRX;
 osMessageQueueId_t xQueueCommandParse; /* extern */
 
 UART_HandleTypeDef huart3;
-
-typedef StaticTask_t osStaticThreadDef_t;
 
 static osThreadId_t xEsp32TXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32TXSerialServiceTaControlBlock;
@@ -73,7 +42,7 @@ static const osThreadAttr_t xEsp32TXSerialServiceTa_attributes = {
 
 static osThreadId_t xEsp32RXSerialServiceTaskHandle;
 static osStaticThreadDef_t xEsp32RXSerialServiceTaControlBlock;
-static uint32_t xEsp32RXSerialServiceTaBuffer[1024];
+static uint32_t xEsp32RXSerialServiceTaBuffer[512];
 static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
 		.name = "xEsp32RXSerialServiceTask",
 		.stack_mem = &xEsp32RXSerialServiceTaBuffer[0],
@@ -82,6 +51,37 @@ static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
 		.cb_size = sizeof(xEsp32RXSerialServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_ESP32_RX
 };
+
+
+
+/**
+ * @brief Function to send out one 8bit character
+ * @param data
+ */
+static void send_character(uint8_t data)
+{
+	//Uart_write(data);
+	HAL_UART_Transmit(&huart3, &data, sizeof(uint8_t),	HAL_MAX_DELAY);
+}
+
+/**
+ * @brief Frame handler function. What to do with received data?
+ * @param data
+ * @param length
+ */
+static void hdlc_frame_handler(uint8_t *data, uint8_t length)
+{
+	jsonMessage_t msg;
+
+	printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
+
+	/* some cleanup */
+	memcpy(msg.json, data, length);
+	msg.msg_size = length;
+
+	/* straight to command service to be interpreted */
+	osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
+}
 
 
 /**
@@ -95,13 +95,19 @@ void vEsp32TXSerialService_Start(void* vParameter)
 	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
 	if (xQueueEspSerialTX == NULL) {
 		Error_Handler();
-		return (EXIT_FAILURE);
 	}
+
+	char *msg = "test frame";
 
 	for (;;)
 	{
+		/* awaits for the frame to send */
+		printf("sending frame: %s\n\r", msg);
+		//HAL_UART_Transmit_IT(&huart3, (uint8_t*)msg, strlen(msg));
+		vSendFrame((uint8_t *)msg, strlen(msg));
 
-		osDelay(1); /* every 5 seconds we send a test command */
+
+		osDelay(5000); /* every 5 seconds we send a test command */
 	}
 	osThreadTerminate(xEsp32TXSerialServiceTaskHandle);
 }
@@ -116,31 +122,20 @@ void vEsp32RXSerialService_Start(void* vParameter)
 
 	/* Initializes the RX Ring Buffer */
 	if (Ringbuf_init() == EXIT_FAILURE) {
+		printf("Failed creating RX Ring buffer, this is a CRITICAL ERROR, exiting now!\n\r");
 		Error_Handler();
-		return (EXIT_FAILURE);
 	}
-
-	xQueueEspSerialRX = osMessageQueueNew(2, sizeof(MAX_HDLC_FRAME_LENGTH), NULL);
-	if (xQueueEspSerialRX == NULL) {
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
-
-	/* Initialize Arduhdlc library with three parameters.
-					1. Character send function, to send out HDLC frame one byte at a time.
-					2. HDLC frame handler function for received frame.
-					3. Length of the longest frame used, to allocate buffer in memory */
-	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 
 	for (;;)
 	{
+
 		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
 		{
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
 
 			char inChar = (char)Uart_read(); /* read one byte of data */
-
+			//printf("%c", inChar);
 			// Pass all incoming data to hdlc char receiver
 			vCharReceiver(inChar);
 
@@ -173,6 +168,12 @@ uint8_t uEsp32SerialServiceInit()
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
+
+	/* Initialize Arduhdlc library with three parameters.
+						1. Character send function, to send out HDLC frame one byte at a time.
+						2. HDLC frame handler function for received frame.
+						3. Length of the longest frame used, to allocate buffer in memory */
+		uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 	printf("Initializing ESP32 Serial Service... Success!\n\r");
 	return EXIT_SUCCESS;

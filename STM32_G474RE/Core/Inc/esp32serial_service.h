@@ -23,16 +23,17 @@
 #define UART_DMA_BUFFER_SIZE 2048
 #define PARSER_MESSAGE_LIST_SIZE 8
 #define PARSER_MESSAGE_SIZE 1024
-#define MAX_JSON_MSG_SIZE 256
+#define MAX_JSON_MSG_SIZE 512
+
+#define MAX_HDLC_FRAME_LENGTH 1024 /* this is the main frame length available */
 
 extern osMessageQueueId_t xQueueEspSerialTX;
-extern osMessageQueueId_t xQueueEspSerialRX;
 
 extern uint8_t UART_DMA_BUF[UART_DMA_BUFFER_SIZE];
 
 typedef struct
 {
-	char json[100];
+	uint8_t json[MAX_JSON_MSG_SIZE];
     uint16_t msg_size;
 } jsonMessage_t;
 //extern jsonMessage_t JsonMsg;
@@ -42,8 +43,6 @@ typedef struct
  * @return
  */
 uint8_t uEsp32SerialServiceInit();
-
-uint8_t uEsp32Serial_SendMSG(const char *msg);
 
 
 #endif /* INC_ESP32_SERIAL_H_ */

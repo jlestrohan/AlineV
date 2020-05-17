@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-12 02:35:55
+ * @ Modified time: 2020-05-17 06:56:49
  * @ Description:
  *******************************************************************************************/
 
@@ -13,8 +13,6 @@
 #include "buzzer_service.h"
 #include "command_service.h"
 #include "hdlc_protocol.h"
-
-#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
 xTaskHandle xStm32TXSerialServiceTask_hnd = NULL; /* for TX */
 xTaskHandle xStm32RXSerialServiceTask_hnd = NULL; /* for RX */
@@ -27,8 +25,8 @@ void send_character(uint8_t data);
 HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 /**
- * @brief   Serial 2 Listener task (from STM32)
- *          Listens to UART2 and pass all commands to the parser queue.
+ * @brief   Serial 2 TX Transmit task (from STM32)
+ *          Transmit to UART2.
  * @note   
  * @param  *pvParameters: 
  * @retval None
@@ -43,10 +41,10 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
     xQueueReceive(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY);
 
     /* we send the json over */
-    debugI("SENT: %s", jsonMsg.json);
+    debugI("SENT: %.*s", jsonMsg.msg_size, (char *)jsonMsg.json);
     //Serial2.println(jsonMsg.json);
 
-    hdlc.sendFrame((uint8_t *)jsonMsg.json, strlen(jsonMsg.json));
+    hdlc.sendFrame(jsonMsg.json, jsonMsg.msg_size);
 
     vTaskDelay(1);
   }
@@ -90,9 +88,9 @@ void vStm32RXSerialServiceTaskCode(void *pvParameters)
 uint8_t uSetupSTM32SerialService()
 {
   /* setup UART communications to and from STM32 on UART2 port */
-  Serial2.begin(230400, SERIAL_8N1, RXD2, TXD2);
+  Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
 
-  xQueueSerialServiceTX = xQueueCreate(20, sizeof(command_package_t));
+  xQueueSerialServiceTX = xQueueCreate(5, sizeof(command_package_t));
   if (xQueueSerialServiceTX == NULL)
   {
     debugE("error creating the xQueueSerialServiceTX queue");
@@ -125,7 +123,7 @@ uint8_t uSetupSTM32SerialService()
       "vStm32RXSerialServiceTaskCode", /* String with name of task. */
       10000,                           /* Stack size in words. */
       NULL,                            /* Parameter passed as input of the task */
-      5,                               /* Priority of the task. */
+      8,                               /* Priority of the task. */
       &xStm32RXSerialServiceTask_hnd); /* Task handle. */
 
   /* check and deinit stuff if applicable */
@@ -160,9 +158,7 @@ void send_character(uint8_t data)
  */
 void hdlc_frame_handler(const uint8_t *data, uint16_t length)
 {
-  /*char buf[1024];
-  snprintf(buf, length + 1, (char *)data);*/
   // Do something with data that is in framebuffer
-  debugV("RECEIVED: %s", data);
+  debugV("RECEIVED: %.*s", length, (char *)data);
   //Serial.println(buf);
 }

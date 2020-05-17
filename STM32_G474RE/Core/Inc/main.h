@@ -78,6 +78,8 @@ void Error_Handler(void);
 #define HR04_3_ECHO_GPIO_Port GPIOA
 #define MOTOR2_PWM_Pin GPIO_PIN_7
 #define MOTOR2_PWM_GPIO_Port GPIOA
+#define I2C2_CMPS12_SCL_Pin GPIO_PIN_4
+#define I2C2_CMPS12_SCL_GPIO_Port GPIOC
 #define B2_Pin GPIO_PIN_5
 #define B2_GPIO_Port GPIOC
 #define B2_EXTI_IRQn EXTI9_5_IRQn
@@ -101,6 +103,8 @@ void Error_Handler(void);
 #define I2C4_BPM280_SDA_GPIO_Port GPIOC
 #define I2C3_TOF_SCL_Pin GPIO_PIN_8
 #define I2C3_TOF_SCL_GPIO_Port GPIOC
+#define I2C2_CMPS12_SDA_Pin GPIO_PIN_8
+#define I2C2_CMPS12_SDA_GPIO_Port GPIOA
 #define UV_LED_Pin GPIO_PIN_9
 #define UV_LED_GPIO_Port GPIOA
 #define MOTOR1_IN2_Pin GPIO_PIN_10

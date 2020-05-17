@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 typedef void (*sendchar_type)(uint8_t);
-typedef void (*frame_handler_type)(const uint8_t *framebuffer, uint16_t framelength);
+typedef void (*frame_handler_type)(uint8_t *framebuffer, uint8_t framelength);
 
 /**
  * @Brief Main routine Initialization
@@ -20,7 +20,7 @@ typedef void (*frame_handler_type)(const uint8_t *framebuffer, uint16_t framelen
  * @param
  * @param max_frame_length
  */
-uint8_t uHdlcProtInit(sendchar_type, frame_handler_type, uint16_t max_frame_length);
+void uHdlcProtInit(sendchar_type, frame_handler_type, uint8_t max_frame_length);
 void vCharReceiver(uint8_t data);
 void vSendFrame(const uint8_t *framebuffer, uint8_t frame_length);
 

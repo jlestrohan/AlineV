@@ -106,7 +106,7 @@ static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
 	return crc;
 }
 
-uint8_t uHdlcProtInit(sendchar_type put_char, frame_handler_type hdlc_command_router, uint16_t max_frame_length)
+void uHdlcProtInit(sendchar_type put_char, frame_handler_type hdlc_command_router, uint8_t max_frame_length)
 {
 	sendchar_function = put_char;
 	frame_handler = hdlc_command_router;

@@ -15,9 +15,18 @@
 #include "UartRingbuffer.h"
 #include "printf.h"
 #include "main.h"
-#include "jsmn.h"
-#include <stdbool.h>
+#include "tiny-json.h"
 
+#include <stdbool.h>
+#include <string.h>
+
+/* struct containing the values once extracted from JSON to be used afterward by the command interpreter */
+typedef struct {
+	uint64_t uuid;			/* ESP32 uuid */
+	uint64_t timestamp;		/* message timestamp */
+	char type[5];			/* 3 letters type */
+} cmdPackage_t;
+cmdPackage_t *cmdPackage;
 
 osMessageQueueId_t xQueueCommandParse;
 static osMessageQueueId_t xQueueCommandInterpreter;
@@ -26,7 +35,7 @@ UART_HandleTypeDef hlpuart1;
 /* command parser (json) task*/
 static osThreadId_t xCommandParserServiceTaskHnd;
 static osStaticThreadDef_t xCommandParserServiceTaControlBlock;
-static uint32_t xCommandParserServiceTaBuffer[512];
+static uint32_t xCommandParserServiceTaBuffer[1024];
 static const osThreadAttr_t xCommandParserServiceTa_attributes = {
 		.name = "xCommandParserServiceTask",
 		.stack_mem = &xCommandParserServiceTaBuffer[0],
@@ -38,7 +47,7 @@ static const osThreadAttr_t xCommandParserServiceTa_attributes = {
 /* command interpreter task */
 static osThreadId_t xCommandInterpreterServiceTaskHnd;
 static osStaticThreadDef_t xCommandInterpreterServiceTaControlBlock;
-static uint32_t xCommandInterpreterServiceTaBuffer[512];
+static uint32_t xCommandInterpreterServiceTaBuffer[256];
 static const osThreadAttr_t xCommandInterpreterServiceTa_attributes = {
 		.name = "xCommandInterpreterServiceTask",
 		.stack_mem = &xCommandInterpreterServiceTaBuffer[0],
@@ -47,10 +56,8 @@ static const osThreadAttr_t xCommandInterpreterServiceTa_attributes = {
 		.cb_size = sizeof(xCommandInterpreterServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_CMD_INTERP_SERVICE };
 
-jsmn_parser parser;
-
 /* function prototypes */
-void jsonDecode(const char *json, uint16_t length, bool reentry, size_t tokcount);
+uint8_t uJsonDecode(uint8_t *json, uint16_t length);
 
 /**
  * Main Task routine
@@ -59,10 +66,9 @@ void jsonDecode(const char *json, uint16_t length, bool reentry, size_t tokcount
 void vCommandParserServiceTask(void *vParameter)
 {
 	printf("Starting Command Parser Service task...\n\r");
+
 	osStatus_t status;
 	jsonMessage_t msgType;
-
-	jsmn_init(&parser);
 
 	xQueueCommandParse = osMessageQueueNew(2, sizeof(jsonMessage_t), NULL);
 	if (xQueueCommandParse == NULL) {
@@ -70,15 +76,13 @@ void vCommandParserServiceTask(void *vParameter)
 		Error_Handler();
 	}
 
-
 	for (;;)
 	{
 		/* wait for pure JSON string TODO: bug here FIXME::: */
-		status = osMessageQueueGet(xQueueCommandParse, &msgType, NULL, osWaitForever);
+		status = osMessageQueueGet(xQueueCommandParse, &msgType, 0U, osWaitForever);
 		if (status == osOK) {
-			printf("received: %s\n\r", msgType.json);
-			jsonDecode(msgType.json, msgType.msg_size, false, 2); /* we start with tokcount 2 by default */
-			/* we just got the command, time to parse it and execute what has to be executed */
+			printf("Command Center received: %.*s\n\r", msgType.msg_size, msgType.json);
+			uJsonDecode(msgType.json, msgType.msg_size); /* we start with tokcount 2 by default */
 
 		}
 
@@ -93,11 +97,12 @@ void vCommandParserServiceTask(void *vParameter)
  */
 void vCommandInterpreterServiceTask(void *vParameter)
 {
-	osStatus_t status;
-	jsmntok_t tokens[512];
+	printf("Starting Command Interpreter Service task...\n\r");
+
+	//osStatus_t status;
 
 	/* this queue is used to pass every token to the interpreter task */
-	xQueueCommandInterpreter = osMessageQueueNew(2, sizeof(jsmntok_t) * 256, NULL);
+	xQueueCommandInterpreter = osMessageQueueNew(2, sizeof(uint8_t), NULL);
 	if (xQueueCommandParse == NULL) {
 		printf("Command Interpreter  Queue Initialization Failed\n\r");
 		Error_Handler();
@@ -105,18 +110,17 @@ void vCommandInterpreterServiceTask(void *vParameter)
 
 	for (;;)
 	{
-		status = osMessageQueueGet(xQueueCommandInterpreter, &tokens, 0U, osWaitForever);
-		if (status == osOK) {
-			printf("we got our tokens again, let's check");
+		//status = osMessageQueueGet(xQueueCommandInterpreter, &tokens, 0U, osWaitForever);
+		//if (status == osOK) {
+		//printf("we got our tokens again, let's check");
 
 
-		}
+		//}
 
 		osDelay(100);
 	}
 	osThreadTerminate(NULL);
 }
-
 
 
 /**
@@ -135,57 +139,71 @@ uint8_t uCmdParseServiceInit()
 	}
 
 	/* creation of xCommandInterpreterService Task */
-	xCommandInterpreterServiceTaskHnd = osThreadNew(vCommandInterpreterServiceTask, NULL, &xCommandInterpreterServiceTa_attributes);
+	/*xCommandInterpreterServiceTaskHnd = osThreadNew(vCommandInterpreterServiceTask, NULL, &xCommandInterpreterServiceTa_attributes);
 	if (xCommandInterpreterServiceTaskHnd == NULL) {
 		printf("Command Interpreter Service Task Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
-	}
+	}*/
 
 	printf("Initializing Command Parser Service... Success!\n\r");
 	return EXIT_SUCCESS;
 }
 
+
 /**
  * Decodes JSON and starts parsing commands sent
  * @param json		The json *char
  * @param length	length of that json
- * @param reentry	false if we are coming for thez first time, true if this is a rentry business
  */
-void jsonDecode(const char *json, uint16_t length, bool reentry, size_t tokcount)
+uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 {
-	int r;
-	jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * tokcount);
-	if(!tokens) Error_Handler();
+	//https://github.com/rafagafe/tiny-json
 
-	/* number of tokens in the json file */
-	r = jsmn_parse(&parser, json, length, tokens, tokcount);
+	json_t pool[128];
+	json_t const* parent = json_create( (char *)json, pool, 128 );
+	if ( parent == NULL ) return EXIT_FAILURE;
 
-	switch (r) {
-	case JSMN_ERROR_INVAL:
-		printf("bad token, JSON string is corrupted\n\r");
-		break;
+	/** UUID **/
+	json_t const* uuid_topic = json_getProperty( parent, "uuid" );
+	if ( uuid_topic == NULL ) return EXIT_FAILURE;
+	if ( json_getType( uuid_topic ) != JSON_INTEGER ) return EXIT_FAILURE;
 
-	case JSMN_ERROR_NOMEM:
-		printf("not enough tokens, JSON string is too large. Trying to reallocate\n\r");
-		vPortFree(tokens);
-		jsonDecode(json, length, true, tokcount * 2); /* recursion in the same function with a realloc */
-		break;
+	int64_t uuid_value = json_getInteger( uuid_topic );
+	printf( "uuid: %lld\n\r", uuid_value);
+	cmdPackage->uuid = uuid_value;
 
-	case JSMN_ERROR_PART:
-		printf("JSON string is too short, expecting more JSON data\n\r");
-		break;
+	/** TIMESTAMP **/
+	json_t const* timestamp_topic = json_getProperty( parent, "timestamp" );
+	if ( timestamp_topic == NULL ) return EXIT_FAILURE;
+	if ( json_getType( timestamp_topic ) != JSON_INTEGER ) return EXIT_FAILURE;
 
-	default: /* PARSING OK, Now we need to check every commands, for this we will send it to a new thread */
-		printf("JSON Parsing ok... processing command..\n\r");
+	int64_t timestamp_value = json_getInteger( timestamp_topic );
+	printf( "timestamp: %lld\n\r", timestamp_value);
+	cmdPackage->uuid = timestamp_value;
 
-		osMessageQueuePut(xQueueCommandInterpreter, &tokens,  0U, osWaitForever);
-		/* we're done here */
-		break;
-	}
+	/** TYPE **/
+	json_t const* type_topic = json_getProperty( parent, "type" );
+	if ( type_topic == NULL ) return EXIT_FAILURE;
+	if ( json_getType( type_topic ) != JSON_TEXT ) return EXIT_FAILURE;
 
-	/* keep this here! */
-	vPortFree(tokens);
+	char const *type_value = json_getValue( type_topic );
+	printf( "type: %s\n\r", type_value);
+	strcpy(cmdPackage->type, type_value);
+
+	/** NESTED DATA **/
+	json_t const* data_topic = json_getProperty( parent, "data" );
+	if ( data_topic == NULL ) return EXIT_FAILURE;
+	if ( json_getType( data_topic ) != JSON_OBJ ) return EXIT_FAILURE;
+
+
+	//TODO: nested command: https://github.com/rafagafe/tiny-json
+
+	printf("done!");
+	//osMessageQueuePut(xQueueCommandInterpreter, &tokens,  0U, osWaitForever);
+	/* we're done here */
+
+	return EXIT_SUCCESS;
 }
 
 
