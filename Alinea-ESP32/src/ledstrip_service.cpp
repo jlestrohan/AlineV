@@ -81,6 +81,9 @@ void vLedStripTask(void *vParameter)
         {
             FastLED.clear();
             FastLED.show();
+            vTaskDelay(50); /* bug in library needs this called twice */
+            FastLED.clear();
+            FastLED.show();
         }
 
         vTaskDelay(300);
