@@ -14,13 +14,13 @@
 
 extern QueueHandle_t xQueueCommandParse;
 
-#define CMD_LINE_MAX_LENGTH 255
+#define CMD_LINE_MAX_LENGTH 100
 #define UART_PAYLOAD_MAX_LGTH 512 /* max command length MUST BE 100 below MAX_HDLC_FRAME_LENGTH */
 
 typedef enum
 {
-    CMD_RECEIVED,
-    CMD_TRANSMIT
+    PKT_RECEIVED,
+    PKT_TRANSMIT,
 } commandRoute_t;
 
 typedef enum
@@ -29,7 +29,8 @@ typedef enum
     CMD_TYPE_JSON_SYN,
     CMD_TYPE_JSON_ACK,
     CMD_TYPE_JSON_TEXT,
-    CMD_TYPE_JSON_DTA
+    CMD_TYPE_JSON_DTA,
+    CMD_TYPE_JSON_DTA_ATM /* atmospheric data coming from the vehicle sensors */
 } command_type_t;
 
 /* this will be sent out thru xCommandQueue, can be anything from JSON to a simple text command coming from telnet */
@@ -38,6 +39,7 @@ struct command_package_t
     commandRoute_t cmd_route;
     command_type_t cmd_type;
     char txtCommand[255]; /* in the case of a simple text command, we put it here, the stm will parse it as it wishes */
+    uint8_t command_size;
 };
 
 //uint16_t DeviceFlag;

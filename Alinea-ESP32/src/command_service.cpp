@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-17 13:37:32
+ * @ Modified time: 2020-05-18 14:46:17
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -28,11 +28,14 @@
 #include <ArduinoJson.h>
 #include "stm32Serial_service.h"
 #include "ntp_service.h"
+#include "configuration_esp32.h"
 
 /* function definitions */
 uint8_t _cmd_status(char **tokens, uint8_t count);
 uint8_t _cmd_ledstrip(char **tokens, uint8_t count);
 uint8_t _cmd_help(char **tokens, uint8_t count);
+void vDecodeJsonCommand(command_package_t *cmd_pack);
+void vEncodeJsonCommand(char **tokens, uint8_t count, command_type_t type);
 
 /** 
  * @brief  ESP32 COMMANDS ARE TO BE ADDED HERE 
@@ -58,6 +61,7 @@ QueueHandle_t xQueueSerialServiceTX; /* extern */
 void cmd_process(command_package_t *command_pack);
 int split(const char *txt, char delim, char ***tokens);
 void encodeJsonCommand(char **tokens, uint8_t count, command_type_t type);
+uint8_t uDecodeJsonCommand(command_package_t *cmd_pack);
 void vCmdtype_text(command_type_t type, char *buffer);
 uint8_t uCheckESP32Command(char **tokens, uint8_t count);
 
@@ -80,12 +84,12 @@ void vCommandParserTaskCode(void *pvParameters)
     This service will decide what to do with the package */
     cmd_process(&commandPack); /*(command_package_t)*/
 
-    //vPlayMelody(MelodyType_CommandReceived); /* command received tune */
+    //vPlayMelody(MelodyType_CommandReceived); /* command received tune */44
 
     /* at this stage the task is done with treating an incoming command */
     vTaskDelay(10);
   }
-  vTaskDelete(xCommandParserTask_hnd);
+  vTaskDelete(NULL);
 }
 
 /**
@@ -134,28 +138,35 @@ void cmd_process(command_package_t *command_pack)
   /* we first split that command contained in the received package */
   char **tokens;
   uint8_t count;
-  count = split(command_pack->txtCommand, ' ', &tokens);
 
   /* is it a command to send the STM32 or execute on the esp ? */
   switch (command_pack->cmd_route)
   {
-  case CMD_TRANSMIT: /* the command has to be packaged and sent over to STM32 */
+  case PKT_TRANSMIT: /* the command has to be packaged to JSON and sent over to STM32 */
+    count = split(command_pack->txtCommand, ' ', &tokens);
     /* the command has to be transmitted, we just got a text that we have to actually parse in order to make that a real JSON command, let's start that */
-
     /* whom to transmit the command ? ESP32 or STM32 ? */
     if (!uCheckESP32Command(tokens, count))
     {
-      encodeJsonCommand(tokens, count, command_pack->cmd_type);
+      vEncodeJsonCommand(tokens, count, command_pack->cmd_type);
     }
 
     for (uint8_t i = 0; i < count; i++) /* freeing tokens */
-      vPortFree(tokens[i]);
-    vPortFree(tokens);
-
+      free(tokens[i]);
+    free(tokens);
     break;
 
-  case CMD_RECEIVED: /* the command has been received to be executed on the ESP32 */
+  case PKT_RECEIVED: /* the packet has been received and we have to decode it and take a further action...*/
+                     /* the packet is a json received from the stm32 */
+    //debugI("COMMAND ROUTINE: %s", command_pack->txtCommand);
 
+    /* we will decode the STM json to check if the message is a DATA of a COMMAND */
+    /* if it is a data, we send the stuff to AWS service to add a few more things,
+    recreate the JSON, packages it into an AWS data pack. */
+    uDecodeJsonCommand(command_pack);
+    break;
+
+  default:
     break;
   }
 }
@@ -204,7 +215,7 @@ int split(const char *text, char delimiter, char ***tkns)
  * @param  count: 
  * @retval None
  */
-void encodeJsonCommand(char **tokens, uint8_t count, command_type_t type)
+void vEncodeJsonCommand(char **tokens, uint8_t count, command_type_t type)
 {
   char type_buf[4]; /* stores a 3 chars type of message */
   const size_t capacity = JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3);
@@ -298,6 +309,8 @@ uint8_t _cmd_help(char **tokens, uint8_t count)
   debugD("\t\tledstrip on/off: lights up/off the front leds\n\r");
   debugD("\t\tstatus: wifi(wifi status)\n\n");
   debugD("----------------------------------------------------------------\n\r");
+
+  return EXIT_SUCCESS;
 }
 
 /* ----------------------------- STATUS COMMAND ----------------------------- */
@@ -361,5 +374,48 @@ uint8_t _cmd_ledstrip(char **tokens, uint8_t count)
       debugE("Command argument not valid\n\r");
     }
   }
+  return EXIT_SUCCESS;
+}
+
+/* --------------------------- DECODE JSON COMMAND FROM STM32-------------------------- */
+/**
+ * @brief  Data or Command to ESP32 ?
+ * @note   
+ * @param  *cmd_pack: 
+ * @retval None
+ */
+uint8_t uDecodeJsonCommand(command_package_t *cmd_pack)
+{
+  /* Deserializes STM JSON */
+  StaticJsonDocument<200> doc;
+  DeserializationError error = deserializeJson(doc, cmd_pack->txtCommand);
+
+  if (error)
+  {
+    debugE("deserializeJson() failed with error: %s", error.c_str());
+    return EXIT_FAILURE;
+  }
+
+  /* check if CMD = a data kind */
+
+  /* check if STM UUID is the right one - check configuration_esp32.h*/
+  if (doc["uuid"] != STM32_UUID)
+  {
+    debugE("Wrong STM32 uuid, operation not permitted, no data will be processed sorry!");
+    return EXIT_FAILURE;
+  }
+
+  /* sends the deserialized json (which is now a struct) to the AWS service */
+
+  /* we are done for this service */
+
+  /* switch */
+  debugI("RECEIVED: %.*s for %d bytes", cmd_pack->command_size, cmd_pack->txtCommand, cmd_pack->command_size);
+  //debugI("Free HEAP: %lu on HEAP TOTAL: %lu", ESP.getFreeHeap(), ESP.getHeapSize());
+  //debugI("Free PS Ram: %lu", ESP.getFreePsram());
+
+  /* 1 we decode JSON */
+  /* 2 we add everything */
+
   return EXIT_SUCCESS;
 }
