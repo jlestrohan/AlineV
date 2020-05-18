@@ -84,7 +84,7 @@ void vNtpServiceTask(void *parameter)
             }
         }
 
-        vTaskDelay(600);
+        vTaskDelay(3600*1000);
     }
     vTaskDelete(NULL);
 }
