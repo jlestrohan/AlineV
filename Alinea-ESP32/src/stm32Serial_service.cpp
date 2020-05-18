@@ -51,6 +51,7 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
   vTaskDelete(xStm32TXSerialServiceTask_hnd);
 }
 
+/* ------------------------------ MAIN RX TASK ------------------------------ */
 /**
  * @brief  Main RX Receiver Task using the minimal protocol
  * @note   

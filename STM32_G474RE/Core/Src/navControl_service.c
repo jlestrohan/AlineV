@@ -40,7 +40,6 @@ static NavigationStatus_t xCurrentNavStatus;
 MotorData_t MotorData; /* extern */
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
-
 osMessageQueueId_t xMessageQueueMotorMotion; /* extern */
 
 /* mutexed variables */

@@ -53,7 +53,7 @@ static void motorSetMotionTurnLeft(MotorData_t *data, uint8_t speed_left, uint8_
  */
 static void vMotorsControlTaskStart(void *vParameters)
 {
-	printf("Starting Motors Control Task...");
+	printf("Starting Motors Control Task...\n\r");
 
 	mMotorDataMutex = osMutexNew(NULL);
 	mLastMotorDataMutex = osMutexNew(NULL);

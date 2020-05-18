@@ -20,6 +20,7 @@ void vProcessCmdRemoteDebug();
 
 xTaskHandle xRemoteDebuggerTask_hnd = NULL;
 
+/* --------------------------- MAIN SERVICE SETUP --------------------------- */
 /**
  * @brief  Remote Debug setup routine
  * @note   
@@ -58,6 +59,7 @@ uint8_t uSetupRemoteDebug()
     return EXIT_SUCCESS;
 }
 
+/* ------------------------- MAIN REMOTE DEBUG TASK ------------------------- */
 /**
  * @brief  Remote Debug main task
  * @note   
@@ -73,6 +75,7 @@ void remoteDebug_task(void *parameter)
     vTaskDelete(&xRemoteDebuggerTask_hnd);
 }
 
+/* ------------------------- CUSTOM COMMAND CALLBACK ------------------------ */
 /**
  * @brief  Custom Command callback
  * @note   

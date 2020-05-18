@@ -64,6 +64,7 @@ static void vUvLedServiceTaskStart(void *vParameters)
 				uUvLedStatus = UV_LED_STATUS_BLINK;
 				osMessageQueuePut(xQueueUVLedStatus, &uUvLedStatus, 0U, osWaitForever);
 				break;
+			default: break;
 			}
 		}
 		osDelay(10);

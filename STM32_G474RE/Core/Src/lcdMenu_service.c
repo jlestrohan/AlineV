@@ -96,9 +96,9 @@ void vLcdMenuServiceTask(void *argument)
 			lcd_send_string(MenuItem.second_line);
 			osSemaphoreRelease(sem_lcdService);*/
 		}
-
 		osDelay(50);
 	}
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -144,19 +144,6 @@ void vSetupMenuTopics()
 	//MenuItem_Complete = {"Alinea v0.35",1,0,"Complete!",3,2, fc_menu_complete, NULL, &MenuItem_Ready};
 
 	/**
-	 * BOOT SCREEN
-	 */
-	strcpy(MenuItem_Boot.first_line_text, "Alinea v0.35  >");
-	MenuItem_Boot.first_line_col = 1;
-	MenuItem_Boot.first_line_row = 0;
-	strcpy(MenuItem_Boot.second_line_text, "Initializing...");
-	MenuItem_Boot.second_line_col = 0;
-	MenuItem_Boot.second_line_row = 2;
-	MenuItem_Boot.func = fc_menu_init;
-	MenuItem_Boot.prev = NULL;
-	MenuItem_Boot.next = &MenuItem_Ready;
-
-	/**
 	 * BOOT COMPLETE
 	 */
 	strcpy(MenuItem_Ready.first_line_text, "Alinea v0.35  >");
@@ -168,4 +155,17 @@ void vSetupMenuTopics()
 	MenuItem_Ready.func = fc_menu_ready;
 	MenuItem_Ready.prev = NULL;
 	MenuItem_Ready.next = NULL;
+
+	/**
+	 * BOOT SCREEN
+	 */
+	strcpy(MenuItem_Boot.first_line_text, "Alinea v0.35  >");
+	MenuItem_Boot.first_line_col = 1;
+	MenuItem_Boot.first_line_row = 0;
+	strcpy(MenuItem_Boot.second_line_text, "Initializing...");
+	MenuItem_Boot.second_line_col = 0;
+	MenuItem_Boot.second_line_row = 2;
+	MenuItem_Boot.func = fc_menu_init;
+	MenuItem_Boot.prev = NULL;
+	MenuItem_Boot.next = NULL;//&MenuItem_Ready;
 };
