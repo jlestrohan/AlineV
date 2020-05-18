@@ -24,6 +24,7 @@
 #include "hdlc_protocol.h"
 
 osMessageQueueId_t xQueueEspSerialTX;
+osMutexId_t mUartRingBufferMutex; /*extern */
 osMessageQueueId_t xQueueCommandParse; /* extern */
 
 UART_HandleTypeDef huart3;
@@ -60,8 +61,9 @@ static const osThreadAttr_t xEsp32RXSerialServiceTa_attributes = {
  */
 static void send_character(uint8_t data)
 {
-	//Uart_write(data);
-	HAL_UART_Transmit(&huart3, &data, sizeof(uint8_t),	HAL_MAX_DELAY);
+	osMutexAcquire(mUartRingBufferMutex, osWaitForever);
+	Uart_write(data);
+	osMutexRelease(mUartRingBufferMutex);
 }
 
 /**
@@ -73,8 +75,7 @@ static void hdlc_frame_handler(uint8_t *data, uint8_t length)
 {
 	jsonMessage_t msg;
 
-	printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
-
+	//printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
 	/* some cleanup */
 	memcpy(msg.json, data, length);
 	msg.msg_size = length;
@@ -105,12 +106,14 @@ void vEsp32TXSerialService_Start(void* vParameter)
 		status = osMessageQueueGet(xQueueEspSerialTX, &msg_packet, 0U, osWaitForever);
 		if (status == osOK) {
 			//printf("sending hdlc frame for %d bytes", msg_packet.msg_size);
+			osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
 			vSendFrame(msg_packet.json, msg_packet.msg_size);
+			osMutexRelease(mHdlcProtocolMutex);
 		}
 
-		osDelay(1); /* every 5 seconds we send a test command */
+		osDelay(20); /* every 5 seconds we send a test command */
 	}
-	osThreadTerminate(xEsp32TXSerialServiceTaskHandle);
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -133,16 +136,20 @@ void vEsp32RXSerialService_Start(void* vParameter)
 		{
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
 
+			osMutexAcquire(mUartRingBufferMutex, osWaitForever);
 			char inChar = (char)Uart_read(); /* read one byte of data */
-			//printf("%c", inChar);
+			osMutexRelease(mUartRingBufferMutex);
+
 			// Pass all incoming data to hdlc char receiver
+			osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
 			vCharReceiver(inChar);
+			osMutexRelease(mHdlcProtocolMutex);
 
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
-		osDelay(1);
+		osDelay(10);
 	}
-	osThreadTerminate(xEsp32RXSerialServiceTaskHandle);
+	osThreadTerminate(NULL);
 }
 
 /**

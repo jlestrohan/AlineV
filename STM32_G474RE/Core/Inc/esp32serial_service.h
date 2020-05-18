@@ -25,7 +25,7 @@
 #define PARSER_MESSAGE_SIZE 1024
 #define MAX_JSON_MSG_SIZE 512
 
-#define MAX_HDLC_FRAME_LENGTH 256 /* this is the main frame length available */
+#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
 extern osMessageQueueId_t xQueueEspSerialTX;
 

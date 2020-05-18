@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+osMutexId_t mHdlcProtocolMutex;
+
 /** HDLC Asynchronous framing */
 /** The frame boundary octet is 01111110, (7E in hexadecimal notation) */
 #define FRAME_BOUNDARY_OCTET 0x7E
@@ -108,6 +110,8 @@ static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
 
 void uHdlcProtInit(sendchar_type put_char, frame_handler_type hdlc_command_router, uint8_t max_frame_length)
 {
+	mHdlcProtocolMutex = osMutexNew(mHdlcProtocolMutex);
+
 	sendchar_function = put_char;
 	frame_handler = hdlc_command_router;
 	_max_frame_length = max_frame_length;

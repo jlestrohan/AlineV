@@ -14,6 +14,7 @@
 
 /**** define the UART you are using  ****/
 
+osMutexId_t mUartRingBufferMutex;
 UART_HandleTypeDef huart3;
 
 #define uart &huart3
@@ -34,6 +35,8 @@ void store_char(unsigned char c, ring_buffer *buffer);
 
 uint8_t Ringbuf_init(void)
 {
+	mUartRingBufferMutex = osMutexNew(NULL);
+
 	_rx_buffer = &rx_buffer;
 	_tx_buffer = &tx_buffer;
 

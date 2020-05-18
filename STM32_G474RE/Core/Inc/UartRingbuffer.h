@@ -18,6 +18,8 @@
  */
 #define UART_BUFFER_SIZE 1024
 
+extern osMutexId_t mUartRingBufferMutex;
+
 typedef struct
 {
   unsigned char buffer[UART_BUFFER_SIZE];

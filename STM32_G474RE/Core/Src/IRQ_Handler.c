@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "esp32serial_service.h"
+#include "UartRingbuffer.h"
 #include "button_service.h"
 #include "main.h"
 #include "usart.h"

@@ -10,6 +10,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "cmsis_os2.h"
+
+extern osMutexId_t mHdlcProtocolMutex;
 
 typedef void (*sendchar_type)(uint8_t);
 typedef void (*frame_handler_type)(uint8_t *framebuffer, uint8_t framelength);

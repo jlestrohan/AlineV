@@ -31,6 +31,25 @@ osMessageQueueId_t xQueueCommandParse;
 static osMessageQueueId_t xQueueCommandInterpreter;
 UART_HandleTypeDef hlpuart1;
 
+/* function definitions */
+uint8_t _cmd_motors(char **tokens, uint8_t count);
+
+/**
+ * @brief  STM32 COMMANDS ARE TO BE ADDED HERE
+ * @note
+ * @retval None
+ */
+typedef struct
+{
+  char command[CMD_LINE_MAX_LENGTH];
+  uint8_t (*commands_func)(char **tokens, uint8_t count);
+} STM32_Commands_t;
+
+STM32_Commands_t stm32_commands_list[] = {
+    {"motors", _cmd_motors},
+};
+
+
 /* command parser (json) task*/
 static osThreadId_t xCommandParserServiceTaskHnd;
 static osStaticThreadDef_t xCommandParserServiceTaControlBlock;
