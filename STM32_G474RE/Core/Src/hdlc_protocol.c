@@ -53,7 +53,7 @@ static uint16_t _frame_checksum = CRC16_CCITT_INIT_VAL;
 static uint16_t _max_frame_length = 0;
 
 
-static uint16_t crc16_update(uint16_t crc, uint8_t a)
+/*static uint16_t crc16_update(uint16_t crc, uint8_t a)
 {
 	int i;
 
@@ -67,9 +67,9 @@ static uint16_t crc16_update(uint16_t crc, uint8_t a)
 	}
 
 	return crc;
-}
+}*/
 
-static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
+/*static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 {
 	int i;
 
@@ -83,7 +83,7 @@ static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 	}
 
 	return crc;
-}
+}*/
 static uint16_t _crc_ccitt_update(uint16_t crc, uint8_t data)
 {
 	data ^= lo8(crc);
@@ -92,7 +92,7 @@ static uint16_t _crc_ccitt_update(uint16_t crc, uint8_t data)
 	return ((((uint16_t)data << 8) | hi8(crc)) ^ (uint8_t)(data >> 4) ^ ((uint16_t)data << 3));
 }
 
-static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
+/*static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
 {
 	uint8_t i;
 
@@ -106,12 +106,11 @@ static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
 	}
 
 	return crc;
-}
+}*/
 
-void uHdlcProtInit(sendchar_type put_char, frame_handler_type hdlc_command_router, uint8_t max_frame_length)
+void uHdlcProtInit(sendchar_type put_char, frame_handler_type hdlc_command_router, uint16_t max_frame_length)
 {
 	mHdlcProtocolMutex = osMutexNew(mHdlcProtocolMutex);
-
 	sendchar_function = put_char;
 	frame_handler = hdlc_command_router;
 	_max_frame_length = max_frame_length;
@@ -174,7 +173,7 @@ void vCharReceiver(uint8_t data)
 }
 
 /* Wrap given data in HDLC frame and send it out byte at a time*/
-void vSendFrame(const uint8_t *framebuffer, uint8_t frame_length)
+void vSendFrame(const uint8_t *framebuffer, uint16_t frame_length)
 {
 	uint8_t data;
 	uint16_t fcs = CRC16_CCITT_INIT_VAL;

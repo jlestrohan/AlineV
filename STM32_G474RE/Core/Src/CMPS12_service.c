@@ -57,13 +57,13 @@ void vCMPS12SensorTaskStart(void *vParameters)
 
 	for (;;)
 	{
-		/* IMPORTANT leave that here !! */
-		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
 		_populate_values();
 
 #ifdef DEBUG_CMPS12
+		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
 		printf("Roll:  %0*d°", 3,CMPS12_SensorData.RollAngle);
 		printf("Pitch:  %0*ld°",  3, CMPS12_SensorData.PitchAngle);
+		osMutexRelease(mCMPS12_SensorDataMutex);
 		printf("gx:%0*ld, gy:%0*ld, gz:%0*ld, accx: %0*ld, accy:%0*ld, accz:%0*ld",
 				3,CMPS12_SensorData.GyroX,
 				3,CMPS12_SensorData.GyroY,
@@ -71,11 +71,9 @@ void vCMPS12SensorTaskStart(void *vParameters)
 				3,CMPS12_SensorData.AccelX,
 				3,CMPS12_SensorData.AccelY,
 				3,CMPS12_SensorData.AccelZ);
-
 		printf("\n\r");
 #endif
 
-		osMutexRelease(mCMPS12_SensorDataMutex);
 		osDelay(10);
 	}
 	osThreadTerminate(xCMPS12SensorTaskHandle);
@@ -100,7 +98,7 @@ uint8_t uCmps12ServiceInit()
 		//Error_Handler();
 		return (EXIT_FAILURE);
 	} else {
-		printf("The CMPS12 device has responded normally!\n\r");
+		printf("** Found CMPS12 device!\n\r");
 	}
 
 	return EXIT_SUCCESS;
@@ -112,6 +110,8 @@ uint8_t uCmps12ServiceInit()
  */
 static uint8_t _populate_values()
 {
+	osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+
 	/* sensor mcu core temperature */
 	_read_register16(CMPS12_REGISTER_SENSOR_TEMP_16, &CMPS12_SensorData.Temperature);
 
@@ -143,6 +143,8 @@ static uint8_t _populate_values()
 	CMPS12_SensorData.RollAngle += CMPS12_DEVICE_ROLLANGLE_OFFSET;
 	CMPS12_SensorData.RollAngle = CMPS12_SensorData.RollAngle <= 180 ? CMPS12_SensorData.RollAngle :
 			-(255-CMPS12_SensorData.RollAngle);
+
+	osMutexRelease(mCMPS12_SensorDataMutex);
 
 
 	return EXIT_SUCCESS;

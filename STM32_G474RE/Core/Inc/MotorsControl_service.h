@@ -61,7 +61,9 @@ typedef struct {
 
 } MotorData_t;
 
+/* extern variables */
 extern osMessageQueueId_t xQueueMotorMotionOrder;
+extern MotorData_t MotorData, lastMotorData;
 extern osMutexId_t mMotorDataMutex, mLastMotorDataMutex;
 
 /**

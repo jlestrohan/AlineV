@@ -62,7 +62,6 @@ static void vMotorsControlTaskStart(void *vParameters)
 	if (xQueueMotorMotionOrder == NULL) {
 		printf("Motors Message Queue Initialization Failed\n\r");
 		Error_Handler();
-		return (EXIT_FAILURE);
 	}
 
 	HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);

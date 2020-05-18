@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-17 21:43:39
+ * @ Modified time: 2020-05-18 21:19:25
  * @ Description:
  *******************************************************************************************/
 
@@ -15,10 +15,11 @@
 
 WiFiClass WiFi;
 
+/* functions definitions */
 void remoteDebug_task(void *parameter);
 void vProcessCmdRemoteDebug();
 
-xTaskHandle xRemoteDebuggerTask_hnd = NULL;
+xTaskHandle xRemoteDebuggerTask_hnd;
 
 /* --------------------------- MAIN SERVICE SETUP --------------------------- */
 /**
@@ -53,6 +54,7 @@ uint8_t uSetupRemoteDebug()
 
     if (&xRemoteDebuggerTask_hnd == NULL)
     {
+        DEBUG_SERIAL("Failed creating xRemoteDebuggerTask_hnd");
         return EXIT_FAILURE;
     }
 
@@ -72,7 +74,7 @@ void remoteDebug_task(void *parameter)
         Debug.handle();
         vTaskDelay(10);
     }
-    vTaskDelete(&xRemoteDebuggerTask_hnd);
+    vTaskDelete(NULL);
 }
 
 /* ------------------------- CUSTOM COMMAND CALLBACK ------------------------ */

@@ -37,8 +37,6 @@ osMessageQueueId_t xQueueEspSerialRX; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
-hcSensorsTimersValue_t hcValue;
-
 
 /**
  *
@@ -77,6 +75,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
+	hcSensorsTimersValue_t hcValue;
 
 	if (htim->Instance == TIM1) { /* HC-SR04 Sensor REAR */
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */

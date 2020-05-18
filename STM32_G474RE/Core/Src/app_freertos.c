@@ -88,7 +88,7 @@ osThreadId_t supervisorTaskHandle;
 const osThreadAttr_t supervisorTask_attributes = {
   .name = "supervisorTask",
   .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 256 * 4
+  .stack_size = 512 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/

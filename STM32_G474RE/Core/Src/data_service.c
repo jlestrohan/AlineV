@@ -172,7 +172,7 @@ uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
 	//https://github.com/jonaskgandersson/jWrite/blob/master/main.c
 	char buffer[1024];
 	unsigned int buflen= 1024;
-	int err;
+	uint8_t err;
 
 	jwOpen( &jwc, buffer, buflen, JW_OBJECT, JW_COMPACT );  /* open root node as object */
 	jwObj_string( &jwc, "uuid", "1256454565" );            /* STUB */

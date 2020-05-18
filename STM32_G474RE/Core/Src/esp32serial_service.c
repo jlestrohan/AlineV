@@ -95,7 +95,7 @@ void vEsp32TXSerialService_Start(void* vParameter)
 	osStatus_t status;
 	jsonMessage_t msg_packet;
 
-	xQueueEspSerialTX = osMessageQueueNew(2, sizeof(jsonMessage_t), NULL);
+	xQueueEspSerialTX = osMessageQueueNew(10, sizeof(jsonMessage_t), NULL);
 	if (xQueueEspSerialTX == NULL) {
 		Error_Handler();
 	}

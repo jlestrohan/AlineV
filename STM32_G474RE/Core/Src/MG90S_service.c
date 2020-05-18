@@ -157,7 +157,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 			}
 			break;
 		}
-		osDelay(1);
+		osDelay(10);
 	}
 	osThreadTerminate(NULL);
 }
@@ -169,6 +169,13 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 void vFrontServo_Start(void* vParameters)
 {
 	printf("Starting FrontServo Service task...\n\r");
+
+	xQueueMg90sMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xQueueMg90sMotionOrder == NULL) {
+		printf("Front Servo Message Queue Initialization Failed\n\r");
+		osThreadTerminate(NULL);
+		Error_Handler();
+	}
 
 	xServoPattern_t xServopattern;
 	osStatus_t status;
@@ -219,13 +226,6 @@ void vFrontServo_Start(void* vParameters)
  */
 uint8_t uMg90sServiceInit()
 {
-
-	xQueueMg90sMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
-	if (xQueueMg90sMotionOrder == NULL) {
-		printf("Front Servo Message Queue Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
 
 	/* creation of xFrontServo_task */
 	xFrontServoTaskHnd = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);
