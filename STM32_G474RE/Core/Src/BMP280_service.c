@@ -44,7 +44,9 @@
 I2C_HandleTypeDef hi2c4;
 BMP280_HandleTypedef bmp280;
 
+/* extern mutexed variables */
 BMP280_Data_t BMP280_Data;
+osMutexId_t mBMP280_DataMutex;
 
 static osThreadId_t xBMP280SensorTaskHandle;
 static osStaticThreadDef_t xBMP280SensorTaControlBlock;
@@ -67,13 +69,15 @@ static void vBMP280SensorTaskStart(void *argument)
 
 	if (HAL_I2C_IsDeviceReady(&hi2c4, BMP280_I2C_ADDRESS_0 << 1, 2, 5) != HAL_OK) {
 		printf("BMP280 Device not ready\n\r");
-	} else {
-		printf("The BMP280 device has responded normally!\n\r");
+		osThreadTerminate(NULL);
 	}
+
+	mBMP280_DataMutex = osMutexNew(NULL);
 
 	bmp280_init_default_params(&bmp280.params);
 	bmp280.addr = BMP280_I2C_ADDRESS_0;
 	bmp280.i2c = &hi2c4;
+
 
 	if (!bmp280_init(&bmp280, &bmp280.params)) {
 		printf("BMP280 initialization failed\n\r");
@@ -86,10 +90,12 @@ static void vBMP280SensorTaskStart(void *argument)
 
 	for (;;)
 	{
+
 		if (bmp280_read_float(&bmp280, &BMP280_Data)) {
 
 
 #ifdef DEBUG_BMP280
+			osMutexAcquire(mBMP280_DataMutex, osWaitForever);
 			printf("Pressure: %.2f Pa, Temperature: %.2f C",
 					BMP280_Data.pressure/100, BMP280_Data.temperature);
 
@@ -99,10 +105,11 @@ static void vBMP280SensorTaskStart(void *argument)
 			else {
 				printf("\n\r");
 			}
+			osMutexRelease(mBMP280_DataMutex);
 #endif
 		}
 
-		osDelay(2000);
+		osDelay(200);
 	}
 	osThreadTerminate(NULL);
 }
@@ -420,10 +427,12 @@ bool bmp280_read_float(BMP280_HandleTypedef *dev, BMP280_Data_t *data) {
 	uint32_t fixed_humidity;
 	if (bmp280_read_fixed(dev, &fixed_temperature, &fixed_pressure,
 			data->humidity ? &fixed_humidity : NULL)) {
+		osMutexAcquire(mBMP280_DataMutex, osWaitForever);
 		data->temperature = (float) fixed_temperature / 100;
 		data->pressure = (float) fixed_pressure / 256;
 		if (data->humidity)
 			data->humidity = (float) fixed_humidity / 1024;
+		osMutexRelease(mBMP280_DataMutex);
 		return true;
 	}
 

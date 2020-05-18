@@ -16,9 +16,12 @@
 #ifndef __BMP280_SERVICE_H__
 #define __BMP280_SERVICE_H__
 
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "i2c.h"
+
 
 #define BMP280_I2C_ADDRESS_0  0x76
 #define BMP280_I2C_ADDRESS_1  0x77
@@ -34,6 +37,7 @@ typedef struct {
 } BMP280_Data_t;
 
 extern BMP280_Data_t BMP280_Data;
+extern osMutexId_t mBMP280_DataMutex;
 
 /**
  * Mode of BMP280 module operation.
