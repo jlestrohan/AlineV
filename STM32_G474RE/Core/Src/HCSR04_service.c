@@ -32,24 +32,14 @@
 #include <stdio.h>
 
 /* mutexed variables */
-HR04_SensorsData_t HR04_SensorsData, HR04_OldSensorsData;
+HR04_SensorsData_t HR04_SensorsData;
+HR04_SensorsData_t HR04_OldSensorsData;
 osMutexId_t mHR04_SensorsDataMutex;
-
-osMessageQueueId_t queue_HC_SR04Handle;
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 
 /* flag to set any sensors active/inactive according to nav control decisions */
-
-typedef enum
-{
-	HC_SR04_Result_Ok = 0x00, /*!< Everything OK */
-	HC_SR04_Result_Error, /*!< Unknown error */
-	HC_SR04_Result_TimerStart_Failed,
-	HC_SR04_Result_TaskInit_Failed,
-
-} HC_SR04_Result;
 
 static osThreadId_t xHr04SensorTaskHandle;
 static osStaticThreadDef_t xHr04SensorTaControlBlock;
@@ -63,7 +53,7 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
 
 /* functions definitions */
-static HC_SR04_Result HC_SR04_StartupTimers();
+static uint8_t HC_SR04_StartupTimers();
 
 
 /**
@@ -74,29 +64,13 @@ static void vHr04SensorTaskStart(void *argument)
 {
 	printf("Starting HCSR_04 Service task...\n\r");
 
-	/* create mutex for struct protection */
-	mHR04_SensorsDataMutex = osMutexNew(NULL);
-
-	queue_HC_SR04Handle = osMessageQueueNew(10, sizeof(hcSensorsTimersValue_t), NULL);
-	if (!queue_HC_SR04Handle) {
-		printf("HR04 Sensor Queue Initialization Failed\n\r");
-		Error_Handler();
-	}
-
-	if (HC_SR04_StartupTimers() != HC_SR04_Result_Ok) {
-		printf("HC_SR04 Timers Initialization Failed\n\r");
-		Error_Handler();
-	}
-
 	hcSensorsTimersValue_t sensorCapuredData;
-
-	osStatus_t status = -1;
+	osStatus_t status;
 
 	for (;;) {
 
-		status = osMessageQueueGet(queue_HC_SR04Handle, &sensorCapuredData, NULL, osWaitForever); /* wait for message */
+		status = osMessageQueueGet(queue_HC_SR04Handle, &sensorCapuredData, 0U, osWaitForever); /* wait for message */
 		if (status == osOK) {
-
 			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 			HR04_OldSensorsData = HR04_SensorsData;
 
@@ -108,7 +82,7 @@ static void vHr04SensorTaskStart(void *argument)
 			case SERVO_DIRECTION_LEFT45:
 				HR04_SensorsData.dist_left45 = sensorCapuredData.front;
 				break;
-			case SERVO_DIRECTION_CENTER:
+			case SERVO_DIRECTION_CENTER: default:
 				HR04_SensorsData.dist_front = sensorCapuredData.front;
 				break;
 			case SERVO_DIRECTION_RIGHT45:
@@ -121,23 +95,17 @@ static void vHr04SensorTaskStart(void *argument)
 				HR04_SensorsData.dist_right90 = sensorCapuredData.front;
 				break;
 			}
-#ifdef DEBUG_HCSR04_ALL_FRONT
-			printf("left45: %0*dcm center: %0*dcm  right45: %0*dcm \n\r", 3,HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45);
-#endif
-
-#ifdef DEBUG_HCSR04_BOTTOM
-			printf("B: %0*dcm\n\r", 3, HR04_SensorsData.bottom);
-#endif
-
-#ifdef DEBUG_HCSR04_REAR
-			printf("rear: %0*d cm\n\r", 3,HR04_SensorsData.dist_rear);
+#ifdef DEBUG_HCSR04_ALL
+			printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
+					HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45,
+					3,HR04_SensorsData.dist_bottom, 3,HR04_SensorsData.dist_rear);
 #endif
 			osMutexRelease(mHR04_SensorsDataMutex);
 		}
 
 		osDelay(20);
 	}
-	osThreadTerminate(xHr04SensorTaskHandle);
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -146,6 +114,19 @@ static void vHr04SensorTaskStart(void *argument)
  */
 uint8_t uHcsr04ServiceInit()
 {
+	/* create mutex for struct protection */
+	mHR04_SensorsDataMutex = osMutexNew(NULL);
+
+	queue_HC_SR04Handle = osMessageQueueNew(20, sizeof(hcSensorsTimersValue_t), NULL);
+	if (!queue_HC_SR04Handle) {
+		printf("HR04 Sensor Queue Initialization Failed\n\r");
+		Error_Handler();
+	}
+
+	if (HC_SR04_StartupTimers() != EXIT_SUCCESS) {
+		printf("HC_SR04 Timers Initialization Failed\n\r");
+		Error_Handler();
+	}
 
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
@@ -163,28 +144,25 @@ uint8_t uHcsr04ServiceInit()
  * Starts up the different timers
  * @return
  */
-static HC_SR04_Result HC_SR04_StartupTimers()
+static uint8_t HC_SR04_StartupTimers()
 {
 	TIM_HandleTypeDef timHandlers[] = {htim1, htim2, htim3};
 
 	for ( int i=0; i< HC_SR04_SONARS_CNT; i++) {
+		/* starst up the different channels for Sensor 1 */
+		if (HAL_TIM_PWM_Start(&*(timHandlers+i), TIM_CHANNEL_3) != HAL_OK) {
+			return (EXIT_FAILURE);
+		}
 
 		if (HAL_TIM_IC_Start(&*(timHandlers+i), TIM_CHANNEL_1) != HAL_OK) {
-			Error_Handler();
-			return (HC_SR04_Result_TimerStart_Failed);
+			return (EXIT_FAILURE);
 		}
 
 		if (HAL_TIM_IC_Start_IT(&*(timHandlers+i), TIM_CHANNEL_2) != HAL_OK) {
-			Error_Handler();
-			return (HC_SR04_Result_TimerStart_Failed);
+			return (EXIT_FAILURE);
 		}
-		if (HAL_TIM_IC_Start(&*(timHandlers+i), TIM_CHANNEL_3) != HAL_OK) {
-			Error_Handler();
-			return (HC_SR04_Result_TimerStart_Failed);
-		}
-
 	}
 
-	return (HC_SR04_Result_Ok);
+	return (EXIT_SUCCESS);
 }
 

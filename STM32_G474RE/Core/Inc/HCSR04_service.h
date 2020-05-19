@@ -25,13 +25,13 @@
 #define HR04_SONAR_FRONT		0x02U
 #define HR04_SONAR_BOTTOM		0x03U
 
-typedef enum {
+/*typedef enum {
 	HCSR04_US_ALL_STOP,
 	HCSR04_US_FRONT_ONLY,
 	HCSR04_US_FRONT_BOTTOM,
 	HCSR04_US_BOTTOM_ONLY,
 	HCSR04_US_REAR_ONLY
-} HR04_SensorsActive_t;
+} HR04_SensorsActive_t;*/
 
 typedef struct {
 	uint8_t		dist_front;
@@ -54,7 +54,7 @@ extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous value
 /********************************************************/
 
 extern osEventFlagsId_t xHcrSr04ControlFlag;
-extern osMessageQueueId_t queue_HC_SR04Handle;
+osMessageQueueId_t queue_HC_SR04Handle;
 
 /**
  * Main initialization function
