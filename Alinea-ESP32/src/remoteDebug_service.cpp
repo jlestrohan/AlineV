@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-18 21:19:25
+ * @ Modified time: 2020-05-19 13:56:45
  * @ Description:
  *******************************************************************************************/
 
@@ -54,7 +54,8 @@ uint8_t uSetupRemoteDebug()
 
     if (&xRemoteDebuggerTask_hnd == NULL)
     {
-        DEBUG_SERIAL("Failed creating xRemoteDebuggerTask_hnd");
+        debugE("Failed creating xRemoteDebuggerTask_hnd");
+        Serial.println("Failed creating xRemoteDebuggerTask_hnd");
         return EXIT_FAILURE;
     }
 
@@ -85,22 +86,15 @@ void remoteDebug_task(void *parameter)
  */
 void vProcessCmdRemoteDebug()
 {
+    /* will send the whole command to the command center to be interpreted */
     String lastCmd = Debug.getLastCommand();
-
-    /* we prepare a cmd_pack for any command if needed, as we expect to be sending a command to the STM32 */
-    command_package_t cmd_pack;
-    cmd_pack.cmd_type = CMD_TYPE_JSON_TEXT; /* command comes from text telnet */
-    cmd_pack.cmd_route = PKT_TRANSMIT;
-
-    strcpy(cmd_pack.txtCommand, lastCmd.c_str());
-
     if (xQueueCommandParse != NULL)
     {
-        //debugI("Sending command: %s...", lastCmd.c_str());
-        xQueueSend(xQueueCommandParse, &cmd_pack, portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
+        debugD("Sending command: %s", lastCmd.c_str());
+        xQueueSend(xQueueCommandParse, lastCmd.c_str(), portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
     }
     else
     {
-        debugI("Failed sending command: %s...", lastCmd.c_str());
+        debugI("Failed sending command: %s", lastCmd.c_str());
     }
 }
