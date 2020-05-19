@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 13:31:11
+ * @ Modified time: 2020-05-19 21:31:59
  * @ Description:
  *******************************************************************************************/
 
@@ -23,6 +23,7 @@
 #include "speed_service.h"
 #include "ledstrip_service.h"
 #include "AWS_service.h"
+#include "data_service.h"
 
 /* reemoving brownout detector */
 #include "soc/soc.h"
@@ -67,13 +68,14 @@ void setup()
   uSetupBuzzer();         /* check */
   uSetupCmdParser();
   //setupBTSerial();
-  uSetupAutoConnect();        /* check */
-  uSetupRemoteDebug();        /* check */
-  uSetupNTPService();         /* check */
+  uSetupAutoConnect(); /* check */
+  uSetupRemoteDebug(); /* check */
+  uSetupNTPService();  /* check */
+  uSetupDataServiceInit();
   uSetupSTM32SerialService(); /* check */
   //uSetupOLED();
   //uSetupSpeedService();
-  // uSetuoAwsService();
+  uSetupAwsService();
   uSetupOTA();
 
   lit_status_t ledstatus;

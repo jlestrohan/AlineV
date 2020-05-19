@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-18 09:28:50
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-18 16:51:53
+ * @ Modified time: 2020-05-19 21:31:27
  * @ Description:   Handles the forwarding/emitting of the datas over the cloud.
  
  * If it is in forwarding mode, it will take the data sent by the STM, recreate a JSON 
@@ -35,19 +35,20 @@
 #include <stdint.h>
 #include "configuration_esp32.h"
 
+extern QueueHandle_t xQueueAWS_Send;
+
+/**
+ * @brief  Used by the data service to send here a complete json package ready to be sent over to AWS
+ * @note   
+ * @retval None
+ */
 typedef struct
 {
-    char key[20];
-    char value[20];
-} aws_keyValue_t;
+    char jsonstr[MAX_JSON_MSG_SIZE]; /* the json string ready to be sent */
+    uint16_t length;                 /* length of the json message, still useful... in case */
+    char type[5];                    /* 3 letters, type so we know which MQTT topic to post that in */
+} aws_rdy_data_t;
 
-typedef struct
-{
-    char stm_uuid[30];              /* stm32 UUID */
-    char cmd_type[5];               /* cmd_type 3 letters */
-    aws_keyValue_t keys_values[50]; /* info array - max data topics */
-} cmd2aws_package_t;
-
-uint8_t uSetuoAwsService();
+uint8_t uSetupAwsService();
 
 #endif /* _IC_AWS_SERVICE_H */

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 14:25:43
+ * @ Modified time: 2020-05-19 18:32:40
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -213,7 +213,7 @@ void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t l
 
   if (xQueueSerialServiceTX != NULL)
   {
-    debugD("Sending JSON to TX %s", jsonMsg.json);
+    debugD("Sending JSON to TX: %.*s", len, jsonMsg.json);
     xQueueSend(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY); /* send directly to the serial TX service, the post office */
   }
   else

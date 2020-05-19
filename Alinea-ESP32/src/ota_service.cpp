@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 18:56:15
+ * @ Modified time: 2020-05-19 20:30:44
  * @ Description:
  *******************************************************************************************/
 
@@ -113,8 +113,8 @@ void vOtaLoopTask(void *parameter)
     for (;;)
     {
         ArduinoOTA.handle();
-
-        vTaskDelay(10);
+        //debugI("Free HEAP: %lu on HEAP TOTAL: %lu", ESP.getFreeHeap(), ESP.getHeapSize());
+        vTaskDelay(1);
     }
     vTaskDelete(NULL);
 }

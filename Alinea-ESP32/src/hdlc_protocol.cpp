@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-05 17:12:31
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-11 20:32:50
+ * @ Modified time: 2020-05-18 17:54:11
  * @ Description:
  *******************************************************************************************/
 
@@ -35,7 +35,7 @@
 #define lo8(x) ((x)&0xff)
 #define hi8(x) ((x) >> 8)
 
-static uint16_t crc16_update(uint16_t crc, uint8_t a)
+/*static uint16_t crc16_update(uint16_t crc, uint8_t a)
 {
     int i;
 
@@ -49,9 +49,9 @@ static uint16_t crc16_update(uint16_t crc, uint8_t a)
     }
 
     return crc;
-}
+}*/
 
-static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
+/*static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
 {
     int i;
 
@@ -65,7 +65,7 @@ static uint16_t crc_xmodem_update(uint16_t crc, uint8_t data)
     }
 
     return crc;
-}
+}*/
 static uint16_t _crc_ccitt_update(uint16_t crc, uint8_t data)
 {
     data ^= lo8(crc);
@@ -74,7 +74,7 @@ static uint16_t _crc_ccitt_update(uint16_t crc, uint8_t data)
     return ((((uint16_t)data << 8) | hi8(crc)) ^ (uint8_t)(data >> 4) ^ ((uint16_t)data << 3));
 }
 
-static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
+/*static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
 {
     uint8_t i;
 
@@ -88,10 +88,15 @@ static uint8_t _crc_ibutton_update(uint8_t crc, uint8_t data)
     }
 
     return crc;
-}
+}*/
 
 HDLC_Prot::HDLC_Prot(sendchar_type put_char, frame_handler_type hdlc_command_router, uint16_t max_frame_length) : sendchar_function(put_char), frame_handler(hdlc_command_router)
 {
+    /* sHdlcProtMutex = xSemaphoreCreateMutex();
+    if (sHdlcProtMutex == NULL)
+    {
+        debugE("Unable to create HDLC Mutex!");
+    }*/
     this->frame_position = 0;
     this->max_frame_length = max_frame_length;
     this->receive_frame_buffer = (uint8_t *)malloc(max_frame_length + 1); // char *ab = (char*)malloc(12);

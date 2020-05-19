@@ -2,19 +2,15 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-18 09:28:57
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-18 17:43:24
+ * @ Modified time: 2020-05-19 22:01:03
  * @ Description:
  *******************************************************************************************/
 
+#include "FreeRTOS.h"
 #include "aws_service.h"
 #include "remoteDebug_service.h"
 #include <stdio.h>
-#include <MQTTClientSecure.h>
-
-// construct the object awsMQTTClient of class MQTTClientSecure
-MQTTClientSecure awsMQTTClient = MQTTClientSecure();
-// construct the object awsTCPClient of class TCPClientSecure
-TCPClientSecure awsTCPClient = TCPClientSecure();
+#include <PubSubClient.h>
 
 /* because ou json messages are quite small we can keep them in the stack to speed up the process */
 
@@ -23,7 +19,9 @@ xTaskHandle xAWS_Receive_Task_hnd = NULL;
 
 /* -------------------------------- AWS SEND -------------------------------- */
 /**
- * @brief  AWS SEND task
+ * @brief  AWS SEND task. 
+ *          This task prepares and encapsulates datas to send AWS to AWS. 
+ *         
  * @note   
  * @param  *vParameter: 
  * @retval None
@@ -33,7 +31,7 @@ void vAWSSendTaskCode(void *vParameter)
     for (;;)
     {
 
-        vTaskDelay(1);
+        vTaskDelay(10);
     }
     vTaskDelete(NULL);
 }
@@ -47,16 +45,17 @@ void vAWSSendTaskCode(void *vParameter)
  */
 void vAWSReceiveTaskCode(void *vParameter)
 {
+    aws_rdy_data_t aws_ReceiveBuf;
+
     for (;;)
     {
+        xQueueReceive(xQueueAWS_Send, &aws_ReceiveBuf, portMAX_DELAY);
+        Serial.println("FINAL JSON to be sent over is... : %s", aws_ReceiveBuf.jsonstr);
 
         vTaskDelay(1);
     }
     vTaskDelete(NULL);
 }
-
-/* we create a queue to receive all the incoming datas from the command center to be repackaged */
-QueueHandle_t xQueueAWS_Send;
 
 /* --------------------------- MAIN INITIALIZATION -------------------------- */
 /**
@@ -64,9 +63,16 @@ QueueHandle_t xQueueAWS_Send;
  * @note   
  * @retval 
  */
-uint8_t uSetuoAwsService()
+uint8_t uSetupAwsService()
 {
-    awsMQTTClient.myTCPClient = awsTCPClient; // tell the MQTT object the TCP object because MQTT library is using the TCP/IP library too
+    xQueueAWS_Send = xQueueCreate(10, sizeof(aws_rdy_data_t));
+    if (xQueueAWS_Send == NULL)
+    {
+        debugE("error creating the xQueueAWS_Send queue\n\r");
+        Serial.println("error creating the xQueueAWS_Send queue\n\r");
+
+        return EXIT_FAILURE;
+    }
 
     /* create tasks */
     /* let's create the parser task first */
@@ -99,7 +105,7 @@ uint8_t uSetuoAwsService()
     {
         debugE("Error creating serial parser task!");
         /* cannot create task, remove all created stuff and exit failure */
-        //vQueueDelete(xQueueCommandParse);
+        vQueueDelete(xQueueAWS_Send);
         return EXIT_FAILURE;
     }
 

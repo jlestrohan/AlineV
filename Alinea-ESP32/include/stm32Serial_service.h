@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:26
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-17 11:34:45
+ * @ Modified time: 2020-05-19 01:31:19
  * @ Description: Serial communications handler for all serial coms
  
  *     using UART2 to STM32 =>  RXD1 -> pin G16
@@ -15,9 +15,9 @@
 #include <stdint.h>
 #include <cstddef>
 #include <FreeRTOS.h>
+#include "configuration_esp32.h"
 
-#define MAX_HDLC_FRAME_LENGTH 256 /* this is the main frame length available */
-#define MAX_JSON_MSG_SIZE 256
+extern QueueHandle_t xQueueSerialServiceTX;
 
 #define RXD2 16
 #define TXD2 17
