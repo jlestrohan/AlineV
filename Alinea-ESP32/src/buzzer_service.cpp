@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 15:17:00
+ * @ Modified time: 2020-05-19 14:24:49
  * @ Description:
  *******************************************************************************************/
 
@@ -138,6 +138,8 @@ struct buzMelody_t mld_cmdReady = {
     {note_C5, note_G5, note_E5, note_C6}, {1, 2, 1, 3}, 4, 120};
 struct buzMelody_t mld_cmdFeedback = {
     {note_E6, note_C6, note_G6}, {1, 1, 1}, 3, 80};
+struct buzMelody_t mld_cmdWrongArg = {
+    {note_Bb4, note_A4, note_Ab4}, {1, 1, 1}, 3, 80};
 
 struct buzMelody_t *melodyPtr;
 
@@ -261,6 +263,8 @@ uint8_t vPlayMelody(melodyType_t melody_type)
     case MelodyType_CommandFeedback:
         melodyPtr = &mld_cmdFeedback;
         break;
+    case MelodyType_WrongArgument:
+        melodyPtr = &mld_cmdWrongArg;
     default:
         break;
     }

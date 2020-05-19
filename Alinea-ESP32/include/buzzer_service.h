@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-08 15:09:18
+ * @ Modified time: 2020-05-19 14:25:21
  * @ Description:
  *******************************************************************************************/
 
@@ -14,6 +14,7 @@ typedef enum
     MelodyType_WifiSuccess,
     MelodyType_CommandReceived,
     MelodyType_CommandReady,
+    MelodyType_WrongArgument,  /* bad command argument */
     MelodyType_CommandFeedback /* feedback received from STM32 */
 } melodyType_t;
 
