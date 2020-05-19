@@ -34,13 +34,13 @@
 } HR04_SensorsActive_t;*/
 
 typedef struct {
-	uint8_t		dist_front;
-	uint8_t		dist_left45;
-	uint8_t		dist_left90;
-	uint8_t		dist_right45;
-	uint8_t		dist_right90;
-	uint8_t 	dist_bottom;
-	uint8_t		dist_rear;
+	uint16_t		dist_front;
+	uint16_t		dist_left45;
+	uint16_t		dist_left90;
+	uint16_t		dist_right45;
+	uint16_t		dist_right90;
+	uint16_t 	dist_bottom;
+	uint16_t		dist_rear;
 	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */
 } HR04_SensorsData_t;
 
@@ -54,7 +54,6 @@ extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous value
 /********************************************************/
 
 extern osEventFlagsId_t xHcrSr04ControlFlag;
-osMessageQueueId_t queue_HC_SR04Handle;
 
 /**
  * Main initialization function

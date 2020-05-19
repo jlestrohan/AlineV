@@ -11,9 +11,9 @@
 #include "HCSR04_service.h"
 
 typedef struct {
-	uint8_t rear;
-	uint8_t front;
-	uint8_t bottom;
+	uint16_t rear;
+	uint16_t front;
+	uint16_t bottom;
 } hcSensorsTimersValue_t;
 
 

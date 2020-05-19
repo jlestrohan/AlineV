@@ -33,10 +33,15 @@ osMessageQueueId_t xQueueDmaAdcInternalSensors;
 DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues; /* extern */
 uint8_t UartRXDmaBuffer[10]; /* extern */
 osMessageQueueId_t xQueueEspSerialRX; /* extern */
+
 xServoPosition_t xServoPosition; /* extern */
+osMutexId_t mServoPositionMutex;
+
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
-static hcSensorsTimersValue_t hcValue;
+HR04_SensorsData_t HR04_SensorsData;
+osMutexId_t mHR04_SensorsDataMutex;
+
 
 /**
  *
@@ -77,23 +82,41 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 
 	if (htim->Instance == TIM1) { /* HC-SR04 Sensor REAR */
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
-		{
-			hcValue.rear = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &hcValue, 0U, 0U);
+		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+		HR04_SensorsData.dist_rear = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
+		osMutexRelease(mHR04_SensorsDataMutex);
+
+	}
+	else if (htim->Instance == TIM2)  /* HC-SR04 Sensor FRONT */
+	{
+		osMutexAcquire(mServoPositionMutex, osWaitForever);
+		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+		switch (xServoPosition) {
+		case SERVO_DIRECTION_LEFT45:
+			HR04_SensorsData.dist_left45 = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
+			break;
+		case SERVO_DIRECTION_CENTER: default:
+			HR04_SensorsData.dist_front = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
+			break;
+		case SERVO_DIRECTION_RIGHT45:
+			HR04_SensorsData.dist_right45 = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
+			break;
+		case SERVO_DIRECTION_LEFT90:
+			HR04_SensorsData.dist_left90 = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
+			break;
+		case SERVO_DIRECTION_RIGHT90:
+			HR04_SensorsData.dist_right90 =htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
+			break;
 		}
-	} else if (htim->Instance == TIM2) { /* HC-SR04 Sensor FRON */
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
-		{
-			hcValue.front = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &hcValue, 0U, 0U);
-		}
-	} else if (htim->Instance == TIM3) { /* HC-SR04 Sensor BOTTOM */
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) /* we read indirect mode only, gives the echo pulse width */
-		{
-			hcValue.bottom = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) / MICROSECONDS_TO_CM;
-			osMessageQueuePut(queue_HC_SR04Handle, &hcValue, 0U, 0U);
-		}
+		osMutexRelease(mHR04_SensorsDataMutex);
+		osMutexRelease(mServoPositionMutex);
+
+	}
+	else if (htim->Instance == TIM3) /* HC-SR04 Sensor BOTTOM */
+	{
+		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+		HR04_SensorsData.dist_bottom = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
+		osMutexRelease(mHR04_SensorsDataMutex);
 	}
 }
 

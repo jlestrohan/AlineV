@@ -56,20 +56,6 @@ static const osThreadAttr_t xThreeProbesMotionServoTa_attributes = {
 		.cb_size = sizeof(xThreeProbesMotionServoTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_MG90S_3PROBES, };
 
-/**
- * TODO: Put this ihn the right service file, here for now
- * This routine starts and stops the measurement for the front HCSR.
- * We stop them and start them to avoid really garbage values while displacing the servo
- * (And yes there would be a LOT of them!!!)
- * @param static_duration	the time we shall stay at the same position;
- */
-static void _vStartStopHCSRPing(uint8_t static_duration)
-{
-	HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_3); /* starts HCSR_04 ping for measuring */
-	osDelay(200);
-	HAL_TIM_IC_Stop(&htim2, TIM_CHANNEL_3); /* stops measuring */
-	osDelay(60); /* noise filter once we sent a ping we don'ty wxant to measure garbage */
-}
 
 /**
  * Three Probes pattern task
@@ -106,9 +92,9 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 				osMutexAcquire(mServoPositionMutex, osWaitForever);
 				xServoPosition = SERVO_DIRECTION_CENTER; /* we update the published position of the servo */
 				osMutexRelease(mServoPositionMutex);
-				_vStartStopHCSRPing(200);
 			}
 			direction = SERVO_DIRECTION_RIGHT45;
+			osDelay(200);
 			break;
 		case SERVO_DIRECTION_CENTER:
 			if (direction == SERVO_DIRECTION_RIGHT45) {
@@ -123,7 +109,6 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 					osMutexAcquire(mServoPositionMutex, osWaitForever);
 					xServoPosition = SERVO_DIRECTION_RIGHT45; /* we update the published position of the servo */
 					osMutexRelease(mServoPositionMutex);
-					_vStartStopHCSRPing(300);
 				}
 			} else {
 				htim5.Instance->CCR1 = SERVO_DIRECTION_LEFT45;
@@ -136,9 +121,9 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 					osMutexAcquire(mServoPositionMutex, osWaitForever);
 					xServoPosition = SERVO_DIRECTION_LEFT45; /* we update the published position of the servo */
 					osMutexRelease(mServoPositionMutex);
-					_vStartStopHCSRPing(300);
 				}
 			}
+			osDelay(300);
 			break;
 
 		case SERVO_DIRECTION_RIGHT45: default:
@@ -153,11 +138,11 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 				osMutexAcquire(mServoPositionMutex, osWaitForever);
 				xServoPosition = SERVO_DIRECTION_CENTER; /* we update the published position of the servo */
 				osMutexRelease(mServoPositionMutex);
-				_vStartStopHCSRPing(200);
 			}
+			osDelay(200);
 			break;
 		}
-		osDelay(10);
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }

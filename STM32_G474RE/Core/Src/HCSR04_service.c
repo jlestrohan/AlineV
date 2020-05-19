@@ -69,41 +69,15 @@ static void vHr04SensorTaskStart(void *argument)
 
 	for (;;) {
 
-		status = osMessageQueueGet(queue_HC_SR04Handle, &sensorCapuredData, 0U, osWaitForever); /* wait for message */
-		if (status == osOK) {
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
-			HR04_OldSensorsData = HR04_SensorsData;
 
-			HR04_SensorsData.dist_bottom = sensorCapuredData.bottom;
-			HR04_SensorsData.dist_rear = sensorCapuredData.rear;
-
-			/* need to know where to store all the front values */
-			switch (xServoPosition) {
-			case SERVO_DIRECTION_LEFT45:
-				HR04_SensorsData.dist_left45 = sensorCapuredData.front;
-				break;
-			case SERVO_DIRECTION_CENTER: default:
-				HR04_SensorsData.dist_front = sensorCapuredData.front;
-				break;
-			case SERVO_DIRECTION_RIGHT45:
-				HR04_SensorsData.dist_right45 = sensorCapuredData.front;
-				break;
-			case SERVO_DIRECTION_LEFT90:
-				HR04_SensorsData.dist_left90 = sensorCapuredData.front;
-				break;
-			case SERVO_DIRECTION_RIGHT90:
-				HR04_SensorsData.dist_right90 = sensorCapuredData.front;
-				break;
-			}
 #ifdef DEBUG_HCSR04_ALL
 			printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
 					HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45,
 					3,HR04_SensorsData.dist_bottom, 3,HR04_SensorsData.dist_rear);
 #endif
 			osMutexRelease(mHR04_SensorsDataMutex);
-		}
 
-		osDelay(20);
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }
@@ -116,12 +90,6 @@ uint8_t uHcsr04ServiceInit()
 {
 	/* create mutex for struct protection */
 	mHR04_SensorsDataMutex = osMutexNew(NULL);
-
-	queue_HC_SR04Handle = osMessageQueueNew(20, sizeof(hcSensorsTimersValue_t), NULL);
-	if (!queue_HC_SR04Handle) {
-		printf("HR04 Sensor Queue Initialization Failed\n\r");
-		Error_Handler();
-	}
 
 	if (HC_SR04_StartupTimers() != EXIT_SUCCESS) {
 		printf("HC_SR04 Timers Initialization Failed\n\r");
