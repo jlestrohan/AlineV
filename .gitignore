@@ -120,3 +120,5 @@ local.properties
 *.code-workspace
 
 STM32_G474RE/submodules/
+
+Alinea-ESP32/include/AWS_Certificate.h
