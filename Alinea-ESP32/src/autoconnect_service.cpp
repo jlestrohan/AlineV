@@ -10,6 +10,10 @@
 #include "autoconnect_service.h"
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
+#include <WiFi.h>
+#include <WebServer.h>
+#include <AutoConnect.h>
+#include "AWS_service.h"
 
 WebServer Server;
 AutoConnect Portal(Server);

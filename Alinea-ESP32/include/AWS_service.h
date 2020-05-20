@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-18 09:28:50
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:07:23
+ * @ Modified time: 2020-05-20 17:36:21
  * @ Description:   Handles the forwarding/emitting of the datas over the cloud.
  
  * If it is in forwarding mode, it will take the data sent by the STM, recreate a JSON 
