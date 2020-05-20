@@ -557,7 +557,7 @@ void modp_dtoa2(double value, char* str, int prec)
 }
 //=================================================================
 /* added by jlestrohan 2020 */
-static char *cGetErrorCodeString(err)
+char *cGetErrorCodeString(uint8_t err)
 {
 	switch (err)
 	{
@@ -570,6 +570,7 @@ static char *cGetErrorCodeString(err)
 	case JWRITE_NEST_ERROR: return "nesting error, not all objects closed when jwClose() called"; break;
 	default: break;
 	}
+	return NULL;
 }
 
 

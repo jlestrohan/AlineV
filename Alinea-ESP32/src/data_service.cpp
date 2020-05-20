@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-19 15:43:59
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 20:56:53
+ * @ Modified time: 2020-05-20 23:49:44
  * @ Description: This task decodes a json coming from the STM32 and makes it ready to be
  *                  sent over to AWS, via the embedded AWS service.
  *******************************************************************************************/
@@ -31,8 +31,8 @@ static void vDataReceiveJsonTask(void *vParameters)
         if (xQueueDataJson != NULL)
         {
             xQueueReceive(xQueueDataJson, &json_msg, portMAX_DELAY);
-            //uRemakeJSON(&json_msg);
-            debugI("want to send json over to queue... ");
+            uRemakeJSON(&json_msg);
+
             // debugI("%.*s", json_msg.length, (char *)json_msg.json_str);
         }
         vTaskDelay(1);
@@ -135,7 +135,10 @@ static uint8_t inline uRemakeJSON(xJsonPackage_t *jsonPack)
     /* sends it over */
     if (xQueueAWS_Send != NULL)
     {
-        xQueueSend(xQueueAWS_Send, &awsData, portMAX_DELAY);
+        if (xQueueAWS_Send != NULL)
+        {
+            xQueueSend(xQueueAWS_Send, &awsData, portMAX_DELAY);
+        }
     }
     else
     {
