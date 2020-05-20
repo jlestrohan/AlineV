@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-19 15:43:59
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 21:53:55
+ * @ Modified time: 2020-05-20 08:42:04
  * @ Description: This task decodes a json coming from the STM32 and makes it ready to be
  *                  sent over to AWS, via the embedded AWS service.
  *******************************************************************************************/
@@ -16,13 +16,13 @@
 #include "ntp_service.h"
 #include "AWS_service.h"
 
-xTaskHandle xDataReceiveJson;
+static xTaskHandle xDataReceiveJson;
 QueueHandle_t xQueueAWS_Send; /* extern */
 
 /* function definitions */
-uint8_t uRemakeJSON(xJsonPackage_t *jsonPack);
+static uint8_t uRemakeJSON(xJsonPackage_t *jsonPack);
 
-void vDataReceiveJsonTask(void *vParameters)
+static void vDataReceiveJsonTask(void *vParameters)
 {
     xJsonPackage_t json_msg;
 
@@ -47,10 +47,11 @@ void vDataReceiveJsonTask(void *vParameters)
  */
 uint8_t uSetupDataServiceInit()
 {
-    xQueueDataJson = xQueueCreate(10, sizeof(xJsonPackage_t));
+    xQueueDataJson = xQueueCreate(3, sizeof(xJsonPackage_t));
     if (xQueueDataJson == NULL)
     {
         debugE("xQueueDataJson ... Error");
+        return EXIT_FAILURE;
     }
     debugI("xQueueDataJson ... Success!");
 
@@ -81,7 +82,7 @@ uint8_t uSetupDataServiceInit()
  * @param  *jsonPack: 
  * @retval 
  */
-uint8_t uRemakeJSON(xJsonPackage_t *jsonPack)
+static uint8_t inline uRemakeJSON(xJsonPackage_t *jsonPack)
 {
     /* deserialization doc */
     StaticJsonDocument<MAX_JSON_MSG_SIZE> doc;

@@ -19,7 +19,7 @@ int numberOfInterrupts = 0;
 
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
-xTaskHandle vSpeedServiceTask_handle = NULL;
+static xTaskHandle vSpeedServiceTask_handle = NULL;
 
 /* functions definitions */
 void vSpeedServiceTask(void *pvParameters);

@@ -16,8 +16,8 @@ extern QueueHandle_t xQueueDataJson;
 
 typedef struct
 {
-    uint8_t json_str[MAX_JSON_MSG_SIZE];
     uint16_t length;
+    uint8_t json_str[MAX_JSON_MSG_SIZE];
 } xJsonPackage_t;
 
 uint8_t uSetupDataServiceInit();

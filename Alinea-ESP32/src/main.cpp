@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 21:31:59
+ * @ Modified time: 2020-05-20 08:30:01
  * @ Description:
  *******************************************************************************************/
 
@@ -16,10 +16,8 @@
 #include "buzzer_service.h"
 #include "stm32Serial_service.h"
 #include "ntp_service.h"
-#include "oled_service.h"
 #include "buzzer_service.h"
 #include "command_service.h"
-#include "bluetooth_serial.h"
 #include "speed_service.h"
 #include "ledstrip_service.h"
 #include "AWS_service.h"
@@ -28,8 +26,6 @@
 /* reemoving brownout detector */
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
-
-#define GET_CHIPID() (ESP.getEfuseMac());
 
 /* functions definitions */
 void vBootCounterUpdate();
@@ -67,13 +63,11 @@ void setup()
   uLedStripServiceInit(); /* check */
   uSetupBuzzer();         /* check */
   uSetupCmdParser();
-  //setupBTSerial();
   uSetupAutoConnect(); /* check */
   uSetupRemoteDebug(); /* check */
   uSetupNTPService();  /* check */
   uSetupDataServiceInit();
   uSetupSTM32SerialService(); /* check */
-  //uSetupOLED();
   //uSetupSpeedService();
   uSetupAwsService();
   uSetupOTA();
@@ -83,7 +77,7 @@ void setup()
   if (xLedStripCommandQueue)
     xQueueSend(xLedStripCommandQueue, &ledstatus, portMAX_DELAY);
 
-  char *cmdRdyESP = "ack restart";
+  const char *cmdRdyESP = "ack restart";
   if (xQueueCommandParse != NULL)
     /* let's inform the STM that we have just rebooted */
     xQueueSend(xQueueCommandParse, &cmdRdyESP, portMAX_DELAY);

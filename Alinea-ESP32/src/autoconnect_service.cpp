@@ -2,25 +2,21 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-12 21:37:29
+ * @ Modified time: 2020-05-20 08:38:37
  * @ Description: https://hieromon.github.io/AutoConnect/otaupdate.html
  * //https://hieromon.github.io/AutoConnect/howtoembed.html
  *******************************************************************************************/
 
 #include "autoconnect_service.h"
 #include "remoteDebug_service.h"
-#include "configuration_esp32.h"
-#include <WiFi.h>
-#include <WebServer.h>
-#include <AutoConnect.h>
 #include "buzzer_service.h"
 
 WebServer Server;
 AutoConnect Portal(Server);
 AutoConnectConfig acConfig;
 
-xTaskHandle xAutoConnectServiceTaskHandle = NULL;
-void vAutoConnectServiceTask(void *parameter);
+static xTaskHandle xAutoConnectServiceTaskHandle = NULL;
+static void vAutoConnectServiceTask(void *parameter);
 
 void rootPage()
 {
@@ -74,12 +70,12 @@ uint8_t uSetupAutoConnect()
  * @note   
  * @retval 
  */
-void vAutoConnectServiceTask(void *parameter)
+static void vAutoConnectServiceTask(void *parameter)
 {
   for (;;)
   {
     Portal.handleClient();
-    vTaskDelay(10);
+    vTaskDelay(1);
   }
   vTaskDelete(xAutoConnectServiceTaskHandle);
 }

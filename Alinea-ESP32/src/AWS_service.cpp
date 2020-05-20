@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-18 09:28:57
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 22:01:03
+ * @ Modified time: 2020-05-20 08:36:02
  * @ Description:
  *******************************************************************************************/
 
@@ -10,13 +10,15 @@
 #include "aws_service.h"
 #include "remoteDebug_service.h"
 #include <stdio.h>
-#include <PubSubClient.h>
+#include "autoconnect_service.h"
 
 /* because ou json messages are quite small we can keep them in the stack to speed up the process */
 
-xTaskHandle xAWS_Send_Task_hnd = NULL;
-xTaskHandle xAWS_Receive_Task_hnd = NULL;
+static xTaskHandle xAWS_Send_Task_hnd = NULL;
+static xTaskHandle xAWS_Receive_Task_hnd = NULL;
 
+const char *awsEndpoint = "a2im1z2thfpkge-ats.iot.eu-west-3.amazonaws.com";
+// https://hieromon.github.io/AutoConnect/howtoembed.html#used-with-mqtt-as-a-client-application
 /* -------------------------------- AWS SEND -------------------------------- */
 /**
  * @brief  AWS SEND task. 
@@ -26,7 +28,7 @@ xTaskHandle xAWS_Receive_Task_hnd = NULL;
  * @param  *vParameter: 
  * @retval None
  */
-void vAWSSendTaskCode(void *vParameter)
+static void vAWSSendTaskCode(void *vParameter)
 {
     for (;;)
     {
@@ -43,15 +45,17 @@ void vAWSSendTaskCode(void *vParameter)
  * @param  *vParameter: 
  * @retval None
  */
-void vAWSReceiveTaskCode(void *vParameter)
+static void vAWSReceiveTaskCode(void *vParameter)
 {
     aws_rdy_data_t aws_ReceiveBuf;
 
     for (;;)
     {
-        xQueueReceive(xQueueAWS_Send, &aws_ReceiveBuf, portMAX_DELAY);
-        Serial.println("FINAL JSON to be sent over is... : %s", aws_ReceiveBuf.jsonstr);
-
+        if (xQueueAWS_Send != NULL)
+        {
+            xQueueReceive(xQueueAWS_Send, &aws_ReceiveBuf, portMAX_DELAY);
+            debugI("FINAL JSON to be sent over is... : %s", (char *)aws_ReceiveBuf.jsonstr);
+        }
         vTaskDelay(1);
     }
     vTaskDelete(NULL);
@@ -65,7 +69,7 @@ void vAWSReceiveTaskCode(void *vParameter)
  */
 uint8_t uSetupAwsService()
 {
-    xQueueAWS_Send = xQueueCreate(10, sizeof(aws_rdy_data_t));
+    xQueueAWS_Send = xQueueCreate(3, sizeof(aws_rdy_data_t));
     if (xQueueAWS_Send == NULL)
     {
         debugE("error creating the xQueueAWS_Send queue\n\r");
@@ -73,6 +77,9 @@ uint8_t uSetupAwsService()
 
         return EXIT_FAILURE;
     }
+
+    /* creating PubSubClient handler */
+    //PubSubClient client(
 
     /* create tasks */
     /* let's create the parser task first */
@@ -87,8 +94,6 @@ uint8_t uSetupAwsService()
     if (xAWS_Send_Task_hnd == NULL)
     {
         debugE("Error creating serial parser task!");
-        /* cannot create task, remove all created stuff and exit failure */
-        //vQueueDelete(xQueueCommandParse);
         return EXIT_FAILURE;
     }
 
@@ -111,67 +116,3 @@ uint8_t uSetupAwsService()
 
     return EXIT_SUCCESS;
 }
-
-/* ----------------------------- CONNECT TO AWS ----------------------------- */
-/**
- * @brief  Connect to Amazon Webservices MQTT Broker
- * @note   
- * @retval 
- */
-/*
-uint8_t uConnectToAWS()
-{
-    int NodeState;
-
-    // closes TCP connection
-    awsTCPClient.Close();
-
-    // get the broker address out of non-volatile storage
-    String strBrokerAddress = preferences.getString("BrokerAddress", "");
-    char *txtBrokerAddress = const_cast<char *>(strBrokerAddress.c_str()); // convert to char*
-
-    // TCP-connect to AWS MQTT Server
-    int TCP_Connect_Result = awsTCPClient.Connect(txtBrokerAddress, 8883);
-
-    // Success?
-    if (TCP_Connect_Result != 1)
-    {
-        // no = red LED
-        BreadboardRGBLED.SwitchRGBLED(LED_RED);
-        BreadboardRGBLED.setRGB(255, 0, 0); // and set the default color to red for dimming
-        NodeState = NODESTATE_NOTCPCONNECTION;
-    }
-    else
-    {
-        // yes = yellow LED
-        BreadboardRGBLED.SwitchRGBLED(LED_YELLOW);
-
-        // take Device Name out of non-volatile storage
-        String strDeviceID = preferences.getString("DeviceID", "");
-
-        // MQTT CONNECT to AWS broker , use Device Name of your device as Client ID
-        int MQTT_Connect_Result = awsMQTTClient.Connect(strDeviceID, "", "");
-
-        if (MQTT_Connect_Result == 1)
-        {
-            // connected
-            BreadboardRGBLED.SwitchRGBLED(LED_GREEN); // green LED
-            BreadboardRGBLED.setRGB(0, 255, 0);       // and set the default color to green for dimming
-            NodeState = NODESTATE_OK;
-
-            Serial.println("MQTT connected.");
-        }
-        else
-        {
-            // not connected
-            BreadboardRGBLED.SwitchRGBLED(LED_RED); // red LED
-            BreadboardRGBLED.setRGB(255, 0, 0);     // and set the default color to red for dimming
-            NodeState = NODESTATE_NOMQTTCONNECTION;
-
-            Serial.println("MQTT not connected.");
-        }
-    }
-
-    return NodeState;
-}
-*/

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-10 23:46:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-12 23:18:29
+ * @ Modified time: 2020-05-20 08:42:49
  * @ Description:
  *******************************************************************************************/
 
@@ -14,9 +14,9 @@
 #define DATA_PIN 4
 
 /* functions definitions */
-void vLedStripTask(void *pvParameters);
+static void vLedStripTask(void *pvParameters);
 
-xTaskHandle xLedStripTask_handle = NULL;
+static xTaskHandle xLedStripTask_handle;
 
 CRGB leds[NUM_LEDS];
 
@@ -29,12 +29,6 @@ int uLedStripServiceInit()
 {
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     randomSeed(analogRead(0));
-
-    xLedStripCommandQueue = xQueueCreate(10, sizeof(lit_status_t));
-    if (xLedStripCommandQueue == NULL)
-    {
-        debugI("xLedStripCommandQueue ... Error");
-    }
 
     /* creates buzzer update task */
     xTaskCreate(
@@ -49,8 +43,7 @@ int uLedStripServiceInit()
     {
         debugI("xLedStripTask_handle ... Error!");
         return EXIT_FAILURE;
-    }
-
+    };
     debugI("Led Strip Service created and running..");
     return EXIT_SUCCESS;
 }
@@ -61,8 +54,19 @@ int uLedStripServiceInit()
  * @param  *vParameter: 
  * @retval None
  */
-void vLedStripTask(void *vParameter)
+static void vLedStripTask(void *vParameter)
 {
+    xLedStripCommandQueue = xQueueCreate(10, sizeof(lit_status_t));
+    if (xLedStripCommandQueue == NULL)
+    {
+        debugI("xLedStripCommandQueue ... Error");
+        vTaskDelete(NULL);
+    }
+    else
+    {
+        debugI("Starting LED Strip Task... Success");
+    }
+
     lit_status_t lit_status;
 
     for (;;)

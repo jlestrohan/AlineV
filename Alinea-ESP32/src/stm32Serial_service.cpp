@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 20:21:47
+ * @ Modified time: 2020-05-20 08:47:14
  * @ Description:
  *******************************************************************************************/
 
@@ -16,8 +16,8 @@
 #include "hdlc_protocol.h"
 #include "data_service.h"
 
-xTaskHandle xStm32TXSerialServiceTask_hnd = NULL; /* for TX */
-xTaskHandle xStm32RXSerialServiceTask_hnd = NULL; /* for RX */
+static xTaskHandle xStm32TXSerialServiceTask_hnd = NULL; /* for TX */
+static xTaskHandle xStm32RXSerialServiceTask_hnd = NULL; /* for RX */
 
 SemaphoreHandle_t xSemaphoreSerial2Mutex;
 QueueHandle_t xQueueDataJson;
@@ -80,7 +80,7 @@ void vStm32RXSerialServiceTaskCode(void *pvParameters)
       hdlc.charReceiver(inChar);
       xSemaphoreGive(xSemaphoreSerial2Mutex);
     }
-    vTaskDelay(1);
+    vTaskDelay(10);
   }
   vTaskDelete(NULL);
 }

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 20:30:44
+ * @ Modified time: 2020-05-20 08:44:25
  * @ Description:
  *******************************************************************************************/
 
@@ -14,9 +14,9 @@
 #include "remoteDebug_service.h"
 #include "autoconnect_service.h"
 
-void vOtaLoopTask(void *parameter);
+static void vOtaLoopTask(void *parameter);
 
-xTaskHandle xTaskOtaHandle;
+static xTaskHandle xTaskOtaHandle;
 
 /**
  * @brief  
@@ -108,7 +108,7 @@ uint8_t uSetupOTA()
  * @note   
  * @retval 
  */
-void vOtaLoopTask(void *parameter)
+static void vOtaLoopTask(void *parameter)
 {
     for (;;)
     {

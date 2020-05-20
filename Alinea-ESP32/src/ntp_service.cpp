@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 23:19:45
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-13 23:01:28
+ * @ Modified time: 2020-05-20 08:43:43
  * @ Description:
  *******************************************************************************************/
 
@@ -14,8 +14,8 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-void vNtpServiceTask(void *parameter);
-xTaskHandle xNtpServiceTaskHandle;
+static void vNtpServiceTask(void *parameter);
+static xTaskHandle xNtpServiceTaskHandle;
 
 const long utcOffsetInSeconds = 3600;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
@@ -65,12 +65,12 @@ uint8_t uSetupNTPService()
  * @note   
  * @retval 
  */
-void vNtpServiceTask(void *parameter)
+static void vNtpServiceTask(void *parameter)
 {
     for (;;)
     {
         /** by defaut updated every 60 seconds but we can force an update here */
-        while (!timeClient.update())
+        if (!timeClient.update())
         {
             DEBUG_SERIAL("Updating NTP...");
             if (timeClient.forceUpdate())
@@ -84,7 +84,7 @@ void vNtpServiceTask(void *parameter)
             }
         }
 
-        vTaskDelay(3600*1000);
+        vTaskDelay(3600 * 1000);
     }
     vTaskDelete(NULL);
 }

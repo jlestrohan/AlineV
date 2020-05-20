@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 18:32:40
+ * @ Modified time: 2020-05-20 08:40:39
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -35,10 +35,9 @@
 static uint8_t _cmd_status(char **tokens, uint8_t count);
 static uint8_t _cmd_ledstrip(char **tokens, uint8_t count);
 static uint8_t _cmd_help(char **tokens, uint8_t count);
-//void vDecodeJsonCommand(command_package_t *cmd_pack);
 uint8_t split(const char *txt, char delim, char ***tokens);
-void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t length);
-uint8_t uCheckESP32Command(char **tokens, uint8_t count);
+static void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t length);
+static uint8_t uCheckESP32Command(char **tokens, uint8_t count);
 
 /** 
  * @brief  ESP32 COMMANDS ARE TO BE ADDED HERE 
@@ -56,7 +55,7 @@ ESP32_Commands_t esp32_commands_list[] = {
     {"status", _cmd_status},
     {"help", _cmd_help}};
 
-xTaskHandle xCommandParserTask_hnd = NULL;
+static xTaskHandle xCommandParserTask_hnd = NULL;
 QueueHandle_t xQueueCommandParse;
 QueueHandle_t xQueueSerialServiceTX; /* extern */
 
@@ -67,7 +66,7 @@ QueueHandle_t xQueueSerialServiceTX; /* extern */
  * @param  *parameter: 
  * @retval None
  */
-void vCommandParserTaskCode(void *pvParameters)
+static void vCommandParserTaskCode(void *pvParameters)
 {
   char **tokens;
   uint8_t count;
@@ -76,24 +75,26 @@ void vCommandParserTaskCode(void *pvParameters)
   for (;;)
   {
 
-    xQueueReceive(xQueueCommandParse, &command_string, portMAX_DELAY);
-
-    size_t len = strlen(command_string);
-    debugI("Queue xQueueCommandParse received command: %.*s with size %d", len, command_string, len);
-    count = split(command_string, ' ', &tokens);
-
-    if (uCheckESP32Command(tokens, count) == EXIT_FAILURE)
+    if (xQueueCommandParse != NULL)
     {
-      /* command ips for the STM32 */
-      debugD("Command is for the STM32");
-      vEncodeJsonCommand(tokens, count, command_string, len);
+      xQueueReceive(xQueueCommandParse, &command_string, portMAX_DELAY);
+
+      size_t len = strlen(command_string);
+      debugI("Queue xQueueCommandParse received command: %.*s with size %d", len, command_string, len);
+      count = split(command_string, ' ', &tokens);
+
+      if (uCheckESP32Command(tokens, count) == EXIT_FAILURE)
+      {
+        /* command ips for the STM32 */
+        debugD("Command is for the STM32");
+        vEncodeJsonCommand(tokens, count, command_string, len);
+      }
+
+      /* freeing tokens */
+      for (uint8_t i = 0; i < count; i++)
+        free(tokens[i]);
+      free(tokens);
     }
-
-    /* freeing tokens */
-    for (uint8_t i = 0; i < count; i++)
-      free(tokens[i]);
-    free(tokens);
-
     vTaskDelay(10);
   }
   vTaskDelete(NULL);
@@ -183,7 +184,7 @@ uint8_t split(const char *text, char delimiter, char ***tkns)
  * @param  count: 
  * @retval None
  */
-void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t length)
+static void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t length)
 {
 
   const size_t capacity = JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(3);
@@ -231,7 +232,7 @@ void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t l
  * @param  count: 
  * @retval 
  */
-uint8_t uCheckESP32Command(char **tokens, uint8_t count)
+static uint8_t uCheckESP32Command(char **tokens, uint8_t count)
 {
   /* we browse thru cEsp32commands and compare it with cmd 
    if that command is an ESP32 one we will treat that here */
@@ -339,57 +340,3 @@ static uint8_t _cmd_ledstrip(char **tokens, uint8_t count)
   }
   return EXIT_SUCCESS;
 }
-
-/* --------------------------- DECODE JSON COMMAND FROM STM32-------------------------- */
-/**
- * @brief  Data or Command to ESP32 ?
- * @note   
- * @param  *cmd_pack: 
- * @retval None
- */
-/*uint8_t uDecodeJsonCommand(command_package_t *cmd_pack)
-{
-  /* Deserializes STM JSON */
-/*StaticJsonDocument<200> doc;
-  DeserializationError error = deserializeJson(doc, cmd_pack->txtCommand);
-
-  if (error)
-  {
-    debugE("deserializeJson() failed with error: %s", error.c_str());
-    return EXIT_FAILURE;
-  }
-
-  /* check if CMD = a data kind */
-
-/* check if STM UUID is the right one - check configuration_esp32.h*/
-/* if (doc["uuid"] != STM32_UUID)
-  {
-    debugE("Wrong STM32 uuid, operation not permitted, no data will be processed sorry!");
-    return EXIT_FAILURE;
-  }
-
-  cmd2aws_package_t aws_pack;
-  /* sends the deserialized json (which is now a struct) to the AWS service */
-/* we will then rebuild a conformed JSON with the right information */
-/* and that service will then directly send the package to the AWS IoT service */
-/* the ESP32 only acts as a relay/adds information to the incoming data from the STM*/
-/* Any emitter decides when to send the data */
-/*strcpy(aws_pack.stm_uuid, doc["uuid"]);
-  strcpy(aws_pack.cmd_type, doc["command_type"]);
-
-  JsonArray arr = doc["data"].as<JsonArray>();
-  int count = arr.size();
-
-  printf("array has count: %d\n\r", count);
-  /* we are done for this service */
-
-/* switch */
-
-//debugI("Free HEAP: %lu on HEAP TOTAL: %lu", ESP.getFreeHeap(), ESP.getHeapSize());
-//debugI("Free PS Ram: %lu", ESP.getFreePsram());
-
-/* 1 we decode JSON */
-/* 2 we add everything */
-
-//return EXIT_SUCCESS;
-//}

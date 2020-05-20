@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 13:56:45
+ * @ Modified time: 2020-05-20 08:45:30
  * @ Description:
  *******************************************************************************************/
 
@@ -16,10 +16,10 @@
 WiFiClass WiFi;
 
 /* functions definitions */
-void remoteDebug_task(void *parameter);
-void vProcessCmdRemoteDebug();
+static void remoteDebug_task(void *parameter);
+static void vProcessCmdRemoteDebug();
 
-xTaskHandle xRemoteDebuggerTask_hnd;
+static xTaskHandle xRemoteDebuggerTask_hnd;
 
 /* --------------------------- MAIN SERVICE SETUP --------------------------- */
 /**
@@ -68,12 +68,12 @@ uint8_t uSetupRemoteDebug()
  * @note   
  * @retval 
  */
-void remoteDebug_task(void *parameter)
+static void remoteDebug_task(void *parameter)
 {
     for (;;)
     {
         Debug.handle();
-        vTaskDelay(10);
+        vTaskDelay(1);
     }
     vTaskDelete(NULL);
 }
@@ -84,7 +84,7 @@ void remoteDebug_task(void *parameter)
  * @note   
  * @retval None
  */
-void vProcessCmdRemoteDebug()
+static void vProcessCmdRemoteDebug()
 {
     /* will send the whole command to the command center to be interpreted */
     String lastCmd = Debug.getLastCommand();

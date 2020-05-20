@@ -1,7 +1,10 @@
 {
     "files.associations": {
         "functional": "cpp",
-        "ota.h": "c"
+        "ota.h": "c",
+        "string": "cpp",
+        "array": "cpp",
+        "vector": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.formatOnType": true,

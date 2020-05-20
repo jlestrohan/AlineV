@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 14:26:32
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 14:24:49
+ * @ Modified time: 2020-05-20 08:38:08
  * @ Description:
  *******************************************************************************************/
 
@@ -144,7 +144,7 @@ struct buzMelody_t mld_cmdWrongArg = {
 struct buzMelody_t *melodyPtr;
 
 /* functions definitions */
-void vBuzzerTask(void *pvParameters);
+static void vBuzzerTask(void *pvParameters);
 
 // note, durée
 //onst double melody[][3] = {{note_D5, 1}, {note_E5, 1}, {note_C5, 1}, {note_G4, 1}, {note_G3, 1}, {note_C4, 1}, {note_C5, 1}, {note_G5, 1}};
@@ -152,7 +152,7 @@ void vBuzzerTask(void *pvParameters);
 //const int notesNumber = 8;
 //const int tempo = 200; /* the littlest the fastest */
 
-xTaskHandle xBuzzerTask_handle = NULL;
+static xTaskHandle xBuzzerTask_handle = NULL;
 QueueHandle_t xBuzzerMelodyQueue = NULL;
 
 /**
@@ -198,7 +198,7 @@ uint8_t uSetupBuzzer()
  * @param  *pvParameters: 
  * @retval None
  */
-void vBuzzerTask(void *pvParameters)
+static void vBuzzerTask(void *pvParameters)
 {
     uint8_t idx = 0;
     int frequency;
@@ -223,22 +223,6 @@ void vBuzzerTask(void *pvParameters)
     }
     /* we never get here but if so... suicides itself */
     vTaskDelete(xBuzzerTask_handle);
-}
-
-/**
- * @brief  Melody when Wifi is connected
- * @note   
- * @retval None
- */
-void wifiSuccessTune()
-{
-    /* let's setup ou melody here on purpose then we'll pass it to the main task */
-    buzMelody_t wifiSuccessMelody = {
-        {note_D5, note_E5, note_C5, note_G4, note_G3, note_C4, note_C5, note_G5}, {1, 1, 1, 1, 1, 1, 1, 1}, 8, 150};
-    if (xBuzzerMelodyQueue != NULL)
-    {
-        xQueueSend(xBuzzerMelodyQueue, &wifiSuccessMelody, portMAX_DELAY);
-    }
 }
 
 /**

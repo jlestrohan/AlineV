@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:03
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-05 15:35:47
+ * @ Modified time: 2020-05-19 23:46:14
  * @ Description:
  *******************************************************************************************/
 
@@ -11,6 +11,10 @@
 
 #include "configuration_esp32.h"
 #include <stdint.h>
+#include "configuration_esp32.h"
+#include <WiFi.h>
+#include <WebServer.h>
+#include <AutoConnect.h>
 
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "73727170";

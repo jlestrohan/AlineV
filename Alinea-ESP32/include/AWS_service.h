@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-18 09:28:50
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 21:31:27
+ * @ Modified time: 2020-05-20 08:07:23
  * @ Description:   Handles the forwarding/emitting of the datas over the cloud.
  
  * If it is in forwarding mode, it will take the data sent by the STM, recreate a JSON 
@@ -46,7 +46,7 @@ typedef struct
 {
     char jsonstr[MAX_JSON_MSG_SIZE]; /* the json string ready to be sent */
     uint16_t length;                 /* length of the json message, still useful... in case */
-    char type[5];                    /* 3 letters, type so we know which MQTT topic to post that in */
+    char type[8];                    /* 3 letters, type so we know which MQTT topic to post that in */
 } aws_rdy_data_t;
 
 uint8_t uSetupAwsService();

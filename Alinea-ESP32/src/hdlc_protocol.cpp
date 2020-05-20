@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-05 17:12:31
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-18 17:54:11
+ * @ Modified time: 2020-05-20 08:25:36
  * @ Description:
  *******************************************************************************************/
 
@@ -105,7 +105,7 @@ HDLC_Prot::HDLC_Prot(sendchar_type put_char, frame_handler_type hdlc_command_rou
 }
 
 /* Function to send a byte throug USART, I2C, SPI etc.*/
-void HDLC_Prot::sendchar(uint8_t data)
+void inline HDLC_Prot::sendchar(uint8_t data)
 {
     (*this->sendchar_function)(data);
 }
