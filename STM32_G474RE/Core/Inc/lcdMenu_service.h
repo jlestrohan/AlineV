@@ -21,7 +21,14 @@ extern osEventFlagsId_t xEventMenuNavButton;
 /**
  * Menu Related Defines
  */
-typedef struct {
+typedef enum {
+	LCD_SCREEN_READY,
+	LCD_SCREEN_HCSR04,
+	LCD_SCREEN_CMPS12_1,
+	LCD_SCREEN_CMPS12_2,
+} LcdTypeScreen_t;
+
+ struct MENUITEMS_t {
 	char first_line_text[16];
 	uint8_t first_line_col;
 	uint8_t first_line_row;
@@ -31,7 +38,8 @@ typedef struct {
 	void (*func)(void);                 /* Pointer to the item function */
 	const struct MENUITEMS_t *prev;           /* Pointer to the previous */
 	const struct MENUITEMS_t *next;           /* Pointer to the next */
-} MENUITEMS_t;
+	LcdTypeScreen_t LcdTypeScreen;		/* holds a track of the current selected screen (cannot switch over pointers alas... ) */
+};
 
 
 

@@ -15,26 +15,69 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "HCSR04_service.h"
+#include "CMPS12_service.h"
 
 #define LCD_I2C_ADDRESS		0x27
 #define LCD_NB_COL			16
 #define LCD_NB_ROW			2
 
-void vSetupMenuTopics();
+HR04_SensorsData_t HR04_SensorsData;	/* extern  */
+osMutexId_t mHR04_SensorsDataMutex;	/* extern */
 
-MENUITEMS_t *pCurrentItem = NULL;
+CMPS12_SensorData_t CMPS12_SensorData; /* extern */
+osMutexId_t mCMPS12_SensorDataMutex;	/* extern */
 
-//void fc_menu_complete() {
-//	pCurrentItem = &MenuItem_Ready;
-//}
+/* functions declarations */
+void fc_menu_hcsr04();
+void fc_menu_ready();
+void fc_menu_cmps();
 
-void fc_menu_init() {
-	//pCurrentItem = &MenuItem_Complete;
-}
+struct MENUITEMS_t *pCurrentItem;
+struct MENUITEMS_t MenuItem_HCSR04;
+struct MENUITEMS_t MenuItem_CMPS2_1;
+struct MENUITEMS_t MenuItem_CMPS2_2;
 
-MENUITEMS_t MenuItem_Ready;
-MENUITEMS_t MenuItem_Complete;
-MENUITEMS_t MenuItem_Boot;
+struct MENUITEMS_t MenuItem_Ready =
+{
+		"Alinea v0.35",1,0,
+		"02/05/20 08:50",0,2,
+		fc_menu_ready,
+		NULL,
+		&MenuItem_HCSR04,
+		LCD_SCREEN_READY
+};
+
+struct MENUITEMS_t MenuItem_HCSR04 =
+{
+		"HC-SR045 Sensors",1,0,
+		"infos here",0,2,
+		fc_menu_hcsr04,
+		NULL,
+		&MenuItem_CMPS2_1,
+		LCD_SCREEN_HCSR04
+};
+
+struct MENUITEMS_t MenuItem_CMPS2_1 =
+{
+		"CMPS12 Sensor",1,0,
+		"infos here",2,2,
+		fc_menu_cmps,
+		&MenuItem_Ready,
+		&MenuItem_CMPS2_2,
+		LCD_SCREEN_CMPS12_1
+};
+
+struct MENUITEMS_t MenuItem_CMPS2_2 =
+{
+		"CMPS12 Sensor",1,0,
+		"infos here",2,2,
+		fc_menu_cmps,
+		&MenuItem_CMPS2_1,
+		&MenuItem_Ready,
+		LCD_SCREEN_CMPS12_2
+};
+
 
 osEventFlagsId_t xEventMenuNavButton;
 
@@ -49,54 +92,113 @@ static const osThreadAttr_t xLcdMenuServiceTa_attributes = {
 		.cb_size = sizeof(xLcdMenuServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_LCDMENU };
 
-void fc_menu_ready()
-{
-	//pCurrentItem = *(pCurrentItem).next = ...
-	vShowLCDText();
-}
+static osThreadId_t xLcdMenuLoopTaskHandle;
+static osStaticThreadDef_t xLcdMenuLoopTaControlBlock;
+static uint32_t xLcdMenuLoopTaBuffer[256];
+static const osThreadAttr_t xLcdMenuLoopTa_attributes = {
+		.name = "xLcdMenuLoopTask",
+		.stack_mem = &xLcdMenuLoopTaBuffer[0],
+		.stack_size = sizeof(xLcdMenuLoopTaBuffer),
+		.cb_mem = &xLcdMenuLoopTaControlBlock,
+		.cb_size = sizeof(xLcdMenuLoopTaControlBlock),
+		.priority = (osPriority_t) OSTASK_PRIORITY_LCDMENU_LOOP };
 
 /**
  * LCD Menu main task
  * @param argument
  */
-void vLcdMenuServiceTask(void *argument)
+static void vLcdMenuServiceTask(void *argument)
 {
 	printf("Starting LCD Menu Service task...\n\r");
 
-	vSetupMenuTopics();
-	/* sets the starting screen */
 	lcdInit(&hi2c1, (uint8_t)LCD_I2C_ADDRESS, (uint8_t)LCD_NB_ROW, (uint8_t)LCD_NB_COL);
 
-	pCurrentItem = &MenuItem_Boot;
-	vShowLCDText();
-
-	//osDelay(3000);
+	/* sets the starting screen */
 	pCurrentItem = &MenuItem_Ready;
-	vShowLCDText();
+	(*pCurrentItem).func();
+
 
 	xEventMenuNavButton = osEventFlagsNew(NULL);
 	if (xEventMenuNavButton == NULL) {
 		printf("LCD Menu Service Event Flags object not created!\n\r");
 		Error_Handler();
 	}
-
 	for (;;) {
 
 		if (xEventMenuNavButton != NULL) {
 			osEventFlagsWait(xEventMenuNavButton,BEXT_PRESSED_EVT, osFlagsWaitAny, osWaitForever);
 
 			printf("BUTTON 2 WAS PRESSED\n\r");
+			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
 			//TODO: implement long press= call prev function
-			//pCurrentItem = (*pCurrentItem).next;
-
-			/* https://stackoverflow.com/questions/43963019/arduino-lcd-generate-a-navigation-menu-by-reading-an-array */
-			/*osSemaphoreAcquire(sem_lcdService, osWaitForever);
-			lcd_send_string(MenuItem.first_line);
-			lcd_put_cur(0, 0);
-			lcd_send_string(MenuItem.second_line);
-			osSemaphoreRelease(sem_lcdService);*/
+			pCurrentItem = pCurrentItem->next;
+			(*pCurrentItem).func();
 		}
 		osDelay(50);
+	}
+	osThreadTerminate(NULL);
+}
+
+/**
+ * Task - Handles the refreshing of the menu infos according to what struct element the current pointer is pointing at
+ * FINITE STATE MACHINE
+ * @param vParameter
+ */
+static void vLcdMenuLoopTask(void *vParameter)
+{
+	char line1[16], line2[16];
+
+	for (;;)
+	{
+		switch ((intptr_t)pCurrentItem->LcdTypeScreen)
+		{
+		case LCD_SCREEN_HCSR04:
+			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+			lcdSetCursorPosition(0, 0);
+			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			sprintf(line1, "F%0*d FL%0*d FR%0*d", 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_left45,3,HR04_SensorsData.dist_right45);
+			osMutexRelease(mHR04_SensorsDataMutex);
+			lcdPrintStr((uint8_t *)line1, strlen(line1));
+
+			lcdSetCursorPosition(4, 1);
+			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			sprintf(line2, "B%0*d R%0*d", 3, HR04_SensorsData.dist_bottom, 3, HR04_SensorsData.dist_rear);
+			osMutexRelease(mHR04_SensorsDataMutex);
+			lcdPrintStr((uint8_t *)line2, strlen(line2));
+			osDelay(20);
+			break;
+
+		case LCD_SCREEN_CMPS12_1:
+			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+			lcdSetCursorPosition(0, 0);
+			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
+
+			lcdSetCursorPosition(3, 1);
+			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+			sprintf(line2, "hdg: %0*d", 3, CMPS12_SensorData.CompassBearing);
+			osMutexRelease(mCMPS12_SensorDataMutex);
+			lcdPrintStr((uint8_t *)line2, strlen(line2));
+			osDelay(50);
+			break;
+
+		case LCD_SCREEN_CMPS12_2:
+			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+			lcdSetCursorPosition(0, 0);
+			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
+
+			lcdSetCursorPosition(0, 1);
+			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+			sprintf(line2, "Pitch:%d Roll:%d", CMPS12_SensorData.PitchAngle, CMPS12_SensorData.RollAngle);
+			osMutexRelease(mCMPS12_SensorDataMutex);
+			lcdPrintStr((uint8_t *)line2, strlen(line2));
+			osDelay(50);
+			break;
+
+		default: break;
+		}
+
+		osDelay(60);
 	}
 	osThreadTerminate(NULL);
 }
@@ -107,16 +209,17 @@ void vLcdMenuServiceTask(void *argument)
  */
 uint8_t uLcdMenuServiceInit()
 {
-	/* first we check if LCD I2C stuff is available */
-	/*if (!lcd_isAvail()) {
-		dbg_printf("LCD Device not ready");
-		return (EXIT_FAILURE);
-	}*/
-
-	/* creation of LoggerServiceTask */
+	/* creation of xLcdMenuServiceTaskHandle - will handle menu rotation */
 	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, &xLcdMenuServiceTa_attributes);
 	if (xLcdMenuServiceTaskHandle == NULL) {
-		printf("Initializing LCD Menu Service - Failed\n\r");
+		printf("Initializing LCD Menu Service... failed\n\r");
+		return (EXIT_FAILURE);
+	}
+
+	/* creation of xLcdMenuLoopTaskHandle - will handle information display and updating */
+	xLcdMenuLoopTaskHandle = osThreadNew(vLcdMenuLoopTask, NULL, &xLcdMenuLoopTa_attributes);
+	if (xLcdMenuLoopTaskHandle == NULL) {
+		printf("Initializing LCD Menu Loop... failed\n\r");
 		return (EXIT_FAILURE);
 	}
 
@@ -125,47 +228,29 @@ uint8_t uLcdMenuServiceInit()
 }
 
 /**
- * Sets the whole LCD content
- * @param items
+ *
  */
-void vShowLCDText()
+void fc_menu_hcsr04()
 {
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	/* rest is done in loop task */
+}
+
+/**
+ *
+ */
+void fc_menu_ready()
+{
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+
 	lcdSetCursorPosition((*pCurrentItem).first_line_col, (*pCurrentItem).first_line_row);
 	lcdPrintStr((uint8_t*)(*pCurrentItem).first_line_text, strlen((*pCurrentItem).first_line_text));
 	lcdSetCursorPosition((*pCurrentItem).second_line_col, (*pCurrentItem).second_line_row);
 	lcdPrintStr((uint8_t*)(*pCurrentItem).second_line_text, strlen((*pCurrentItem).second_line_text));
 }
 
-/**
- * Prepare all LCD static screens of the application
- */
-void vSetupMenuTopics()
+void fc_menu_cmps()
 {
-	//MenuItem_Complete = {"Alinea v0.35",1,0,"Complete!",3,2, fc_menu_complete, NULL, &MenuItem_Ready};
-
-	/**
-	 * BOOT COMPLETE
-	 */
-	strcpy(MenuItem_Ready.first_line_text, "Alinea v0.35  >");
-	MenuItem_Ready.first_line_col = 1;
-	MenuItem_Ready.first_line_row = 0;
-	strcpy(MenuItem_Ready.second_line_text, "02/05/20 08:50");
-	MenuItem_Ready.second_line_col = 0;
-	MenuItem_Ready.second_line_row = 2;
-	MenuItem_Ready.func = fc_menu_ready;
-	MenuItem_Ready.prev = NULL;
-	MenuItem_Ready.next = NULL;
-
-	/**
-	 * BOOT SCREEN
-	 */
-	strcpy(MenuItem_Boot.first_line_text, "Alinea v0.35  >");
-	MenuItem_Boot.first_line_col = 1;
-	MenuItem_Boot.first_line_row = 0;
-	strcpy(MenuItem_Boot.second_line_text, "Initializing...");
-	MenuItem_Boot.second_line_col = 0;
-	MenuItem_Boot.second_line_row = 2;
-	MenuItem_Boot.func = fc_menu_init;
-	MenuItem_Boot.prev = NULL;
-	MenuItem_Boot.next = NULL;//&MenuItem_Ready;
-};
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	/* rest is done in loop task */
+}
