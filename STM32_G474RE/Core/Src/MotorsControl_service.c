@@ -109,6 +109,12 @@ static void vMotorsControlTaskStart(void *vParameters)
 		case MOTOR_MOTION_FORWARD_LEFT: //TODO: add PID here, the more/less we reduce distance against wall the more we derive each caterp speed */
 			MotorSetSpeed(&MotorData, MotorData.currentSpeedLeft - 2, MotorData.currentSpeedRight + 2);
 			break;
+		case MOTOR_MOTION_CORRECT_RIGHT:
+			MotorSetSpeed(&MotorData, MotorData.currentSpeedLeft + MOTORS_DEFAULT_CORRECT_BIAS, MotorData.currentSpeedRight - MOTORS_DEFAULT_CORRECT_BIAS);
+			break;
+		case MOTOR_MOTION_CORRECT_LEFT:
+			MotorSetSpeed(&MotorData, MotorData.currentSpeedLeft - MOTORS_DEFAULT_CORRECT_BIAS, MotorData.currentSpeedRight + MOTORS_DEFAULT_CORRECT_BIAS);
+			break;
 		default:
 			motorsSetMotionIdle(&MotorData);
 			break;

@@ -7,6 +7,11 @@
  
  *******************************************************************************************/
 
+// see https://github.com/Hieromon/AutoConnect/blob/master/examples/mqttRSSI/mqttRSSI.ino
+// https://hieromon.github.io/AutoConnect/howtoembed.html
+// https://hieromon.github.io/AutoConnect/otaupdate.html
+// https://www.hackster.io/hieromon-ikasamo/esp8266-esp32-connect-wifi-made-easy-d75f45
+
 #include "autoconnect_service.h"
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"

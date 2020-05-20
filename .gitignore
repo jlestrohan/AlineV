@@ -123,6 +123,8 @@ STM32_G474RE/submodules/
 
 Alinea-ESP32/include/AWS_Certificate.h
 
+Alinea-ESP32/data/
+
 Alinea-ESP32/data/0604963a32-certificate.pem.crt
 
 Alinea-ESP32/data/0604963a32-private.pem.key

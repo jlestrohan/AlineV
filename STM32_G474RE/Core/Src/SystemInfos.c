@@ -40,7 +40,7 @@
 #include "main.h"
 #include "adc.h"
 
-double readProcessorTemperature (uint32_t temperature_adc);
+//double readProcessorTemperature (uint32_t temperature_adc);
 
 osMessageQueueId_t xQueueDmaAdcInternalSensors;
 DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues;

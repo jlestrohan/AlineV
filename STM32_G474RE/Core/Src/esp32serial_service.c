@@ -111,7 +111,7 @@ void vEsp32TXSerialService_Start(void* vParameter)
 			osMutexRelease(mHdlcProtocolMutex);
 		}
 
-		osDelay(20); /* every 5 seconds we send a test command */
+		osDelay(1); /* every 5 seconds we send a test command */
 	}
 	osThreadTerminate(NULL);
 }
@@ -147,7 +147,7 @@ void vEsp32RXSerialService_Start(void* vParameter)
 
 			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
 		}
-		osDelay(10);
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }

@@ -117,11 +117,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 			case BTN_BUTTON_EXT_PRESSED:
 				if (uButtonDebounce(uExternalBtnLastPressedTick)) {
 					uExternalBtnLastPressedTick = HAL_GetTick();
-					printf("External button was pressed ...\n\r");
-					if (xQueueMotorMotionOrder != NULL) {
-						motorMotion = MOTOR_MOTION_BACKWARD;
-						osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, 0U);
-					}
+					osEventFlagsSet(xEventMenuNavButton, BEXT_PRESSED_EVT);
 				}
 				break;
 			default: break;

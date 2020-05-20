@@ -34,6 +34,7 @@ void fc_menu_ready();
 void fc_menu_cmps();
 
 struct MENUITEMS_t *pCurrentItem;
+
 struct MENUITEMS_t MenuItem_HCSR04;
 struct MENUITEMS_t MenuItem_CMPS2_1;
 struct MENUITEMS_t MenuItem_CMPS2_2;
@@ -128,10 +129,10 @@ static void vLcdMenuServiceTask(void *argument)
 		if (xEventMenuNavButton != NULL) {
 			osEventFlagsWait(xEventMenuNavButton,BEXT_PRESSED_EVT, osFlagsWaitAny, osWaitForever);
 
-			printf("BUTTON 2 WAS PRESSED\n\r");
 			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
 			//TODO: implement long press= call prev function
-			pCurrentItem = pCurrentItem->next;
+			if (pCurrentItem->next != NULL)
+				pCurrentItem = pCurrentItem->next;
 			(*pCurrentItem).func();
 		}
 		osDelay(50);
@@ -183,7 +184,6 @@ static void vLcdMenuLoopTask(void *vParameter)
 
 		case LCD_SCREEN_CMPS12_2:
 			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
-			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
 			lcdSetCursorPosition(0, 0);
 			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
 
@@ -198,7 +198,7 @@ static void vLcdMenuLoopTask(void *vParameter)
 		default: break;
 		}
 
-		osDelay(60);
+		osDelay(80);
 	}
 	osThreadTerminate(NULL);
 }

@@ -40,7 +40,7 @@ osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 
 /* flag to set any sensors active/inactive according to nav control decisions */
-
+#ifdef DEBUG_HCSR04_ALL
 static osThreadId_t xHr04SensorTaskHandle;
 static osStaticThreadDef_t xHr04SensorTaControlBlock;
 static uint32_t xHr04SensorTaBuffer[256];
@@ -51,11 +51,13 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.cb_size = sizeof(xHr04SensorTaControlBlock),
 		.cb_mem = &xHr04SensorTaControlBlock,
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
+#endif
 
 /* functions definitions */
 static uint8_t HC_SR04_StartupTimers();
 
 
+#ifdef DEBUG_HCSR04_ALL
 /**
  *	HR04 Sensors Task
  * @param argument
@@ -70,17 +72,17 @@ static void vHr04SensorTaskStart(void *argument)
 	for (;;) {
 
 
-#ifdef DEBUG_HCSR04_ALL
 			printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
 					HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45,
 					3,HR04_SensorsData.dist_bottom, 3,HR04_SensorsData.dist_rear);
-#endif
+
 			osMutexRelease(mHR04_SensorsDataMutex);
 
 		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }
+#endif
 
 /**
  * Initialization function
@@ -96,6 +98,7 @@ uint8_t uHcsr04ServiceInit()
 		Error_Handler();
 	}
 
+#ifdef DEBUG_HCSR04_ALL
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
 	if (xHr04SensorTaskHandle == NULL) {
@@ -105,6 +108,7 @@ uint8_t uHcsr04ServiceInit()
 	}
 
 	printf("Initializing HC-SR04 Service... Success!\n\r");
+#endif
 	return (EXIT_SUCCESS);
 }
 

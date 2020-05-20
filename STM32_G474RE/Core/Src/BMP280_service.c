@@ -165,8 +165,7 @@ static bool read_register16(BMP280_HandleTypedef *dev, uint8_t addr, uint16_t *v
 
 }
 
-static uint8_t read_data(BMP280_HandleTypedef *dev, uint8_t addr, uint8_t *value,
-		uint8_t len) {
+static uint8_t read_data(BMP280_HandleTypedef *dev, uint8_t addr, uint8_t *value, uint8_t len) {
 	uint16_t tx_buff;
 	tx_buff = (dev->addr << 1);
 	if (HAL_I2C_Mem_Read(dev->i2c, tx_buff, addr, 1, value, len, 5000) == HAL_OK)

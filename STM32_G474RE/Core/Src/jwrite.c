@@ -266,6 +266,7 @@ char *jwErrorToString( int err )
 	case JWRITE_STACK_FULL:	return "array/object nesting > JWRITE_STACK_DEPTH";
 	case JWRITE_STACK_EMPTY:return "stack underflow error (too many 'end's)";
 	case JWRITE_NEST_ERROR:	return "nesting error, not all objects closed when jwClose() called";
+	default: break;
 	}
 	return "Unknown error";
 }
@@ -555,5 +556,21 @@ void modp_dtoa2(double value, char* str, int prec)
     strreverse(str, wstr-1);
 }
 //=================================================================
+/* added by jlestrohan 2020 */
+static char *cGetErrorCodeString(err)
+{
+	switch (err)
+	{
+	case JWRITE_OK: return "Operation Complete"; break;
+	case JWRITE_BUF_FULL: return "Output Buffer Full"; break;
+	case JWRITE_NOT_ARRAY: return "tried to write Array value into Object"; break;
+	case JWRITE_NOT_OBJECT: return "tried to write Object key/value into Array"; break;
+	case JWRITE_STACK_FULL: return "array/object nesting > JWRITE_STACK_DEPTH"; break;
+	case JWRITE_STACK_EMPTY: return "stack underflow error (too many 'end's)"; break;
+	case JWRITE_NEST_ERROR: return "nesting error, not all objects closed when jwClose() called"; break;
+	default: break;
+	}
+}
+
 
 /* end of jWrite.c */

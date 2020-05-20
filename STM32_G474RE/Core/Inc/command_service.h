@@ -12,7 +12,7 @@
 
 #define UART_PAYLOAD_MAX_LGTH 512 /* max command length MUST BE 100 below MAX_HDLC_FRAME_LENGTH */
 #define ESP32_UUID
-#define CMD_LINE_MAX_LENGTH 100
+#define CMD_LINE_MAX_LENGTH 256
 
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"

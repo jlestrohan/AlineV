@@ -209,6 +209,7 @@ void jwArr_array( struct jWriteControl *jwc );
 int jwEnd( struct jWriteControl *jwc );
 void jwObj_raw( struct jWriteControl *jwc, char *key, char *rawtext );
 void jwArr_raw( struct jWriteControl *jwc, char *rawtext );
+static char *cGetErrorCodeString(err);
 
 #endif /* JW_GLOBAL_CONTROL_STRUCT */
 

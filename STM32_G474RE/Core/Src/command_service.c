@@ -12,12 +12,12 @@
 #include "esp32serial_service.h"
 #include "configuration.h"
 #include <stdlib.h>
-#include "UartRingbuffer.h"
 #include "printf.h"
 #include "main.h"
 #include <tiny-json.h>
 #include <stdbool.h>
 #include <string.h>
+#include "MotorsControl_service.h"
 
 /* struct containing the values once extracted from JSON to be used afterward by the command interpreter */
 typedef struct {
@@ -28,11 +28,11 @@ typedef struct {
 cmdPackage_t *cmdPackage;
 
 osMessageQueueId_t xQueueCommandParse;
-static osMessageQueueId_t xQueueCommandInterpreter;
 UART_HandleTypeDef hlpuart1;
 
 /* function definitions */
 uint8_t _cmd_motors(char **tokens, uint8_t count);
+
 
 /**
  * @brief  STM32 COMMANDS ARE TO BE ADDED HERE
@@ -41,19 +41,19 @@ uint8_t _cmd_motors(char **tokens, uint8_t count);
  */
 typedef struct
 {
-  char command[CMD_LINE_MAX_LENGTH];
-  uint8_t (*commands_func)(char **tokens, uint8_t count);
+	char command[CMD_LINE_MAX_LENGTH];
+	uint8_t (*commands_func)(char **tokens, uint8_t count);
 } STM32_Commands_t;
 
 STM32_Commands_t stm32_commands_list[] = {
-    {"motors", _cmd_motors},
+		{"motors", _cmd_motors},
 };
 
 
 /* command parser (json) task*/
 static osThreadId_t xCommandParserServiceTaskHnd;
 static osStaticThreadDef_t xCommandParserServiceTaControlBlock;
-static uint32_t xCommandParserServiceTaBuffer[1024];
+static uint32_t xCommandParserServiceTaBuffer[512];
 static const osThreadAttr_t xCommandParserServiceTa_attributes = {
 		.name = "xCommandParserServiceTask",
 		.stack_mem = &xCommandParserServiceTaBuffer[0],
@@ -62,17 +62,6 @@ static const osThreadAttr_t xCommandParserServiceTa_attributes = {
 		.cb_size = sizeof(xCommandParserServiceTaControlBlock),
 		.priority = (osPriority_t) OSTASK_PRIORITY_CMD_SERVICE, };
 
-/* command interpreter task */
-static osThreadId_t xCommandInterpreterServiceTaskHnd;
-static osStaticThreadDef_t xCommandInterpreterServiceTaControlBlock;
-static uint32_t xCommandInterpreterServiceTaBuffer[256];
-static const osThreadAttr_t xCommandInterpreterServiceTa_attributes = {
-		.name = "xCommandInterpreterServiceTask",
-		.stack_mem = &xCommandInterpreterServiceTaBuffer[0],
-		.stack_size = sizeof(xCommandInterpreterServiceTaBuffer),
-		.cb_mem = &xCommandInterpreterServiceTaControlBlock,
-		.cb_size = sizeof(xCommandInterpreterServiceTaControlBlock),
-		.priority = (osPriority_t) OSTASK_PRIORITY_CMD_INTERP_SERVICE };
 
 /* function prototypes */
 uint8_t uJsonDecode(uint8_t *json, uint16_t length);
@@ -99,8 +88,10 @@ void vCommandParserServiceTask(void *vParameter)
 		/* wait for pure JSON string TODO: bug here FIXME::: */
 		status = osMessageQueueGet(xQueueCommandParse, &msgType, 0U, osWaitForever);
 		if (status == osOK) {
+#ifdef DEBUG_ESP32_COMMAND_CHAIN
 			printf("Command Center received: %.*s\n\r", msgType.msg_size, msgType.json);
-			uJsonDecode(msgType.json, msgType.msg_size); /* we start with tokcount 2 by default */
+#endif
+			uJsonDecode(msgType.json, msgType.msg_size);
 
 		}
 
@@ -110,44 +101,11 @@ void vCommandParserServiceTask(void *vParameter)
 }
 
 /**
- * Command Interpreter routine
- * @param vParameter
- */
-void vCommandInterpreterServiceTask(void *vParameter)
-{
-	printf("Starting Command Interpreter Service task...\n\r");
-
-	//osStatus_t status;
-
-	/* this queue is used to pass every token to the interpreter task */
-	xQueueCommandInterpreter = osMessageQueueNew(2, sizeof(uint8_t), NULL);
-	if (xQueueCommandParse == NULL) {
-		printf("Command Interpreter  Queue Initialization Failed\n\r");
-		Error_Handler();
-	}
-
-	for (;;)
-	{
-		//status = osMessageQueueGet(xQueueCommandInterpreter, &tokens, 0U, osWaitForever);
-		//if (status == osOK) {
-		//printf("we got our tokens again, let's check");
-
-
-		//}
-
-		osDelay(100);
-	}
-	osThreadTerminate(NULL);
-}
-
-
-/**
  * Main Command Service Initialization Routine
  * @return
  */
 uint8_t uCmdParseServiceInit()
 {
-
 	/* creation of xCommandParserService Task */
 	xCommandParserServiceTaskHnd = osThreadNew(vCommandParserServiceTask, NULL, &xCommandParserServiceTa_attributes);
 	if (xCommandParserServiceTaskHnd == NULL) {
@@ -155,14 +113,6 @@ uint8_t uCmdParseServiceInit()
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
-
-	/* creation of xCommandInterpreterService Task */
-	/*xCommandInterpreterServiceTaskHnd = osThreadNew(vCommandInterpreterServiceTask, NULL, &xCommandInterpreterServiceTa_attributes);
-	if (xCommandInterpreterServiceTaskHnd == NULL) {
-		printf("Command Interpreter Service Task Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}*/
 
 	printf("Initializing Command Parser Service... Success!\n\r");
 	return EXIT_SUCCESS;
@@ -214,15 +164,57 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 	if ( data_topic == NULL ) return EXIT_FAILURE;
 	if ( json_getType( data_topic ) != JSON_OBJ ) return EXIT_FAILURE;
 
+	//FIXME STUB
+	char **tokens = (char *[]) {"motors", "forward"};
+	uint8_t count = 2;
 
 	//TODO: nested command: https://github.com/rafagafe/tiny-json
+	/* we browse thru cEsp32commands and compare it with cmd
+	   if that command is an ESP32 one we will treat that here */
+	size_t stmCmdAarray = sizeof(stm32_commands_list) / sizeof(stm32_commands_list[0]);
 
-	printf("done!\n\r");
-	//osMessageQueuePut(xQueueCommandInterpreter, &tokens,  0U, osWaitForever);
-	/* we're done here */
+	for (uint8_t i = 0; i < stmCmdAarray; i++)
+	{
+		if (strcmp(tokens[0], stm32_commands_list[i].command) == 0)
+		{
+			//stm32_commands_list[i].commands_func(tokens, count);
+			return EXIT_SUCCESS;
+		}
+	}
 
-	return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
 
+/**************************************************** COMMANDS **************************************
+ *
+ */
+uint8_t _cmd_motors(char **tokens, uint8_t count)
+{
+	MotorMotion_t motorMotion;
 
+	if (count <=1) return EXIT_FAILURE;
 
+#ifdef DEBUG_ESP32_COMMAND_CHAIN
+	printf("Executing motors %s STM32 commmand ", tokens[1]);
+#endif
+
+	if (tokens[1])
+	{
+		if (strcmp(tokens[1], "forward") == 0)
+		{
+			//motorMotion = MOTOR_MOTION_FORWARD;
+			//osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+		}
+		else if (strcmp(tokens[1], "idle") == 0)
+		{
+			//motorMotion = MOTOR_MOTION_IDLE;
+			//osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+		}
+		else if (strcmp(tokens[1], "backward") == 0)
+		{
+			//motorMotion = MOTOR_MOTION_BACKWARD;
+			//osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+		}
+	}
+	return EXIT_SUCCESS;
+}

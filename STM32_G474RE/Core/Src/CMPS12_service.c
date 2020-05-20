@@ -27,8 +27,8 @@ void vCMPS12_CalibrationStatus();
 static uint8_t _read_register16(uint8_t addr, uint16_t *value);
 static uint8_t _read_signed_register16(uint8_t addr, int16_t *value);
 static uint8_t _read_register8(uint8_t addr, uint8_t *value);
-static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len);
-static uint8_t _write_register8(uint8_t addr, uint8_t value);
+//static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len);
+//static uint8_t _write_register8(uint8_t addr, uint8_t value);
 static uint8_t _populate_values();
 
 
@@ -118,6 +118,7 @@ static uint8_t _populate_values()
 	/* compass bearing */
 	_read_register16(CMPS12_REGISTER_COMPASS_BEARING2_16, &CMPS12_SensorData.CompassBearing);
 	CMPS12_SensorData.CompassBearing += CMPS12_DEVICE_MAGNETO_OFFSET; /* offset adjustment */
+	CMPS12_SensorData.CompassBearing = (CMPS12_SensorData.CompassBearing == 65535 ? 0 : CMPS12_SensorData.CompassBearing);
 	CMPS12_SensorData.CompassBearing /= 16; /* must do to get a real bearing in degrees */
 
 	/* pitch angle */
@@ -212,13 +213,13 @@ static uint8_t _read_signed_register16(uint8_t addr, int16_t *value)
  * @param len
  * @return
  */
-static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len)
+/*static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len)
 {
 	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, value, len, 5000) == HAL_OK) {
 		return EXIT_SUCCESS;
 	}
 	return EXIT_FAILURE;
-}
+}*/
 
 /**
  * Write 8 bits of data
@@ -227,14 +228,14 @@ static uint8_t _read_data(uint8_t addr, uint8_t *value, uint8_t len)
  * @param value
  * @return
  */
-static uint8_t _write_register8(uint8_t addr, uint8_t value)
+/*static uint8_t _write_register8(uint8_t addr, uint8_t value)
 {
 
 	if (HAL_I2C_Mem_Write(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, &value, 1, 10000) == HAL_OK)
 		return EXIT_SUCCESS;
 
 	return EXIT_FAILURE;
-}
+}*/
 
 /**
  * Returns the sensor calibration status

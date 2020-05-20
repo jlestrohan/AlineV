@@ -17,11 +17,12 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
-#define MOTORS_DEFAULT_FW_SPEED			20
-#define MOTORS_DEFAULT_WARNING_SPEED	15
-#define MOTORS_DEFAULT_DANGER_SPEED		12
-#define MOTORS_DEFAULT_TURN_SPEED		15
-#define MOTORS_DEFAULT_BW_SPEED			15
+#define MOTORS_DEFAULT_FW_SPEED			25
+#define MOTORS_DEFAULT_WARNING_SPEED	18
+#define MOTORS_DEFAULT_DANGER_SPEED		15
+#define MOTORS_DEFAULT_TURN_SPEED		18
+#define MOTORS_DEFAULT_BW_SPEED			18
+#define MOTORS_DEFAULT_CORRECT_BIAS				4
 
 #define MOTORS_IDLE		(1 << 0) /* if this flag is set the others are ignored */
 #define MOTORS_FORWARD	(1 << 1)
@@ -46,6 +47,8 @@ typedef enum {
 	MOTOR_SPEED_NORMAL,		/* reset to normal speed */
 	MOTOR_MOTION_TURN_RIGHT, /* FIXME: here we need to have MOTOR_MOTION_TURN_HEADING once BMP280 is working as intended */
 	MOTOR_MOTION_TURN_LEFT,
+	MOTOR_MOTION_CORRECT_RIGHT,
+	MOTOR_MOTION_CORRECT_LEFT,
 	MOTOR_MOTION_FORWARD_RIGHT, /* keep motion but a little to the right */
 	MOTOR_MOTION_FORWARD_LEFT /* keep motion but a little to the left */
 } MotorMotion_t;

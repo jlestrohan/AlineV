@@ -29,8 +29,8 @@
 static struct jWriteControl jwc;
 
 /* function definitions */
-uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack);
-void vAtmosphericDataService_Start(void *vParameter);
+static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack);
+static void vAtmosphericDataService_Start(void *vParameter);
 
 /* extern declared vars */
 BMP280_Data_t BMP280_Data;	/* extern */
@@ -82,7 +82,7 @@ static const osThreadAttr_t xNavigationDataTa_attributes = {
  *
  * @param vParameter
  */
-void vDataControlService_Start(void *vParameter)
+static void vDataControlService_Start(void *vParameter)
 {
 	printf("Starting Data Control Service task.. Success!\n\r");
 
@@ -107,7 +107,7 @@ void vDataControlService_Start(void *vParameter)
  * Sends Atmospheric data JSON every 30 seconds
  * @param vParameter
  */
-void vAtmosphericDataService_Start(void *vParameter)
+static void vAtmosphericDataService_Start(void *vParameter)
 {
 	jsonMessage_t msg_pack;
 
@@ -131,7 +131,7 @@ void vAtmosphericDataService_Start(void *vParameter)
  * Sends Navigation data JSON automatically
  * @param vParameter
  */
-void vNavigationDataTask_Start(void *vParameter)
+static void vNavigationDataTask_Start(void *vParameter)
 {
 
 	for (;;)
@@ -175,7 +175,7 @@ uint8_t uDataServiceinit()
  * @param cmd_type
  * @return
  */
-uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
+static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
 {
 	//https://github.com/jonaskgandersson/jWrite/blob/master/main.c
 	char buffer[1024];
@@ -207,6 +207,9 @@ uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
 	}
 
 	err = jwClose(&jwc);                                  // close root object - done
+	if (err != JWRITE_OK) {
+		printf("%s", err);
+	}
 
 	//printf("%s\n\r", buffer);
 	uint8_t buffer_size = strlen(buffer);

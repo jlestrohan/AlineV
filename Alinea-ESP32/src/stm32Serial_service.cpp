@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:47:14
+ * @ Modified time: 2020-05-20 08:59:11
  * @ Description:
  *******************************************************************************************/
 
@@ -36,7 +36,7 @@ HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
  * @param  *pvParameters: 
  * @retval None
  */
-void vStm32TXSerialServiceTaskCode(void *pvParameters)
+static void vStm32TXSerialServiceTaskCode(void *pvParameters)
 {
   jsonMessage_t jsonMsg;
 
@@ -63,7 +63,7 @@ void vStm32TXSerialServiceTaskCode(void *pvParameters)
  * @param  *parameter: 
  * @retval None
  */
-void vStm32RXSerialServiceTaskCode(void *pvParameters)
+static void vStm32RXSerialServiceTaskCode(void *pvParameters)
 {
   String RXJson;
   char inChar;

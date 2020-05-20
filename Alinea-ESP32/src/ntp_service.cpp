@@ -75,12 +75,12 @@ static void vNtpServiceTask(void *parameter)
             DEBUG_SERIAL("Updating NTP...");
             if (timeClient.forceUpdate())
             {
-                debugD("NTP updated successfully!");
+                DEBUG_SERIAL("NTP updated successfully!");
                 debugD("%s, %s\n\r", daysOfTheWeek[timeClient.getDay()], timeClient.getFormattedTime().c_str());
             }
             else
             {
-                debugE("Error updating NTP time!");
+                DEBUG_SERIAL("Error updating NTP time!");
             }
         }
 

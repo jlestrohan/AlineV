@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "esp32serial_service.h"
-#include "UartRingbuffer.h"
 #include "button_service.h"
 #include "main.h"
 #include "usart.h"
@@ -39,7 +38,8 @@ osMutexId_t mServoPositionMutex;
 
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
-HR04_SensorsData_t HR04_SensorsData;
+HR04_SensorsData_t HR04_SensorsData;	/* extern */
+HR04_SensorsData_t HR04_OldSensorsData;	/* extern */
 osMutexId_t mHR04_SensorsDataMutex;
 
 
@@ -84,8 +84,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	if (htim->Instance == TIM1) { /* HC-SR04 Sensor REAR */
 		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 		HR04_SensorsData.dist_rear = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
+		HR04_OldSensorsData = HR04_SensorsData;
 		osMutexRelease(mHR04_SensorsDataMutex);
-
 	}
 	else if (htim->Instance == TIM2)  /* HC-SR04 Sensor FRONT */
 	{
@@ -108,6 +108,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			HR04_SensorsData.dist_right90 =htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
 			break;
 		}
+		HR04_OldSensorsData = HR04_SensorsData;
 		osMutexRelease(mHR04_SensorsDataMutex);
 		osMutexRelease(mServoPositionMutex);
 
