@@ -24,15 +24,18 @@
 #include "esp32serial_service.h"
 #include "command_service.h"
 #include "BMP280_service.h"
+#include "usart.h"
 
 static struct jWriteControl jwc;
 
 /* function definitions */
 uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack);
+void vAtmosphericDataService_Start(void *vParameter);
 
 /* extern declared vars */
 BMP280_Data_t BMP280_Data;	/* extern */
 osMutexId_t mBMP280_DataMutex;	/* extern */
+osMessageQueueId_t xQueueEspSerialTX; /* extern */
 
 /** DATA CONTROL TASK **/
 static osThreadId_t xDataControlTaskHandle;
@@ -83,6 +86,14 @@ void vDataControlService_Start(void *vParameter)
 {
 	printf("Starting Data Control Service task.. Success!\n\r");
 
+	/*atmospheric data service task creation */
+	xAtmosphericDataTaskHandle = osThreadNew(vAtmosphericDataService_Start, NULL, &xAtmosphericDataTa_attributes);
+	if (xAtmosphericDataTaskHandle == NULL) {
+		printf("Atmospheric Data Initialization Failed\n\r");
+		Error_Handler();
+		osThreadTerminate(NULL);
+	}
+
 	for(;;)
 	{
 		/* queue to accept nav/system on request events */
@@ -102,12 +113,16 @@ void vAtmosphericDataService_Start(void *vParameter)
 
 	for (;;)
 	{
-		osDelay(10000); /* we start with a delay to give sensors a chance to be populated */
+		osDelay(10000);  /* we start with a delay to give sensors a chance to be populated */
 
-		uEncodeJson(CMD_TYPE_JSON_ATM, &msg_pack);
-		osMessageQueuePut(xQueueEspSerialTX, &msg_pack, 0U, osWaitForever);
-
-		osDelay(1);
+		if (uEncodeJson(CMD_TYPE_JSON_ATM, &msg_pack) == EXIT_SUCCESS) {
+#ifdef DEBUG_DATA_CONTROL
+			printf("transmitting %.*s\n\r", msg_pack.msg_size, msg_pack.json);
+#endif
+			if (xQueueEspSerialTX != NULL)
+				osMessageQueuePut(xQueueEspSerialTX, &msg_pack, 0U, osWaitForever);
+		}
+		osDelay(50);
 	}
 	osThreadTerminate(NULL);
 }
@@ -122,7 +137,7 @@ void vNavigationDataTask_Start(void *vParameter)
 	for (;;)
 	{
 
-		osDelay(10);
+		osDelay(50);
 	}
 	osThreadTerminate(NULL);
 }
@@ -141,13 +156,6 @@ uint8_t uDataServiceinit()
 		return (EXIT_FAILURE);
 	}
 
-	/*atmospheric data service task creation */
-	xAtmosphericDataTaskHandle = osThreadNew(vAtmosphericDataService_Start, NULL, &xAtmosphericDataTa_attributes);
-	if (xAtmosphericDataTaskHandle == NULL) {
-		printf("Atmospheric Data Initialization Failed\n\r");
-		Error_Handler();
-		return (EXIT_FAILURE);
-	}
 
 	/* navigation data service task creation */
 	xNavigationDataTaskHandle = osThreadNew(vNavigationDataTask_Start, NULL, &xNavigationDataTa_attributes);
@@ -184,17 +192,21 @@ uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
 	case CMD_TYPE_JSON_ATM:
 		jwObj_object(&jwc, "data");
 		jwObj_string(&jwc, "sensor_type", "BMP280");
+
 		osMutexAcquire(mBMP280_DataMutex, osWaitForever);
-		jwObj_double(&jwc, "pressure", (double)BMP280_Data.pressure/100);
-		jwObj_double(&jwc, "temperature", (double)BMP280_Data.temperature);
+		if (BMP280_Data.pressure > 0 || BMP280_Data.temperature > 0) {
+			jwObj_double(&jwc, "pressure", (double)BMP280_Data.pressure/100);
+			jwObj_double(&jwc, "temperature", (double)BMP280_Data.temperature);
+		} else return EXIT_FAILURE;
 		osMutexRelease(mBMP280_DataMutex);
+
 		jwEnd(&jwc);
 		break;
 
 	default: break;
 	}
 
-	err= jwClose(&jwc);                                  // close root object - done
+	err = jwClose(&jwc);                                  // close root object - done
 
 	//printf("%s\n\r", buffer);
 	uint8_t buffer_size = strlen(buffer);

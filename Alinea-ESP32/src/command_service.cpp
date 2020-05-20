@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:40:39
+ * @ Modified time: 2020-05-20 20:16:55
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -29,7 +29,6 @@
 #include "stm32Serial_service.h"
 #include "ntp_service.h"
 #include "configuration_esp32.h"
-#include "AWS_service.h"
 
 /* function definitions */
 static uint8_t _cmd_status(char **tokens, uint8_t count);

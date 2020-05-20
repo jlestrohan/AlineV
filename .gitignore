@@ -122,3 +122,11 @@ local.properties
 STM32_G474RE/submodules/
 
 Alinea-ESP32/include/AWS_Certificate.h
+
+Alinea-ESP32/data/0604963a32-certificate.pem.crt
+
+Alinea-ESP32/data/0604963a32-private.pem.key
+
+Alinea-ESP32/data/0604963a32-public.pem.key
+
+Alinea-ESP32/data/aws-root-ca.pem

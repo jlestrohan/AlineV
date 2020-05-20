@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-19 15:43:59
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:42:04
+ * @ Modified time: 2020-05-20 20:56:53
  * @ Description: This task decodes a json coming from the STM32 and makes it ready to be
  *                  sent over to AWS, via the embedded AWS service.
  *******************************************************************************************/
@@ -14,7 +14,7 @@
 #include <ArduinoJson.h>
 #include "configuration_esp32.h"
 #include "ntp_service.h"
-#include "AWS_service.h"
+#include "autoconnect_service.h"
 
 static xTaskHandle xDataReceiveJson;
 QueueHandle_t xQueueAWS_Send; /* extern */
@@ -31,7 +31,8 @@ static void vDataReceiveJsonTask(void *vParameters)
         if (xQueueDataJson != NULL)
         {
             xQueueReceive(xQueueDataJson, &json_msg, portMAX_DELAY);
-            uRemakeJSON(&json_msg);
+            //uRemakeJSON(&json_msg);
+            debugI("want to send json over to queue... ");
             // debugI("%.*s", json_msg.length, (char *)json_msg.json_str);
         }
         vTaskDelay(1);

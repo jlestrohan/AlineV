@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:30:01
+ * @ Modified time: 2020-05-20 20:16:12
  * @ Description:
  *******************************************************************************************/
 
@@ -20,7 +20,6 @@
 #include "command_service.h"
 #include "speed_service.h"
 #include "ledstrip_service.h"
-#include "AWS_service.h"
 #include "data_service.h"
 
 /* reemoving brownout detector */
@@ -69,7 +68,7 @@ void setup()
   uSetupDataServiceInit();
   uSetupSTM32SerialService(); /* check */
   //uSetupSpeedService();
-  uSetupAwsService();
+  //uSetupAwsService();
   uSetupOTA();
 
   lit_status_t ledstatus;
@@ -81,8 +80,6 @@ void setup()
   if (xQueueCommandParse != NULL)
     /* let's inform the STM that we have just rebooted */
     xQueueSend(xQueueCommandParse, &cmdRdyESP, portMAX_DELAY);
-
-  vPlayMelody(MelodyType_CommandReady);
 }
 
 // TODO: connect 2xI2C TOF https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/#7

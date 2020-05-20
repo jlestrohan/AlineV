@@ -114,6 +114,8 @@ void vNavControlNormalMotionTask(void *vParameters)
 {
 	printf("Starting Navigation Control task...\n\r");
 
+	uint16_t currentBearing;
+
 	xEventFlagNavControlMainCom = osEventFlagsNew(NULL);
 	if (xEventFlagNavControlMainCom == NULL) {
 		printf("Nav Control Event Flag Initialization Failed\n\r");
@@ -170,56 +172,57 @@ void vNavControlNormalMotionTask(void *vParameters)
 			/* FRONT SENSOR BEHAVIOUR */
 			osMutexAcquire(mMotorDataMutex, osWaitForever);
 
-				if (HR04_SensorsData.dist_front < US_FRONT_MIN_WARNING_CM) {
+			if (HR04_SensorsData.dist_front < US_FRONT_MIN_WARNING_CM) {
 				osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
-					motorMotion = MOTOR_SPEED_REDUCE_WARNING;
-					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
-					//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
-				}
-				if (HR04_SensorsData.dist_front < US_FRONT_MIN_DANGER_CM) {
-					motorMotion = MOTOR_SPEED_REDUCE_DANGER;
-					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
-					//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
-				}
-				if (HR04_SensorsData.dist_front < US_FRONT_MIN_STOP_CM) {
-					motorMotion = MOTOR_MOTION_IDLE;
-					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
-					printf("incident found front, servo at %lu, distance at: %d\n\r", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
-					xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
-				}
-
-				/* FRONT DERIVATION IF OBSTACLE IS DETECTED ON THE ANGLES */
-				/* once detected a warning zone, we try to follow a heading which is parallel to the obstacle detected at the angle */
-				/* FIXME: for now angle detection = stop motion! */
-				//			/* WAITING FOR CMPS12 inertial sensor to make that better */
-
-				if ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_WARNING_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_WARNING_CM)) {
-					motorMotion = MOTOR_SPEED_REDUCE_WARNING;
-					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
-					printf("incident found angles, reducing speed to MOTOR_SPEED_REDUCE_WARNING\n\r");
-				}
-				if ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_DANGER_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_DANGER_CM)) {
-					motorMotion = MOTOR_SPEED_REDUCE_DANGER;
-					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
-					printf("incident found angles, reducing speed to MOTOR_SPEED_REDUCE_DANGER\n\r");
-				}
-				if  ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_STOP_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_STOP_CM)) {
-					motorMotion = MOTOR_MOTION_IDLE;
-					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
-					printf("incident found angles, servo %lu, distL: %d, distR: %d\n\r", htim5.Instance->CCR1, HR04_SensorsData.dist_left45, HR04_SensorsData.dist_right45);
-					xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
-				}
-				osMutexRelease(mHR04_SensorsDataMutex);
-
+				motorMotion = MOTOR_SPEED_REDUCE_WARNING;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
 			}
+			if (HR04_SensorsData.dist_front < US_FRONT_MIN_DANGER_CM) {
+				motorMotion = MOTOR_SPEED_REDUCE_DANGER;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				//printf("incident found front, servo at %lu, distance at: %d", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
+			}
+			if (HR04_SensorsData.dist_front < US_FRONT_MIN_STOP_CM) {
+				motorMotion = MOTOR_MOTION_IDLE;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				printf("incident found front, servo at %lu, distance at: %d\n\r", htim5.Instance->CCR1, HR04_SensorsData.dist_front);
+				xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
+			}
+
+			/* FRONT DERIVATION IF OBSTACLE IS DETECTED ON THE ANGLES */
+			/* once detected a warning zone, we try to follow a heading which is parallel to the obstacle detected at the angle */
+			/* FIXME: for now angle detection = stop motion! */
+			//			/* WAITING FOR CMPS12 inertial sensor to make that better */
+
+			if ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_WARNING_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_WARNING_CM)) {
+				motorMotion = MOTOR_SPEED_REDUCE_WARNING;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				printf("incident found angles, reducing speed to MOTOR_SPEED_REDUCE_WARNING\n\r");
+			}
+			if ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_DANGER_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_DANGER_CM)) {
+				motorMotion = MOTOR_SPEED_REDUCE_DANGER;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				printf("incident found angles, reducing speed to MOTOR_SPEED_REDUCE_DANGER\n\r");
+			}
+			if  ((HR04_SensorsData.dist_left45 < US_ANGLE_MIN_STOP_CM) || (HR04_SensorsData.dist_right45 < US_ANGLE_MIN_STOP_CM)) {
+				motorMotion = MOTOR_MOTION_IDLE;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever); /* completely stop the motors*/
+				printf("incident found angles, servo %lu, distL: %d, distR: %d\n\r", htim5.Instance->CCR1, HR04_SensorsData.dist_left45, HR04_SensorsData.dist_right45);
+				xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
+			}
+			osMutexRelease(mHR04_SensorsDataMutex);
+
+
 			osMutexRelease(mMotorDataMutex);
+
 			break;
 
 
 
 
 			/* avoid flag is set, we try some emergency measures */
-		case NAV_STATUS_AVOIDING : {
+		case NAV_STATUS_AVOIDING :
 			/* sensors */
 			_vServoLedMotionBackwardRules();
 
@@ -258,7 +261,7 @@ void vNavControlNormalMotionTask(void *vParameters)
 
 			/* saves the current bearing */
 			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
-			currentBearing = CMPS12_SensorData.CompassBearing;
+			//currentBearing = CMPS12_SensorData.CompassBearing;
 			osMutexRelease(mCMPS12_SensorDataMutex);
 
 			xCurrentNavStatus = NAV_STATUS_EXPLORING;
@@ -270,8 +273,8 @@ void vNavControlNormalMotionTask(void *vParameters)
 			_vServoLedMotionForwardRules();
 			osDelay(1000);	motorMotion = MOTOR_MOTION_FORWARD;
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
-		}
 
+			break;
 		case NAV_STATUS_CANCELLING:
 
 			break;
@@ -320,6 +323,7 @@ static void vNavDecisionControlTask(void *vParameter)
 	xServoPattern_t xSrvpattrn;
 	NavSpecialEvent_t special_event;
 	char msg[30];
+	uint16_t currentBearing;
 
 	xMessageQueueDecisionControlMainCom = osMessageQueueNew(10, sizeof(uint8_t), NULL);
 	if (xMessageQueueDecisionControlMainCom == NULL) {

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-21 00:30:22
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:44:25
+ * @ Modified time: 2020-05-20 18:42:46
  * @ Description:
  *******************************************************************************************/
 
@@ -90,7 +90,7 @@ uint8_t uSetupOTA()
         "vOtaLoopTask",   /* String with name of task. */
         10000,            /* Stack size in words. */
         NULL,             /* Parameter passed as input of the task */
-        1,                /* Priority of the task. */
+        8,                /* Priority of the task. */
         &xTaskOtaHandle); /* Task handle. */
 
     if (xTaskOtaHandle == NULL)

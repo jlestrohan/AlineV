@@ -20,7 +20,7 @@
 
 #define CMD_LINE_MAX_LENGTH 50
 #define MAX_HDLC_FRAME_LENGTH 1024 /* this is the main frame length available */
-#define MAX_JSON_MSG_SIZE 256
+#define MAX_JSON_MSG_SIZE 512
 
 /**
  * @brief free up pointer and pointed memory at the same time 
