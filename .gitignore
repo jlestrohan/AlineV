@@ -132,3 +132,7 @@ Alinea-ESP32/data/0604963a32-private.pem.key
 Alinea-ESP32/data/0604963a32-public.pem.key
 
 Alinea-ESP32/data/aws-root-ca.pem
+
+AlineV_ESP8266GW/include/wifi_credentials.h
+
+AlineV_ESP8266GW/include/AWS_Certificate.h
