@@ -7,7 +7,7 @@
  * @attention
  *				PINOUT =>
  *
- *
+ * Datasheet: https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BME280-DS002.pdf
  *
  ******************************************************************************
  */
@@ -22,6 +22,8 @@
 /**
  * BMP280 registers
  */
+#define BMP280_REG_HUM_LSB     0xFE /* bits: 7-4 */
+#define BMP280_REG_HUM_MSB     0xFD /* bits: 7-4 */
 #define BMP280_REG_TEMP_XLSB   0xFC /* bits: 7-4 */
 #define BMP280_REG_TEMP_LSB    0xFB
 #define BMP280_REG_TEMP_MSB    0xFA
@@ -72,8 +74,6 @@ static void vBMP280SensorTaskStart(void *argument)
 		osThreadTerminate(NULL);
 	}
 
-	mBMP280_DataMutex = osMutexNew(NULL);
-
 	bmp280_init_default_params(&bmp280.params);
 	bmp280.addr = BMP280_I2C_ADDRESS_0;
 	bmp280.i2c = &hi2c4;
@@ -100,7 +100,7 @@ static void vBMP280SensorTaskStart(void *argument)
 					BMP280_Data.pressure/100, BMP280_Data.temperature);
 
 			if (bme280p) { /* keep if sensor change */
-				printf(", Humidity: %.2f\n\r", BMP280_Data.humidity);
+			printf(", Humidity: %lu\n\r", BMP280_Data.humidity);
 			}
 			else {
 				printf("\n\r");
@@ -127,6 +127,8 @@ uint8_t uBmp280ServiceInit()
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
+
+	mBMP280_DataMutex = osMutexNew(NULL);
 
 	return EXIT_SUCCESS;
 }
@@ -274,7 +276,7 @@ bool bmp280_init(BMP280_HandleTypedef *dev, bmp280_params_t *params) {
 	}
 
 	uint8_t ctrl = (params->oversampling_temperature << 5)
-																							| (params->oversampling_pressure << 2) | (params->mode);
+			| (params->oversampling_pressure << 2) | (params->mode);
 
 	if (dev->id == BME280_CHIP_ID) {
 		// Write crtl hum reg first, only active after write to BMP280_REG_CTRL.
@@ -346,7 +348,7 @@ static inline uint32_t compensate_pressure(BMP280_HandleTypedef *dev, int32_t ad
 	var2 = var2 + ((var1 * (int64_t) dev->dig_P5) << 17);
 	var2 = var2 + (((int64_t) dev->dig_P4) << 35);
 	var1 = ((var1 * var1 * (int64_t) dev->dig_P3) >> 8)
-																							+ ((var1 * (int64_t) dev->dig_P2) << 12);
+					+ ((var1 * (int64_t) dev->dig_P2) << 12);
 	var1 = (((int64_t) 1 << 47) + var1) * ((int64_t) dev->dig_P1) >> 33;
 
 	if (var1 == 0) {
@@ -374,10 +376,11 @@ static inline uint32_t compensate_humidity(BMP280_HandleTypedef *dev, int32_t ad
 	v_x1_u32r = fine_temp - (int32_t) 76800;
 	v_x1_u32r = ((((adc_hum << 14) - ((int32_t) dev->dig_H4 << 20)
 			- ((int32_t) dev->dig_H5 * v_x1_u32r)) + (int32_t) 16384) >> 15)
-																							* (((((((v_x1_u32r * (int32_t) dev->dig_H6) >> 10)
-																									* (((v_x1_u32r * (int32_t) dev->dig_H3) >> 11)
-																											+ (int32_t) 32768)) >> 10) + (int32_t) 2097152)
-																									* (int32_t) dev->dig_H2 + 8192) >> 14);
+			* (((((((v_x1_u32r * (int32_t) dev->dig_H6) >> 10)
+			* (((v_x1_u32r * (int32_t) dev->dig_H3) >> 11)
+			+ (int32_t) 32768)) >> 10) + (int32_t) 2097152)
+			* (int32_t) dev->dig_H2 + 8192) >> 14);
+
 	v_x1_u32r = v_x1_u32r
 			- (((((v_x1_u32r >> 15) * (v_x1_u32r >> 15)) >> 7)
 					* (int32_t) dev->dig_H1) >> 4);

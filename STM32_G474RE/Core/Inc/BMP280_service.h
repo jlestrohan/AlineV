@@ -33,7 +33,7 @@ uint8_t uBmp280ServiceInit();
 typedef struct {
 	float pressure;
 	float temperature;
-	float humidity;
+	uint32_t humidity;
 } BMP280_Data_t;
 
 extern BMP280_Data_t BMP280_Data;
