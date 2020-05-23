@@ -97,7 +97,7 @@ void vCommandParserServiceTask(void *vParameter)
 
 		osDelay(50);
 	}
-	osThreadTerminate(xCommandParserServiceTaskHnd);
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -165,24 +165,26 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 	if ( json_getType( data_topic ) != JSON_OBJ ) return EXIT_FAILURE;
 
 	//FIXME STUB
-	char **tokens = (char *[]) {"motors", "forward"};
-	uint8_t count = 2;
+	//char **tokens = (char *[]) {"motors", "forward"};
+	//uint8_t count = 2;
 
 	//TODO: nested command: https://github.com/rafagafe/tiny-json
 	/* we browse thru cEsp32commands and compare it with cmd
 	   if that command is an ESP32 one we will treat that here */
-	size_t stmCmdAarray = sizeof(stm32_commands_list) / sizeof(stm32_commands_list[0]);
+	//size_t stmCmdAarray = sizeof(stm32_commands_list) / sizeof(stm32_commands_list[0]);
 
-	for (uint8_t i = 0; i < stmCmdAarray; i++)
+	/*for (uint8_t i = 0; i < stmCmdAarray; i++)
 	{
 		if (strcmp(tokens[0], stm32_commands_list[i].command) == 0)
 		{
 			//stm32_commands_list[i].commands_func(tokens, count);
 			return EXIT_SUCCESS;
 		}
-	}
+	}*/
 
-	return EXIT_FAILURE;
+	//return EXIT_FAILURE;
+
+	return EXIT_SUCCESS;
 }
 
 /**************************************************** COMMANDS **************************************

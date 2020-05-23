@@ -70,6 +70,14 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 /* on a backward motion distance under which the rover will stop going backward */
 #define US_REAR_MIN_STOP_CM							20
 
+/* RX TX BUFFERS */
+#define UART_DMA_BUFFER_SIZE 1024
+#define PARSER_MESSAGE_LIST_SIZE 8
+#define PARSER_MESSAGE_SIZE 1024
+#define MAX_JSON_MSG_SIZE 256
+
+#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
+
 
 /**
  * osPriorityNone          =  0,         ///< No priority (not initialized).

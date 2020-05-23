@@ -3,6 +3,8 @@
  *
  *  Created on: May 8, 2020
  *      Author: aez03
+ *
+ *      Pinout: PB1 -> LEDSTRIP
  */
 
 #include "uvLed_service.h"
@@ -11,6 +13,7 @@
 #include "main.h"
 #include "configuration.h"
 #include "gpio.h"
+#include "tim.h"
 
 osMessageQueueId_t xQueueUVLedStatus;
 

@@ -86,11 +86,6 @@ static void vOnBoardButtonServiceTask(void *argument)
 	uint32_t uOnboardBtnLastPressedTick = HAL_GetTick();
 	uint32_t uExternalBtnLastPressedTick = HAL_GetTick();
 
-	xQueueButtonEvent = osMessageQueueNew(1, sizeof(uint8_t), NULL);
-	if (xQueueButtonEvent == NULL) {
-		printf("Button Service Queue initialization failed!\n\r");
-		Error_Handler();
-	}
 
 	for (;;)
 	{
@@ -125,7 +120,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 		}
 		osDelay(1);
 	}
-	osThreadTerminate(xOnboardButtonServiceTaskHandle);
+	osThreadTerminate(NULL);
 }
 
 /**
@@ -133,6 +128,11 @@ static void vOnBoardButtonServiceTask(void *argument)
  */
 uint8_t uButtonServiceInit()
 {
+	xQueueButtonEvent = osMessageQueueNew(1, sizeof(uint8_t), NULL);
+		if (xQueueButtonEvent == NULL) {
+			printf("Button Service Queue initialization failed!\n\r");
+			Error_Handler();
+		}
 
 	xOnboardButtonServiceTaskHandle = osThreadNew(vOnBoardButtonServiceTask, NULL, &xOnBoardButtonServiceTask_attributes);
 	if (xOnboardButtonServiceTaskHandle == NULL) {

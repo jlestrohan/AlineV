@@ -18,14 +18,7 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
-//#include "UartRingbuffer.h"
-
-#define UART_DMA_BUFFER_SIZE 2048
-#define PARSER_MESSAGE_LIST_SIZE 8
-#define PARSER_MESSAGE_SIZE 1024
-#define MAX_JSON_MSG_SIZE 256
-
-#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
+#include "configuration.h"
 
 extern osMessageQueueId_t xQueueEspSerialTX;
 
@@ -34,7 +27,7 @@ extern uint8_t UART_DMA_BUF[UART_DMA_BUFFER_SIZE];
 typedef struct
 {
 	uint8_t json[MAX_JSON_MSG_SIZE];
-    uint16_t msg_size;
+    size_t msg_size;
 } jsonMessage_t;
 //extern jsonMessage_t JsonMsg;
 

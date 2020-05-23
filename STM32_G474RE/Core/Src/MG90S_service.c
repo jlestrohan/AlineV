@@ -155,13 +155,6 @@ void vFrontServo_Start(void* vParameters)
 {
 	printf("Starting FrontServo Service task...\n\r");
 
-	xQueueMg90sMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
-	if (xQueueMg90sMotionOrder == NULL) {
-		printf("Front Servo Message Queue Initialization Failed\n\r");
-		osThreadTerminate(NULL);
-		Error_Handler();
-	}
-
 	xServoPattern_t xServopattern;
 	osStatus_t status;
 	//uint8_t motion_status;
@@ -211,6 +204,13 @@ void vFrontServo_Start(void* vParameters)
  */
 uint8_t uMg90sServiceInit()
 {
+
+	xQueueMg90sMotionOrder = osMessageQueueNew(10, sizeof(uint8_t), NULL);
+	if (xQueueMg90sMotionOrder == NULL) {
+		printf("Front Servo Message Queue Initialization Failed\n\r");
+		osThreadTerminate(NULL);
+		Error_Handler();
+	}
 
 	/* creation of xFrontServo_task */
 	xFrontServoTaskHnd = osThreadNew(vFrontServo_Start, NULL, &xFrontServoTa_attributes);

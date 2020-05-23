@@ -10,7 +10,6 @@
  *******************************************************************/
 
 #include "esp32serial_service.h"
-#include "configuration.h"
 #include "printf.h"
 #include "main.h"
 #include "command_service.h"
@@ -77,11 +76,11 @@ static void hdlc_frame_handler(uint8_t *data, uint8_t length)
 
 	//printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
 	/* some cleanup */
-	memcpy(msg.json, data, length);
-	msg.msg_size = length;
+	//snprintf(msg.json, length, (uint8_t *)data);
+	//msg.msg_size = length;
 
 	/* straight to command service to be interpreted */
-	osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
+	//osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
 }
 
 /**
@@ -106,12 +105,13 @@ void vEsp32TXSerialService_Start(void* vParameter)
 		status = osMessageQueueGet(xQueueEspSerialTX, &msg_packet, 0U, osWaitForever);
 		if (status == osOK) {
 			//printf("sending hdlc frame for %d bytes", msg_packet.msg_size);
-			osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
-			vSendFrame(msg_packet.json, msg_packet.msg_size);
-			osMutexRelease(mHdlcProtocolMutex);
+			//osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
+			//vSendFrame(msg_packet.json, msg_packet.msg_size);
+			//osMutexRelease(mHdlcProtocolMutex);
+			HAL_UART_Transmit(&huart3, msg_packet.json, msg_packet.msg_size, HAL_MAX_DELAY);
 		}
 
-		osDelay(1); /* every 5 seconds we send a test command */
+		osDelay(10); /* every 5 seconds we send a test command */
 	}
 	osThreadTerminate(NULL);
 }
@@ -132,22 +132,22 @@ void vEsp32RXSerialService_Start(void* vParameter)
 
 	for (;;)
 	{
-		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
-		{
-			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
+		//if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
+		//{
+		//	HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
 
-			osMutexAcquire(mUartRingBufferMutex, osWaitForever);
-			char inChar = (char)Uart_read(); /* read one byte of data */
-			osMutexRelease(mUartRingBufferMutex);
+		//	osMutexAcquire(mUartRingBufferMutex, osWaitForever);
+			//char inChar = (char)Uart_read(); /* read one byte of data */
+		//	osMutexRelease(mUartRingBufferMutex);
 
 			// Pass all incoming data to hdlc char receiver
-			osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
-			vCharReceiver(inChar);
-			osMutexRelease(mHdlcProtocolMutex);
+		//	osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
+			//vCharReceiver(inChar);
+		//	osMutexRelease(mHdlcProtocolMutex);
 
-			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
-		}
-		osDelay(1);
+		//	HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
+		//}
+		osDelay(10);
 	}
 	osThreadTerminate(NULL);
 }

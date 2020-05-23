@@ -23,10 +23,8 @@
 #include "cmsis_os.h"
 #include "adc.h"
 #include "dma.h"
-#include "app_fatfs.h"
 #include "i2c.h"
 #include "usart.h"
-#include "spi.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -100,10 +98,6 @@ int main(void)
   MX_DMA_Init();
   MX_LPUART1_UART_Init();
   MX_I2C1_Init();
-  MX_SPI2_Init();
-  if (MX_FATFS_Init() != APP_OK) {
-    Error_Handler();
-  }
   MX_I2C3_Init();
   MX_I2C4_Init();
   MX_TIM1_Init();

@@ -53,8 +53,6 @@ static const osThreadAttr_t xCMPS12SensorTa_attributes = {
  */
 void vCMPS12SensorTaskStart(void *vParameters)
 {
-	mCMPS12_SensorDataMutex = osMutexNew(NULL);
-
 	for (;;)
 	{
 		_populate_values();
@@ -85,6 +83,8 @@ void vCMPS12SensorTaskStart(void *vParameters)
  */
 uint8_t uCmps12ServiceInit()
 {
+	mCMPS12_SensorDataMutex = osMutexNew(NULL);
+
 	/* creation of CMPS12 task */
 	xCMPS12SensorTaskHandle = osThreadNew(vCMPS12SensorTaskStart, NULL, &xCMPS12SensorTa_attributes);
 	if (xCMPS12SensorTaskHandle == NULL) {

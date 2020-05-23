@@ -19,6 +19,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include <stdlib.h>
+#include <stdint.h>
 #include "printf.h"
 #include "jwrite.h"
 #include "esp32serial_service.h"
@@ -27,6 +28,9 @@
 #include "usart.h"
 
 static struct jWriteControl jwc;
+
+
+unsigned long *id = (unsigned long *)0x1FFF7590;
 
 /* function definitions */
 static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack);
@@ -110,18 +114,23 @@ static void vDataControlService_Start(void *vParameter)
 static void vAtmosphericDataService_Start(void *vParameter)
 {
 	jsonMessage_t msg_pack;
+	uint16_t counter = 0;
 
 	for (;;)
 	{
-		osDelay(10000);  /* we start with a delay to give sensors a chance to be populated */
+		osDelay(30000);  /* we start with a delay to give sensors a chance to be populated */
 
 		if (uEncodeJson(CMD_TYPE_JSON_ATM, &msg_pack) == EXIT_SUCCESS) {
 #ifdef DEBUG_DATA_CONTROL
-			printf("transmitting %.*s\n\r", msg_pack.msg_size, msg_pack.json);
+			printf("%.*s", msg_pack.msg_size, (char *)msg_pack.json);
 #endif
+			counter++;
 			if (xQueueEspSerialTX != NULL)
 				osMessageQueuePut(xQueueEspSerialTX, &msg_pack, 0U, osWaitForever);
+		} else {
+			printf("error uEncodeJSON");
 		}
+
 		osDelay(50);
 	}
 	osThreadTerminate(NULL);
@@ -158,13 +167,13 @@ uint8_t uDataServiceinit()
 
 
 	/* navigation data service task creation */
-	xNavigationDataTaskHandle = osThreadNew(vNavigationDataTask_Start, NULL, &xNavigationDataTa_attributes);
+	/*xNavigationDataTaskHandle = osThreadNew(vNavigationDataTask_Start, NULL, &xNavigationDataTa_attributes);
 	if (xNavigationDataTaskHandle == NULL)
 	{
 		printf("Navigation Data Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
-	}
+	}*/
 
 	return EXIT_SUCCESS;
 }
@@ -178,25 +187,28 @@ uint8_t uDataServiceinit()
 static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
 {
 	//https://github.com/jonaskgandersson/jWrite/blob/master/main.c
-	char buffer[1024];
-	unsigned int buflen= 1024;
+	char buffer[MAX_JSON_MSG_SIZE+1];
 	uint8_t err;
 
-	jwOpen( &jwc, buffer, buflen, JW_OBJECT, JW_COMPACT );  /* open root node as object */
-	jwObj_string( &jwc, "uuid", "1256454565" );            /* STUB */
-	jwObj_string( &jwc, "command_type", "ATM" );
+	/* formats the unique id */
+	char uuid[40];
+	sprintf(uuid, "%lu-%lu-%lu", id[0], id[1], id[2]);
+
+	jwOpen( &jwc, buffer, MAX_JSON_MSG_SIZE, JW_OBJECT, JW_COMPACT );  /* open root node as object */
+	jwObj_string( &jwc, "id", uuid );
+	jwObj_string( &jwc, "cmd", "ATM" );
 
 	switch (cmd_type)
 	{
 	/* atmospheric stuff */
 	case CMD_TYPE_JSON_ATM:
 		jwObj_object(&jwc, "data");
-		jwObj_string(&jwc, "sensor_type", "BMP280");
+		jwObj_string(&jwc, "sns", "BME280");
 
 		osMutexAcquire(mBMP280_DataMutex, osWaitForever);
 		if (BMP280_Data.pressure > 0 || BMP280_Data.temperature > 0) {
-			jwObj_double(&jwc, "pressure", (double)BMP280_Data.pressure/100);
-			jwObj_double(&jwc, "temperature", (double)BMP280_Data.temperature);
+			jwObj_double(&jwc, "Ps", (double)BMP280_Data.pressure/100);
+			jwObj_double(&jwc, "Tp", (double)BMP280_Data.temperature);
 		} else return EXIT_FAILURE;
 		osMutexRelease(mBMP280_DataMutex);
 
@@ -211,9 +223,9 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack)
 		printf("%s", err);
 	}
 
-	//printf("%s\n\r", buffer);
-	uint8_t buffer_size = strlen(buffer);
+	size_t buffer_size = strlen(buffer);
 	memcpy(msg_pack->json, buffer, buffer_size);
+	//msg_pack->json[buffer_size+1] = (char)'\n';
 	msg_pack->msg_size = buffer_size;
 
 	return EXIT_SUCCESS;

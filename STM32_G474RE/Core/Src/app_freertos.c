@@ -33,7 +33,6 @@
 #include "printf.h"
 #include "i2c.h"
 #include "Button_service.h"
-#include "sdcard_service.h"
 #include "IRQ_Handler.h"
 #include "BMP280_service.h"
 #include "lcdMenu_service.h"
@@ -170,13 +169,6 @@ void MX_FREERTOS_Init(void) {
 		//Error_Handler();
 	}
 #endif
-
-	/*if (uSdCardServiceInit() == EXIT_FAILURE) {
-		loggerE("Error Initializing SD Card Service");
-		Error_Handler();
-	} else {
-		ServicesSuccessFlags |= SERVICE_SDCARD_COMPLETE;
-	}*/
 
 #ifdef DEBUG_SERVICE_MOTORS
 	if (uMotorsControlServiceInit() == EXIT_FAILURE) {
