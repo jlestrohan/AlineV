@@ -2,14 +2,16 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:59:11
+ * @ Modified time: 2020-05-21 22:34:16
  * @ Description:
  *******************************************************************************************/
 
 #include "FreeRTOS.h"
 #include "stm32Serial_service.h"
 #include "configuration_esp32.h"
+#include "autoconnect_service.h"
 #include <stdint.h>
+#include <stddef.h>
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
 #include "command_service.h"
@@ -20,10 +22,11 @@ static xTaskHandle xStm32TXSerialServiceTask_hnd = NULL; /* for TX */
 static xTaskHandle xStm32RXSerialServiceTask_hnd = NULL; /* for RX */
 
 SemaphoreHandle_t xSemaphoreSerial2Mutex;
-QueueHandle_t xQueueDataJson;
+//QueueHandle_t xQueueDataJson;
+QueueHandle_t xQueueAWS_Send;
 
 /* function definitions */
-static void hdlc_frame_handler(const uint8_t *data, uint16_t length);
+static void hdlc_frame_handler(uint8_t *data, size_t length);
 static void send_character(uint8_t data);
 
 HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
@@ -38,18 +41,18 @@ HDLC_Prot hdlc(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
  */
 static void vStm32TXSerialServiceTaskCode(void *pvParameters)
 {
-  jsonMessage_t jsonMsg;
+  // jsonMessage_t jsonMsg;
 
   for (;;)
   {
     /* receiving queue for objects tro be sent over */
-    xQueueReceive(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY);
-
+    // xQueueReceive(xQueueSerialServiceTX, &jsonMsg, portMAX_DELAY);
+    //debugI("HEAP: %lu/%lu", ESP.getFreeHeap(), ESP.getHeapSize());
     /* we send the json over */
-    debugI("SENT: %.*s", jsonMsg.msg_size, (char *)jsonMsg.json);
+    //debugI("SENT: %.*s", jsonMsg.msg_size, (char *)jsonMsg.json);
     //Serial2.println(jsonMsg.json);
 
-    hdlc.sendFrame(jsonMsg.json, jsonMsg.msg_size);
+    //hdlc.sendFrame(jsonMsg.json, jsonMsg.msg_size);
 
     vTaskDelay(1);
   }
@@ -65,22 +68,19 @@ static void vStm32TXSerialServiceTaskCode(void *pvParameters)
  */
 static void vStm32RXSerialServiceTaskCode(void *pvParameters)
 {
-  String RXJson;
-  char inChar;
+  char inData;
 
   for (;;)
   {
-    //debugI("Free HEAP: %lu on HEAP TOTAL: %lu", ESP.getFreeHeap(), ESP.getHeapSize());
-
-    // Read some bytes from the USB serial port..
     if (Serial2.available() > 0)
     {
       xSemaphoreTake(xSemaphoreSerial2Mutex, portMAX_DELAY);
-      inChar = (char)Serial2.read();
-      hdlc.charReceiver(inChar);
+      inData = Serial2.read();
       xSemaphoreGive(xSemaphoreSerial2Mutex);
+      vTaskDelay(1);
+      hdlc.charReceiver(inData);
     }
-    vTaskDelay(10);
+    vTaskDelay(1);
   }
   vTaskDelete(NULL);
 }
@@ -112,14 +112,17 @@ uint8_t uSetupSTM32SerialService()
   }
 
   /* setup UART communications to and from STM32 on UART2 port */
+  xSemaphoreTake(xSemaphoreSerial2Mutex, portMAX_DELAY);
+  Serial2.setRxBufferSize(1024);
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+  xSemaphoreGive(xSemaphoreSerial2Mutex);
 
   /* we attempt to create the serial listener task */
   DEBUG_SERIAL("xStm32TXSerialService Task ... Creating");
   xTaskCreate(
       vStm32TXSerialServiceTaskCode,   /* Task function. */
       "vStm32TXSerialServiceTaskCode", /* String with name of task. */
-      10000,                           /* Stack size in words. */
+      8192,                            /* Stack size in words. */
       NULL,                            /* Parameter passed as input of the task */
       5,                               /* Priority of the task. */
       &xStm32TXSerialServiceTask_hnd); /* Task handle. */
@@ -144,9 +147,9 @@ uint8_t uSetupSTM32SerialService()
   xTaskCreate(
       vStm32RXSerialServiceTaskCode,   /* Task function. */
       "vStm32RXSerialServiceTaskCode", /* String with name of task. */
-      10000,                           /* Stack size in words. */
+      8192,                            /* Stack size in words. */
       NULL,                            /* Parameter passed as input of the task */
-      8,                               /* Priority of the task. */
+      5,                               /* Priority of the task. */
       &xStm32RXSerialServiceTask_hnd); /* Task handle. */
 
   /* check and deinit stuff if applicable */
@@ -189,21 +192,17 @@ static void send_character(uint8_t data)
  * @param  length: 
  * @retval None
  */
-static void hdlc_frame_handler(const uint8_t *data, uint16_t length)
+static void hdlc_frame_handler(uint8_t *data, size_t length)
 {
   /* Do something with data that is in framebuffer */
-  //debugI("RECEIVED: %.*s for %d bytes", length, (char *)data, length);
-
-  /* we got a json from the stm32, we direct it to the data service to be rearranged by the ESP32, then
-  encapsulated thru the AWS service to ne sent over to the cloud */
-  xJsonPackage_t json_pack;
-  memcpy(json_pack.json_str, data, length);
-  json_pack.length = length;
-
-  if (xQueueDataJson != NULL)
+  jsonMessage_t json_pack;
+  memset(json_pack.json, 0, MAX_JSON_MSG_SIZE);
+  memcpy(json_pack.json, data, length);
+  json_pack.msg_size = length;
+  if (xQueueAWS_Send != NULL)
   {
-    // debugI("resending STM32 JSON to Data Service: %.*s", length, json_pack.json_str);
-    xQueueSend(xQueueDataJson, &json_pack, portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
+    debugI("%s", (char *)json_pack.json);
+    xQueueSend(xQueueAWS_Send, &json_pack, portMAX_DELAY); /* send to the command parser that will form the json and forward it to the postman */
   }
   else
   {

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 20:16:55
+ * @ Modified time: 2020-05-21 11:14:38
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -18,6 +18,7 @@
 
 // https://arduinojson.org/v6/assistant/
 
+#include "configuration_esp32.h"
 #include "FreeRTOS.h"
 #include "command_service.h"
 #include "ledstrip_service.h"
@@ -28,7 +29,6 @@
 #include <ArduinoJson.h>
 #include "stm32Serial_service.h"
 #include "ntp_service.h"
-#include "configuration_esp32.h"
 
 /* function definitions */
 static uint8_t _cmd_status(char **tokens, uint8_t count);
@@ -122,9 +122,9 @@ uint8_t uSetupCmdParser()
   xTaskCreate(
       vCommandParserTaskCode,   /* Task function. */
       "vCommandParserTaskCode", /* String with name of task. */
-      10000,                    /* Stack size in words. */
+      4096,                     /* Stack size in words. */
       NULL,                     /* Parameter passed as input of the task */
-      7,                        /* Priority of the task. */
+      15,                       /* Priority of the task. */
       &xCommandParserTask_hnd); /* Task handle. */
 
   if (xCommandParserTask_hnd == NULL)

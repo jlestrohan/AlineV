@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-09 10:35:09
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-11 20:19:51
+ * @ Modified time: 2020-05-21 00:45:37
  * @ Description:
  *******************************************************************************************/
 
@@ -57,6 +57,7 @@ void vSpeedServiceTask(void *pvParameters)
 {
     for (;;)
     {
+
         if (interruptCounter > 0)
         {
             portENTER_CRITICAL(&mux);
@@ -67,7 +68,7 @@ void vSpeedServiceTask(void *pvParameters)
             // debugI("An interrupt has occurred. Total: ");
             //debugI("%d", numberOfInterrupts);
         }
-        vTaskDelay(30);
+        vTaskDelay(300);
     }
     vTaskDelete(vSpeedServiceTask_handle);
 }

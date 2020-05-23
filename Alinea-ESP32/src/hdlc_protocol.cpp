@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-05 17:12:31
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:25:36
+ * @ Modified time: 2020-05-21 20:25:09
  * @ Description:
  *******************************************************************************************/
 
@@ -90,7 +90,7 @@ static uint16_t _crc_ccitt_update(uint16_t crc, uint8_t data)
     return crc;
 }*/
 
-HDLC_Prot::HDLC_Prot(sendchar_type put_char, frame_handler_type hdlc_command_router, uint16_t max_frame_length) : sendchar_function(put_char), frame_handler(hdlc_command_router)
+HDLC_Prot::HDLC_Prot(sendchar_type put_char, frame_handler_type hdlc_command_router, size_t max_frame_length) : sendchar_function(put_char), frame_handler(hdlc_command_router)
 {
     /* sHdlcProtMutex = xSemaphoreCreateMutex();
     if (sHdlcProtMutex == NULL)
@@ -105,7 +105,7 @@ HDLC_Prot::HDLC_Prot(sendchar_type put_char, frame_handler_type hdlc_command_rou
 }
 
 /* Function to send a byte throug USART, I2C, SPI etc.*/
-void inline HDLC_Prot::sendchar(uint8_t data)
+void HDLC_Prot::sendchar(uint8_t data)
 {
     (*this->sendchar_function)(data);
 }
@@ -160,7 +160,7 @@ void HDLC_Prot::charReceiver(uint8_t data)
 }
 
 /* Wrap given data in HDLC frame and send it out byte at a time*/
-void HDLC_Prot::sendFrame(const uint8_t *framebuffer, uint8_t frame_length)
+void HDLC_Prot::sendFrame(const uint8_t *framebuffer, size_t frame_length)
 {
     uint8_t data;
     uint16_t fcs = CRC16_CCITT_INIT_VAL;

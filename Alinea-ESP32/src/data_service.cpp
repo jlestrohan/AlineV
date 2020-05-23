@@ -2,40 +2,41 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-19 15:43:59
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 23:49:44
+ * @ Modified time: 2020-05-21 11:18:12
  * @ Description: This task decodes a json coming from the STM32 and makes it ready to be
  *                  sent over to AWS, via the embedded AWS service.
  *******************************************************************************************/
 
+#include "configuration_esp32.h"
 #include <stdio.h>
 #include "data_service.h"
 #include <FreeRTOS.h>
 #include "remoteDebug_service.h"
 #include <ArduinoJson.h>
-#include "configuration_esp32.h"
 #include "ntp_service.h"
 #include "autoconnect_service.h"
 
 static xTaskHandle xDataReceiveJson;
-QueueHandle_t xQueueAWS_Send; /* extern */
+//QueueHandle_t xQueueAWS_Send; /* extern */
 
 /* function definitions */
 static uint8_t uRemakeJSON(xJsonPackage_t *jsonPack);
 
 static void vDataReceiveJsonTask(void *vParameters)
 {
-    xJsonPackage_t json_msg;
+    //xJsonPackage_t json_msg;
 
     for (;;)
     {
-        if (xQueueDataJson != NULL)
+        /* if (xQueueDataJson != NULL)
         {
             xQueueReceive(xQueueDataJson, &json_msg, portMAX_DELAY);
             uRemakeJSON(&json_msg);
 
             // debugI("%.*s", json_msg.length, (char *)json_msg.json_str);
-        }
-        vTaskDelay(1);
+        }*/
+
+        vTaskDelay(20);
     }
     vTaskDelete(NULL);
 }
@@ -48,19 +49,19 @@ static void vDataReceiveJsonTask(void *vParameters)
  */
 uint8_t uSetupDataServiceInit()
 {
-    xQueueDataJson = xQueueCreate(3, sizeof(xJsonPackage_t));
-    if (xQueueDataJson == NULL)
-    {
-        debugE("xQueueDataJson ... Error");
-        return EXIT_FAILURE;
-    }
-    debugI("xQueueDataJson ... Success!");
+    //xQueueDataJson = xQueueCreate(3, sizeof(xJsonPackage_t));
+    // if (xQueueDataJson == NULL)
+    /// {
+    //     debugE("xQueueDataJson ... Error");
+    //      return EXIT_FAILURE;
+    //  }
+    //debugI("xQueueDataJson ... Success!");
 
     /* let's create the parser task first */
     xTaskCreate(
         vDataReceiveJsonTask,   /* Task function. */
         "vDataReceiveJsonTask", /* String with name of task. */
-        10000,                  /* Stack size in words. */
+        2048,                   /* Stack size in words. */
         NULL,                   /* Parameter passed as input of the task */
         8,                      /* Priority of the task. */
         &xDataReceiveJson);     /* Task handle. */
@@ -69,7 +70,7 @@ uint8_t uSetupDataServiceInit()
     {
         debugE("Error creating serial parser task!");
         /* cannot create task, remove all created stuff and exit failure */
-        vQueueDelete(xQueueDataJson);
+        //  vQueueDelete(xQueueDataJson);
         return EXIT_FAILURE;
     }
 
@@ -137,7 +138,9 @@ static uint8_t inline uRemakeJSON(xJsonPackage_t *jsonPack)
     {
         if (xQueueAWS_Send != NULL)
         {
-            xQueueSend(xQueueAWS_Send, &awsData, portMAX_DELAY);
+            if (!heap_caps_check_integrity_all(true))
+                Serial.println("HEAP CORRUPTION DETECTED HERE!");
+            //xQueueSend(xQueueAWS_Send, &awsData, portMAX_DELAY);
         }
     }
     else

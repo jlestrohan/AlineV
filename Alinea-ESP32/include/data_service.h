@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-19 15:43:43
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 20:09:00
+ * @ Modified time: 2020-05-21 13:23:40
  * @ Description:
  *******************************************************************************************/
 
@@ -16,8 +16,8 @@ extern QueueHandle_t xQueueDataJson;
 
 typedef struct
 {
+    char json_str[MAX_JSON_MSG_SIZE];
     uint16_t length;
-    uint8_t json_str[MAX_JSON_MSG_SIZE];
 } xJsonPackage_t;
 
 uint8_t uSetupDataServiceInit();

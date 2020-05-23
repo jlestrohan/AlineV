@@ -2,36 +2,34 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 21:02:17
+ * @ Modified time: 2020-05-21 20:40:46
  * @ Description: 
  
  *******************************************************************************************/
 
-// see https://github.com/Hieromon/AutoConnect/blob/master/examples/mqttRSSI/mqttRSSI.ino
-// https://hieromon.github.io/AutoConnect/howtoembed.html
-// https://hieromon.github.io/AutoConnect/otaupdate.html
-// https://www.hackster.io/hieromon-ikasamo/esp8266-esp32-connect-wifi-made-easy-d75f45
-
+#include <WiFiClientSecure.h>
 #include "autoconnect_service.h"
 #include "remoteDebug_service.h"
 #include "buzzer_service.h"
+#include "stm32Serial_service.h"
 #include <WiFi.h>
 #include <WebServer.h>
-#include <AutoConnect.h>
 #include "AWS_Certificate.h"
-#include <WiFiClientSecure.h>
-#include <MQTTClient.h>
+#include <PubSubClient.h>
+#include <AutoConnect.h>
+
+#define MQTT_MAX_PACKET_SIZE 256
 
 /* functions definitions */
-void vMqttConnect();
+void AWS_Connect();
 
 static xTaskHandle xAWS_Send_Task_hnd = NULL;
 
 WebServer Server;
 AutoConnect Portal(Server);
 AutoConnectConfig acConfig;
-WiFiClientSecure net = WiFiClientSecure();
-MQTTClient client = MQTTClient(1024);
+WiFiClientSecure wifiClient;
+PubSubClient pubSubClient(AWS_IOT_ENDPOINT, 8883, NULL, wifiClient);
 
 static xTaskHandle xAutoConnectServiceTaskHandle = NULL;
 void vAutoConnectServiceTask(void *parameter);
@@ -53,13 +51,19 @@ void rootPage()
  */
 static void vAWSSendTaskCode(void *vParameter)
 {
-  aws_rdy_data_t aws_ReceiveBuf;
+  jsonMessage_t aws_ReceiveBuf;
 
   for (;;)
   {
     xQueueReceive(xQueueAWS_Send, &aws_ReceiveBuf, portMAX_DELAY);
-    debugI(" %s", (char *)aws_ReceiveBuf.jsonstr);
-    //client.publish(AWS_IOT_TOPIC, aws_ReceiveBuf.jsonstr);
+    if (pubSubClient.connected())
+    {
+      debugI("%s", (char *)aws_ReceiveBuf.json);
+      if (!pubSubClient.publish(AWS_IOT_TOPIC, (const char *)aws_ReceiveBuf.json))
+      {
+        debugE("Error publishing MQTT topic");
+      }
+    }
 
     vTaskDelay(20);
   }
@@ -74,8 +78,9 @@ static void vAWSSendTaskCode(void *vParameter)
  */
 uint8_t uSetupAutoConnect()
 {
+
   /* AWS SEND QUEUE */
-  xQueueAWS_Send = xQueueCreate(3, sizeof(aws_rdy_data_t));
+  xQueueAWS_Send = xQueueCreate(5, sizeof(jsonMessage_t));
   if (xQueueAWS_Send == NULL)
   {
     DEBUG_SERIAL("error creating the xQueueAWS_Send queue");
@@ -86,9 +91,9 @@ uint8_t uSetupAutoConnect()
   xTaskCreate(
       vAWSSendTaskCode,         /* Task function. */
       "vCommandParserTaskCode", /* String with name of task. */
-      10000,                    /* Stack size in words. */
+      16384,                    /* Stack size in words. */
       NULL,                     /* Parameter passed as input of the task */
-      1,                        /* Priority of the task. */
+      18,                       /* Priority of the task. */
       &xAWS_Send_Task_hnd);     /* Task handle. */
 
   Server.on("/", rootPage);
@@ -97,10 +102,11 @@ uint8_t uSetupAutoConnect()
   //acConfig.apid = "AlineV-" + ESP.getEfuseMac();
   // Portal.config(acConfig);
 
-  // Configure WiFiClientSecure to use the AWS certificates we generated
-  net.setCACert(AWS_CERT_CA);
-  net.setCertificate(AWS_CERT_CRT);
-  net.setPrivateKey(AWS_CERT_PRIVATE);
+  /* Configure WiFiClientSecure to use the AWS certificates we generated */
+
+  wifiClient.setCACert(AWS_CERT_CA);
+  wifiClient.setCertificate(AWS_CERT_CRT);
+  wifiClient.setPrivateKey(AWS_CERT_PRIVATE);
 
   if (Portal.begin())
   {
@@ -108,42 +114,16 @@ uint8_t uSetupAutoConnect()
     debugI("--- WiFi connected: %s ---", WiFi.localIP().toString());
     Serial.println("--- WiFi connected: " + WiFi.localIP().toString() + " ---");
     DEBUG_SERIAL("Web server started");
-
-    // Connect to the MQTT broker on the AWS endpoint we defined earlier
-    client.begin(AWS_IOT_ENDPOINT, 8883, net);
-
-    // Try to connect to AWS and count how many times we retried.
-    /*int retries = 0;
-    DEBUG_SERIAL("Connecting to AWS IOT");
-
-    while (!client.connect(DEVICE_NAME) && retries < AWS_MAX_RECONNECT_TRIES)
-    {
-      Serial.print(".");
-      delay(100);
-      retries++;
-    }
-
-    // Make sure that we did indeed successfully connect to the MQTT broker
-    // If not we just end the function and wait for the next loop.
-    if (!client.connected())
-    {
-      Serial.println(" Timeout!");
-      debugE("MQTT Timeout!...");
-    }
-    else
-    {
-      DEBUG_SERIAL("MQTT Connected!");
-      vPlayMelody(MelodyType_CommandReady);
-    }*/
   }
+
   /** FREERTOS AutoConnect Task */
   DEBUG_SERIAL("vAutoConnectService Task ... Creating");
   xTaskCreate(
       vAutoConnectServiceTask,         /* Task function. */
       "xAutoConnectServiceTask",       /* String with name of task. */
-      10000,                           /* Stack size in words. */
+      16384,                           /* Stack size in words. */
       NULL,                            /* Parameter passed as input of the task */
-      1,                               /* Priority of the task. */
+      12,                              /* Priority of the task. */
       &xAutoConnectServiceTaskHandle); /* Task handle. */
 
   if (xAutoConnectServiceTaskHandle == NULL)
@@ -163,44 +143,24 @@ uint8_t uSetupAutoConnect()
  */
 void vAutoConnectServiceTask(void *parameter)
 {
+
   for (;;)
   {
     Portal.handleClient();
-    //client.loop();
 
-    /*if (!client.connected())
+    if (!pubSubClient.connected())
     {
-      vMqttConnect();
-    }*/
 
-    vTaskDelay(60);
+      if (pubSubClient.connect(DEVICE_NAME))
+      {
+        Serial.println("MQTT Connected...");
+        // Seria("MQTT Connected to %s", AWS_IOT_ENDPOINT);
+        vPlayMelody(MelodyType_CommandReady);
+      }
+    }
+    pubSubClient.loop();
+    //debugI("Free HEAP: %lu on HEAP TOTAL: %lu", ESP.getFreeHeap(), ESP.getHeapSize());
+    vTaskDelay(5);
   }
-  vTaskDelete(xAutoConnectServiceTaskHandle);
-}
-
-/**
- * @brief  
- * @note   
- * @retval None
- */
-void vMqttConnect()
-{
-  Serial.print("checking wifi...");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    vTaskDelay(1000);
-  }
-
-  Serial.print("\nconnecting...");
-  while (!client.connect("arduino", "try", "try"))
-  {
-    Serial.print(".");
-    delay(1000);
-  }
-
-  Serial.println("\nconnected!");
-
-  //client.subscribe("/hello");
-  // client.unsubscribe("/hello");
+  vTaskDelete(NULL);
 }

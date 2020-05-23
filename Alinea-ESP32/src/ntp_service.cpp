@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 23:19:45
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:43:43
+ * @ Modified time: 2020-05-21 10:57:18
  * @ Description:
  *******************************************************************************************/
 
@@ -45,7 +45,7 @@ uint8_t uSetupNTPService()
     xTaskCreate(
         vNtpServiceTask,         /* Task function. */
         "vNtpServiceTask",       /* String with name of task. */
-        10000,                   /* Stack size in words. */
+        2048,                    /* Stack size in words. */
         NULL,                    /* Parameter passed as input of the task */
         10,                      /* Priority of the task. */
         &xNtpServiceTaskHandle); /* Task handle. */

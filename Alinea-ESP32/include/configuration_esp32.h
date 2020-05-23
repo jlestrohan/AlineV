@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:35:25
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 17:10:27
+ * @ Modified time: 2020-05-21 16:52:30
  * @ Description:   Main ESP32 Alinea Hardware Configuration file
  *                  All software configuration must be recorded on the SD card for both ctrl
  *******************************************************************************************/
@@ -16,11 +16,13 @@
 #define DEVICE_NAME "AlineV"
 #define AWS_MAX_RECONNECT_TRIES 50
 #define AWS_IOT_ENDPOINT "a2im1z2thfpkge-ats.iot.eu-west-3.amazonaws.com"
-#define AWS_IOT_TOPIC "$aws/things/" DEVICE_NAME "/shadow/update"
+#define AWS_IOT_TOPIC "atmos/bmp280" //"$aws/things/" DEVICE_NAME "/shadow/update"
 
 #define CMD_LINE_MAX_LENGTH 50
-#define MAX_HDLC_FRAME_LENGTH 1024 /* this is the main frame length available */
-#define MAX_JSON_MSG_SIZE 512
+#define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
+#define MAX_JSON_MSG_SIZE 256
+//#define MQTT_BUFFER_SIZE 512
+#define ARDUINOJSON_USE_LONG_LONG 1
 
 /**
  * @brief free up pointer and pointed memory at the same time 

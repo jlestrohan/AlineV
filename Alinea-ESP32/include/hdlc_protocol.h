@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-05 17:12:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:08:18
+ * @ Modified time: 2020-05-21 20:24:16
  * @ Description:
  *******************************************************************************************/
 
@@ -10,16 +10,17 @@
 #define _IC_HDLC_PROTOCOL_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef void (*sendchar_type)(uint8_t);
-typedef void (*frame_handler_type)(const uint8_t *framebuffer, uint16_t framelength);
+typedef void (*frame_handler_type)(uint8_t *framebuffer, size_t framelength);
 
 class HDLC_Prot
 {
 public:
-    HDLC_Prot(sendchar_type, frame_handler_type, uint16_t max_frame_length);
+    HDLC_Prot(sendchar_type, frame_handler_type, size_t max_frame_length);
     void charReceiver(uint8_t data);
-    void sendFrame(const uint8_t *framebuffer, uint8_t frame_length);
+    void sendFrame(const uint8_t *framebuffer, size_t frame_length);
 
 private:
     // 16bit CRC sum for _crc_ccitt_update

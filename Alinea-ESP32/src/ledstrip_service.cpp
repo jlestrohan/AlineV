@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-10 23:46:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 08:42:49
+ * @ Modified time: 2020-05-22 22:52:46
  * @ Description:
  *******************************************************************************************/
 
@@ -34,7 +34,7 @@ int uLedStripServiceInit()
     xTaskCreate(
         vLedStripTask,          /* Task function. */
         "vLedStripTask",        /* String with name of task. */
-        10000,                  /* Stack size in words. */
+        2048,                   /* Stack size in words. */
         NULL,                   /* Parameter passed as input of the task */
         2,                      /* Priority of the task. */
         &xLedStripTask_handle); /* Task handle. */

@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:26
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-19 01:31:19
+ * @ Modified time: 2020-05-21 15:21:46
  * @ Description: Serial communications handler for all serial coms
  
  *     using UART2 to STM32 =>  RXD1 -> pin G16
@@ -24,8 +24,8 @@ extern QueueHandle_t xQueueSerialServiceTX;
 
 typedef struct
 {
-    size_t msg_size;
     uint8_t json[MAX_JSON_MSG_SIZE];
+    size_t msg_size;
 } jsonMessage_t;
 
 uint8_t uSetupSTM32SerialService();

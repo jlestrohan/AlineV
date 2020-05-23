@@ -4,7 +4,11 @@
         "ota.h": "c",
         "string": "cpp",
         "array": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "bitset": "cpp",
+        "initializer_list": "cpp",
+        "regex": "cpp",
+        "utility": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.formatOnType": true,

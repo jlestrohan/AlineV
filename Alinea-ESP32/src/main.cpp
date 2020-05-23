@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-20 20:16:12
+ * @ Modified time: 2020-05-21 19:04:14
  * @ Description:
  *******************************************************************************************/
 
@@ -55,31 +55,32 @@ void setup()
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
 
   Serial.begin(115200);
+  Serial.setDebugOutput(true);
+
   DEBUG_SERIAL("Starting Program...");
 
   vBootCounterUpdate();
 
-  uLedStripServiceInit(); /* check */
-  uSetupBuzzer();         /* check */
-  uSetupCmdParser();
+  //uLedStripServiceInit(); /* check */
+  uSetupBuzzer(); /* check */
+  //uSetupCmdParser();
   uSetupAutoConnect(); /* check */
   uSetupRemoteDebug(); /* check */
-  uSetupNTPService();  /* check */
-  uSetupDataServiceInit();
+  //uSetupNTPService();  /* check */
+  //uSetupDataServiceInit();
   uSetupSTM32SerialService(); /* check */
   //uSetupSpeedService();
-  //uSetupAwsService();
-  uSetupOTA();
+  //uSetupOTA();
 
   lit_status_t ledstatus;
   ledstatus.is_lit = true;
   if (xLedStripCommandQueue)
     xQueueSend(xLedStripCommandQueue, &ledstatus, portMAX_DELAY);
 
-  const char *cmdRdyESP = "ack restart";
-  if (xQueueCommandParse != NULL)
-    /* let's inform the STM that we have just rebooted */
-    xQueueSend(xQueueCommandParse, &cmdRdyESP, portMAX_DELAY);
+  //const char *cmdRdyESP = "ack restart";
+  //if (xQueueCommandParse != NULL)
+  /* let's inform the STM that we have just rebooted */
+  //xQueueSend(xQueueCommandParse, &cmdRdyESP, portMAX_DELAY);
 }
 
 // TODO: connect 2xI2C TOF https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/#7
