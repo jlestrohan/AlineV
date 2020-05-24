@@ -31,6 +31,7 @@ typedef enum {
 	NAV_STATUS_EXPLORING,//!< NAV_STATUS_EXPLORING
 	NAV_STATUS_TURNING_TO_DEST_BEARING, /* bot is turning to head to the set direction */
 	NAV_STATUS_AVOIDING, //!< NAV_STATUS_AVOIDING
+	NAV_STATUS_CORRECT_HEADING,	/* heading correction mode, back to exploring every time */
 	NAV_STATUS_CANCELLING//!< NAV_STATUS_CANCELLING
 } NavigationStatus_t;
 static NavigationStatus_t xCurrentNavStatus;
@@ -60,6 +61,7 @@ static void _vServoLedMotionBackwardRules();
 static void _vServoLedMotionIdleRules();
 static uint8_t _uCheckFrontDangerZone();
 static uint8_t uGetNewBearing(int16_t deviationDegrees,  uint16_t *bearing);
+uint8_t u_is_ref_bearing_right_of_actual(uint16_t *ref_bearing, uint16_t *actual_bearing);
 //static uint8_t _vMotionSeekEscapePath();
 
 MotorData_t lastMotorData; /* extern - records the last before the last events */
@@ -123,7 +125,7 @@ static void vNavControlNormalMotionTask(void *vParameters)
 
 	for (;;)
 	{
-		/* we need to constantly uipdate this */
+		/* BEARING - we need to constantly uipdate this */
 		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
 		xCurrentBearing = CMPS12_SensorData.CompassBearing;
 		osMutexRelease(mCMPS12_SensorDataMutex);
@@ -133,9 +135,25 @@ static void vNavControlNormalMotionTask(void *vParameters)
 		switch (xCurrentNavStatus) {
 
 		/*---------------------------------------------------------------------------------------------------- */
-		/* EXPLORING MODE */
+		/* TRAJECTORY CORRECTION MODE */
 		/*---------------------------------------------------------------------------------------------------- */
+		case NAV_STATUS_CORRECT_HEADING:
+
+			motorMotion = u_is_ref_bearing_right_of_actual(&xDestinationBearing, &xCurrentBearing)
+			? MOTOR_MOTION_FORWARD_LEFT : MOTOR_MOTION_FORWARD_RIGHT;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+			xCurrentNavStatus = NAV_STATUS_EXPLORING; /* back to exploring */
+			break;
+
+			/*---------------------------------------------------------------------------------------------------- */
+			/* EXPLORING MODE */
+			/*---------------------------------------------------------------------------------------------------- */
 		case NAV_STATUS_EXPLORING:
+
+			/* we try to keep the heading */
+			if (xCurrentBearing != xDestinationBearing) {
+				xCurrentNavStatus = NAV_STATUS_CORRECT_HEADING; /* back to exploring */
+			}
 
 			/* front sensor data check, if we hit an obstacle, we stop and enter avoiding mode */
 			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
@@ -174,6 +192,9 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			_vServoLedMotionForwardRules();
 			if (HR04_SensorsData.dist_left45 > 0 && HR04_SensorsData.dist_right45 > 0 && HR04_SensorsData.dist_front > 0)
 			{
+				/* saves the current bearing */
+				xDestinationBearing = xCurrentBearing; /* we sync both */
+
 				osMutexRelease(mHR04_SensorsDataMutex);
 				/* at this condition we can change special event status to "exploring */
 				motorMotion = MOTOR_MOTION_FORWARD;
@@ -294,7 +315,6 @@ static void vNavDecisionControlTask(void *vParameter)
 
 			/* we reset to zero all HCSR4 sensor values */
 			osEventFlagsSet(xEventFlagHCSR04Orders, EVT_HCSR_FLAG_RESET);
-
 			break;
 
 		case STOP_EVENT: default:
@@ -429,4 +449,18 @@ static uint8_t uGetNewBearing(int16_t deviationDegrees,  uint16_t *bearing)
 	return result;
 }
 
+/**
+ * Return true if the reference bearing is right from the actual bearing, or false of left
+ */
+uint8_t u_is_ref_bearing_right_of_actual(uint16_t *ref_bearing, uint16_t *actual_bearing)
+{
+	// how many degrees are we off
+	int16_t diff = actual_bearing - ref_bearing;
 
+	if (diff > 180) {
+		diff = -360 + diff;
+	} else if (diff < -180) {
+		diff = 360 + diff;
+	}
+	return (diff > 0);
+}
