@@ -15,6 +15,7 @@
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
 
+/* generic usage structs */
 typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the code elsewhere */
 
 /**

@@ -91,6 +91,9 @@ static void vMotorsControlTaskStart(void *vParameters)
 		case MOTOR_MOTION_IDLE:
 			motorsSetMotionIdle(&MotorData);
 			break;
+		case MOTOR_SPEED_NORMAL:
+			MotorSetSpeed(&MotorData, MOTORS_DEFAULT_FW_SPEED, MOTORS_DEFAULT_FW_SPEED);
+			break;
 		case MOTOR_SPEED_REDUCE_DANGER:
 			MotorSetSpeed(&MotorData, MOTORS_DEFAULT_DANGER_SPEED, MOTORS_DEFAULT_DANGER_SPEED);
 			break;

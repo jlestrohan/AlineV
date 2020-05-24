@@ -25,13 +25,8 @@
 #define HR04_SONAR_FRONT		0x02U
 #define HR04_SONAR_BOTTOM		0x03U
 
-/*typedef enum {
-	HCSR04_US_ALL_STOP,
-	HCSR04_US_FRONT_ONLY,
-	HCSR04_US_FRONT_BOTTOM,
-	HCSR04_US_BOTTOM_ONLY,
-	HCSR04_US_REAR_ONLY
-} HR04_SensorsActive_t;*/
+#define EVT_HCSR_FLAG_RESET		(1 << 0)		/* resets data */
+extern osEventFlagsId_t xEventFlagHCSR04Orders;
 
 typedef struct {
 	uint16_t		dist_front;
