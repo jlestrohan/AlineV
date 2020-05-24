@@ -244,10 +244,13 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			osDelay(2000);
 
 			/* then backward */
-			motorMotion = MOTOR_MOTION_BACKWARD;
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
-			_vServoLedMotionBackwardRules();
-			osDelay(1000); /* for one second */
+			if (HR04_SensorsData.dist_rear > US_REAR_MIN_STOP_CM) {
+				motorMotion = MOTOR_MOTION_BACKWARD;
+				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+				_vServoLedMotionBackwardRules();
+				osDelay(1000); /* for one second */
+			}
+
 
 			/* idle again */
 			_vServoLedMotionIdleRules(); /* idle servo + leds rules */
