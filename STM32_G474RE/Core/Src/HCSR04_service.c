@@ -31,6 +31,8 @@
 #include <string.h>
 #include <stdio.h>
 
+/* functions definitions */
+uint16_t median_filter(uint16_t datum);
 
 /* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData;
@@ -56,6 +58,10 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
 //#endif
 
+/* median filter */
+#define STOPPER 0                                      /* Smaller than any datum */
+#define    MEDIAN_FILTER_SIZE    (5)
+
 /* functions definitions */
 static uint8_t HC_SR04_StartupTimers();
 
@@ -71,6 +77,7 @@ static void vHr04SensorTaskStart(void *argument)
 
 	HR04_SensorRaw sensorCapturedData;
 	osStatus_t status;
+	register uint16_t sensread;
 
 	for (;;)
 	{
@@ -80,31 +87,34 @@ static void vHr04SensorTaskStart(void *argument)
 		if (status == osOK)
 		{
 			HR04_OldSensorsData = HR04_SensorsData;
+			sensread = sensorCapturedData.distance_data;
 
 			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
 			/* now let's filter out and populate data from the IRQ; */
 			switch (sensorCapturedData.sensor_number) {
-			case HR04_SONAR_REAR: case HR04_SONAR_BOTTOM:
-				HR04_SensorsData.dist_rear = sensorCapturedData.distance_data;
+			case HR04_SONAR_REAR:
+				HR04_SensorsData.dist_rear = sensread;
 				break;
-
+			case HR04_SONAR_BOTTOM:
+				HR04_SensorsData.dist_bottom = sensread;
+				break;
 			case HR04_SONAR_FRONT:
 				osMutexAcquire(mServoPositionMutex, osWaitForever);
 				switch (xServoPosition) {
 				case SERVO_DIRECTION_LEFT45:
-					HR04_SensorsData.dist_left45 = sensorCapturedData.distance_data;
+					HR04_SensorsData.dist_left45 = sensread;
 					break;
 				case SERVO_DIRECTION_CENTER: default:
-					HR04_SensorsData.dist_front = sensorCapturedData.distance_data;
+					HR04_SensorsData.dist_front = sensread;
 					break;
 				case SERVO_DIRECTION_RIGHT45:
-					HR04_SensorsData.dist_right45 = sensorCapturedData.distance_data;
+					HR04_SensorsData.dist_right45 = sensread;
 					break;
 				case SERVO_DIRECTION_LEFT90:
-					HR04_SensorsData.dist_left90 = sensorCapturedData.distance_data;
+					HR04_SensorsData.dist_left90 = sensread;
 					break;
 				case SERVO_DIRECTION_RIGHT90:
-					HR04_SensorsData.dist_right90 = sensorCapturedData.distance_data;
+					HR04_SensorsData.dist_right90 = sensread;
 					break;
 				}
 				osMutexRelease(mServoPositionMutex);
@@ -191,3 +201,98 @@ static uint8_t HC_SR04_StartupTimers()
 	return (EXIT_SUCCESS);
 }
 
+/**
+ * Median filter to filter out values
+ * @param datum
+ * @return
+ */
+inline uint16_t median_filter(uint16_t datum)
+{
+	struct pair
+	{
+		struct pair   *point;                              /* Pointers forming list linked in sorted order */
+		uint16_t  value;                                   /* Values to sort */
+	};
+	static struct pair buffer[MEDIAN_FILTER_SIZE] = {0}; /* Buffer of nwidth pairs */
+	static struct pair *datpoint = buffer;               /* Pointer into circular buffer of data */
+	static struct pair small = {NULL, STOPPER};          /* Chain stopper */
+	static struct pair big = {&small, 0};                /* Pointer to head (largest) of linked list.*/
+
+	struct pair *successor;                              /* Pointer to successor of replaced data item */
+	struct pair *scan;                                   /* Pointer used to scan down the sorted list */
+	struct pair *scanold;                                /* Previous value of scan */
+	struct pair *median;                                 /* Pointer to median */
+	uint16_t i;
+
+	if (datum == STOPPER)
+	{
+		datum = STOPPER + 1;                             /* No stoppers allowed. */
+	}
+
+	if ( (++datpoint - buffer) >= MEDIAN_FILTER_SIZE)
+	{
+		datpoint = buffer;                               /* Increment and wrap data in pointer.*/
+	}
+
+	datpoint->value = datum;                           /* Copy in new datum */
+	successor = datpoint->point;                       /* Save pointer to old value's successor */
+	median = &big;                                     /* Median initially to first in chain */
+	scanold = NULL;                                    /* Scanold initially null. */
+	scan = &big;                                       /* Points to pointer to first (largest) datum in chain */
+
+	/* Handle chain-out of first item in chain as special case */
+	if (scan->point == datpoint)
+	{
+		scan->point = successor;
+	}
+	scanold = scan;                                     /* Save this pointer and   */
+	scan = scan->point ;                                /* step down chain */
+
+	/* Loop through the chain, normal loop exit via break. */
+	for (i = 0 ; i < MEDIAN_FILTER_SIZE; ++i)
+	{
+		/* Handle odd-numbered item in chain  */
+		if (scan->point == datpoint)
+		{
+			scan->point = successor;                      /* Chain out the old datum.*/
+		}
+
+		if (scan->value < datum)                        /* If datum is larger than scanned value,*/
+		{
+			datpoint->point = scanold->point;             /* Chain it in here.  */
+			scanold->point = datpoint;                    /* Mark it chained in. */
+			datum = STOPPER;
+		};
+
+		/* Step median pointer down chain after doing odd-numbered element */
+		median = median->point;                       /* Step median pointer.  */
+		if (scan == &small)
+		{
+			break;                                      /* Break at end of chain  */
+		}
+		scanold = scan;                               /* Save this pointer and   */
+		scan = scan->point;                           /* step down chain */
+
+		/* Handle even-numbered item in chain.  */
+		if (scan->point == datpoint)
+		{
+			scan->point = successor;
+		}
+
+		if (scan->value < datum)
+		{
+			datpoint->point = scanold->point;
+			scanold->point = datpoint;
+			datum = STOPPER;
+		}
+
+		if (scan == &small)
+		{
+			break;
+		}
+
+		scanold = scan;
+		scan = scan->point;
+	}
+	return median->value;
+}
