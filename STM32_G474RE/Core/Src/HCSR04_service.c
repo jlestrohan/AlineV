@@ -32,15 +32,14 @@
 #include <stdio.h>
 
 
-/* orders flags */
-osEventFlagsId_t xEventFlagHCSR04Orders;
-
 /* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData;
 HR04_SensorsData_t HR04_OldSensorsData;
 osMutexId_t mHR04_SensorsDataMutex;
+osMessageQueueId_t xQueueHCSR04DataSend;
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
+osMutexId_t mServoPositionMutex; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 
 /* flag to set any sensors active/inactive according to nav control decisions */
@@ -70,21 +69,54 @@ static void vHr04SensorTaskStart(void *argument)
 {
 	printf("Starting HCSR_04 Service task...\n\r");
 
-	//hcSensorsTimersValue_t sensorCapuredData;
-	//osStatus_t status;
-	uint32_t flags;
+	HR04_SensorRaw sensorCapturedData;
+	osStatus_t status;
 
-	for (;;) {
+	for (;;)
+	{
 
-		flags = osEventFlagsWait(xEventFlagHCSR04Orders, EVT_HCSR_FLAG_RESET, osFlagsWaitAny, osWaitForever);
+		/* we accept data from the IRQ to populate the HR04_SensorsData after filtering garbage out */
+		status = osMessageQueueGet(xQueueHCSR04DataSend, &sensorCapturedData, 0U, osWaitForever);
+		if (status == osOK)
+		{
+			HR04_OldSensorsData = HR04_SensorsData;
 
-		if (flags && EVT_HCSR_FLAG_RESET) {
 			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
-			HR04_SensorsData = (HR04_SensorsData_t){0};
-			HR04_SensorsData = (HR04_SensorsData_t){0};
+			/* now let's filter out and populate data from the IRQ; */
+			switch (sensorCapturedData.sensor_number) {
+			case HR04_SONAR_REAR: case HR04_SONAR_BOTTOM:
+				HR04_SensorsData.dist_rear = sensorCapturedData.distance_data;
+				break;
 
+			case HR04_SONAR_FRONT:
+				osMutexAcquire(mServoPositionMutex, osWaitForever);
+				switch (xServoPosition) {
+				case SERVO_DIRECTION_LEFT45:
+					HR04_SensorsData.dist_left45 = sensorCapturedData.distance_data;
+					break;
+				case SERVO_DIRECTION_CENTER: default:
+					HR04_SensorsData.dist_front = sensorCapturedData.distance_data;
+					break;
+				case SERVO_DIRECTION_RIGHT45:
+					HR04_SensorsData.dist_right45 = sensorCapturedData.distance_data;
+					break;
+				case SERVO_DIRECTION_LEFT90:
+					HR04_SensorsData.dist_left90 = sensorCapturedData.distance_data;
+					break;
+				case SERVO_DIRECTION_RIGHT90:
+					HR04_SensorsData.dist_right90 = sensorCapturedData.distance_data;
+					break;
+				}
+				osMutexRelease(mServoPositionMutex);
+				break;
+
+				default: break;
+			}
 			osMutexRelease(mHR04_SensorsDataMutex);
 		}
+
+
+
 
 		/*printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
 				HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45,
@@ -107,12 +139,13 @@ uint8_t uHcsr04ServiceInit()
 	/* create mutex for struct protection */
 	mHR04_SensorsDataMutex = osMutexNew(NULL);
 
-	xEventFlagHCSR04Orders = osEventFlagsNew(NULL);
-	if (xEventFlagHCSR04Orders == NULL) {
-		printf("Error Initializing xEventFlagHCSR04Orders HCSR...\n\r");
+	xQueueHCSR04DataSend = osMessageQueueNew(10,  sizeof(HR04_SensorRaw), NULL);
+	if (xQueueHCSR04DataSend == NULL) {
+		printf("Error Initializing xQueueHCSR04DataSend HCSR04 Queue...\n\r");
 		Error_Handler();
 		return EXIT_FAILURE;
 	}
+
 
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);

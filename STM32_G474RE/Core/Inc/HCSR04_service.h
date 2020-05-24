@@ -25,8 +25,7 @@
 #define HR04_SONAR_FRONT		0x02U
 #define HR04_SONAR_BOTTOM		0x03U
 
-#define EVT_HCSR_FLAG_RESET		(1 << 0)		/* resets data */
-extern osEventFlagsId_t xEventFlagHCSR04Orders;
+extern osMessageQueueId_t xQueueHCSR04DataSend; /* used by IRQ handler to send out the data */
 
 typedef struct {
 	uint16_t		dist_front;
@@ -39,6 +38,10 @@ typedef struct {
 	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */
 } HR04_SensorsData_t;
 
+typedef struct {
+	uint8_t sensor_number;
+	uint16_t distance_data;
+} HR04_SensorRaw;
 
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */

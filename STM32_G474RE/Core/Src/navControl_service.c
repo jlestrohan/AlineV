@@ -44,7 +44,6 @@ MotorData_t MotorData; /* extern */
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
 osMessageQueueId_t xMessageQueueMotorMotion; /* extern */
 
-osEventFlagsId_t xEventFlagHCSR04Orders; /* extern */
 
 /* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData; /* extern */
@@ -312,9 +311,6 @@ static void vNavDecisionControlTask(void *vParameter)
 		case START_EVENT:
 			printf("Initiating disinfection program....\n\r");
 			xCurrentNavStatus = NAV_STATUS_STARTING;
-
-			/* we reset to zero all HCSR4 sensor values */
-			osEventFlagsSet(xEventFlagHCSR04Orders, EVT_HCSR_FLAG_RESET);
 			break;
 
 		case STOP_EVENT: default:

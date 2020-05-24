@@ -35,12 +35,11 @@ osMessageQueueId_t xQueueEspSerialRX; /* extern */
 
 xServoPosition_t xServoPosition; /* extern */
 osMutexId_t mServoPositionMutex;
-
+osMessageQueueId_t xQueueHCSR04DataSend; /* extern */
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
-HR04_SensorsData_t HR04_SensorsData;	/* extern */
-HR04_SensorsData_t HR04_OldSensorsData;	/* extern */
-osMutexId_t mHR04_SensorsDataMutex;
+/* internal use */
+HR04_SensorRaw sensorRaw;
 
 
 /**
@@ -81,43 +80,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 
-	if (htim->Instance == TIM1) { /* HC-SR04 Sensor REAR */
-		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
-		HR04_SensorsData.dist_rear = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
-		HR04_OldSensorsData = HR04_SensorsData;
-		osMutexRelease(mHR04_SensorsDataMutex);
-	}
-	else if (htim->Instance == TIM2)  /* HC-SR04 Sensor FRONT */
+	if (htim->Instance == TIM1) /* HC-SR04 Sensor REAR */
 	{
-		osMutexAcquire(mServoPositionMutex, osWaitForever);
-		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
-		switch (xServoPosition) {
-		case SERVO_DIRECTION_LEFT45:
-			HR04_SensorsData.dist_left45 = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
-			break;
-		case SERVO_DIRECTION_CENTER: default:
-			HR04_SensorsData.dist_front = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
-			break;
-		case SERVO_DIRECTION_RIGHT45:
-			HR04_SensorsData.dist_right45 = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
-			break;
-		case SERVO_DIRECTION_LEFT90:
-			HR04_SensorsData.dist_left90 = htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
-			break;
-		case SERVO_DIRECTION_RIGHT90:
-			HR04_SensorsData.dist_right90 =htim->Instance->CCR2 / MICROSECONDS_TO_CM;;
-			break;
-		}
-		HR04_OldSensorsData = HR04_SensorsData;
-		osMutexRelease(mHR04_SensorsDataMutex);
-		osMutexRelease(mServoPositionMutex);
+		sensorRaw.sensor_number = HR04_SONAR_REAR;
+		sensorRaw.distance_data = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
+		osMessageQueuePut(xQueueHCSR04DataSend, &sensorRaw, 0U, 0U);
+	}
+	else if (htim->Instance == TIM2) /* HC-SR04 Sensor FRONT */
+	{
+		sensorRaw.sensor_number = HR04_SONAR_FRONT;
+		sensorRaw.distance_data = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
+		osMessageQueuePut(xQueueHCSR04DataSend, &sensorRaw, 0U, 0U);
 
 	}
 	else if (htim->Instance == TIM3) /* HC-SR04 Sensor BOTTOM */
 	{
-		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
-		HR04_SensorsData.dist_bottom = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
-		osMutexRelease(mHR04_SensorsDataMutex);
+		sensorRaw.sensor_number = HR04_SONAR_BOTTOM;
+		sensorRaw.distance_data = htim->Instance->CCR2 / MICROSECONDS_TO_CM;
+		osMessageQueuePut(xQueueHCSR04DataSend, &sensorRaw, 0U, 0U);
 	}
 }
 
