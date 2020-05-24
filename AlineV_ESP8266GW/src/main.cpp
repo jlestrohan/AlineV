@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-23 11:16:50
+ * @ Modified time: 2020-05-24 11:48:51
  * @ Description:
  *******************************************************************************************/
 
@@ -24,7 +24,7 @@
 #define STRING_LEN 128
 
 // Local wireless network
-#define MQTT_PUB_TOPIC "AlineV/atmospheric"
+#define MQTT_PUB_TOPIC "AlineV/data/atmospheric"
 #define AWS_IOT_ENDPOINT "a2im1z2thfpkge-ats.iot.eu-west-3.amazonaws.com"
 #define CONFIG_VERSION "0.35"
 
@@ -91,7 +91,12 @@ void loop()
   }
 }
 
-/*****==================================================================*****/
+/* ------------------------- CONNECT TO AWS ROUTINE ------------------------- */
+/**
+ * @brief  Main connection endtry function to AWS IoT Core services
+ * @note   
+ * @retval None
+ */
 void connectToAws()
 {
   if ((isReady) && !pubSubClient.connected())
@@ -124,7 +129,13 @@ String getRxdata()
   return "";
 }
 
-/*****==================================================================*****/
+/* ---------------------------- DATA SEND TO AWS ---------------------------- */
+/**
+ * @brief  
+ * @note   
+ * @param  jsonData: 
+ * @retval 
+ */
 uint8_t sendDatatoAws(String jsonData)
 {
   //The model we got from nucleo UART
@@ -151,11 +162,12 @@ uint8_t sendDatatoAws(String jsonData)
  
   //Json document construction
   JsonObject root = newdoc.to<JsonObject>();
-  root["uuid"] = stm32_uuid;
-  root["timestamp"] = time(nullptr);
+  //JsonObject Payload = root.createNestedObject("payload");
+  //JsonObject Reported = State.createNestedObject("reported");
+ 
+  root["deviceid"] = stm32_uuid;
+  //root["ts"] = time(nullptr);
   
-  JsonObject Data = newdoc.createNestedObject("payload");
-
   /* we create the data accordingly */
   /* Atmospheric */
   if (doc["cmd"] = "ATM")
@@ -164,12 +176,12 @@ uint8_t sendDatatoAws(String jsonData)
     float pressure = doc["data"]["Ps"];
     float temperature = doc["data"]["Tp"];
 
-    Data["sensor_type"] = sensortype;
-    Data["pressure"] = pressure;
-    Data["temperature"] = temperature;
-    Data["humidity"] = 0;
+    root["sensor_type"] = sensortype;
+    root["pressure"] = pressure;
+    root["temperature"] = temperature;
+    root["humidity"] = 0;
     
-    mqttTopic = "AlineV/atmospheric";
+    mqttTopic = "AlineV/data/atmospheric";
   }
 
   /*Serial.printf("Sending  [%s]: ", MQTT_PUB_TOPIC);*/
@@ -186,7 +198,15 @@ uint8_t sendDatatoAws(String jsonData)
   return EXIT_SUCCESS;
 }
 
-/*****==================================================================*****/
+/* ------------------------------ AWS CALLBACK ------------------------------ */
+/**
+ * @brief  Amazon AWS IoT Core callback
+ * @note   
+ * @param  *topic: 
+ * @param  *payload: 
+ * @param  length: 
+ * @retval None
+ */
 void callback(char *topic, byte *payload, unsigned int length)
 {
   Serial.print("Message received on ");
@@ -200,7 +220,12 @@ void callback(char *topic, byte *payload, unsigned int length)
 }
 
 
-/*****==================================================================*****/
+/* -------------------------------- NTP SETUP ------------------------------- */
+/**
+ * @brief  
+ * @note   
+ * @retval None
+ */
 void setCurrentTime()
 {
   configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");

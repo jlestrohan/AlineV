@@ -40,12 +40,6 @@ static void vUvLedServiceTaskStart(void *vParameters)
 	uint8_t uUvLedStatus;
 	osStatus_t status;
 
-	xQueueUVLedStatus = osMessageQueueNew(10,  sizeof(uint8_t), NULL);
-	if (xQueueUVLedStatus == NULL) {
-		printf("Error Initializing xQueueUVLedStatus UV Leds Service Queue...\n\r");
-		Error_Handler();
-	}
-
 	/* starting with leds unlit */
 	HAL_GPIO_WritePin(GPIOA, UV_LED_Pin, GPIO_PIN_SET); /* set = unlit */
 
@@ -82,6 +76,13 @@ static void vUvLedServiceTaskStart(void *vParameters)
  */
 uint8_t uUvLedServiceInit()
 {
+	xQueueUVLedStatus = osMessageQueueNew(10,  sizeof(uint8_t), NULL);
+	if (xQueueUVLedStatus == NULL) {
+		printf("Error Initializing xQueueUVLedStatus UV Leds Service Queue...\n\r");
+		Error_Handler();
+		return EXIT_FAILURE;
+	}
+
 	/* creation of HR04Sensor1_task */
 	xUvLedServiceTaskHandle = osThreadNew(vUvLedServiceTaskStart, NULL, &xUvLedServiceTa_attributes);
 	if (xUvLedServiceTaskHandle == NULL) {

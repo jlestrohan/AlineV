@@ -95,7 +95,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 			case BTN_BUTTON_ONBOARD_PRESSED:
 				if (uButtonDebounce(uOnboardBtnLastPressedTick)) {
 					uOnboardBtnLastPressedTick = HAL_GetTick();
-					printf("Onboard button was pressed ...\n\r");
+					//printf("Onboard button was pressed ...\n\r");
 					HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
 					//FIXME:
