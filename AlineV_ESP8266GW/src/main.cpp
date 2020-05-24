@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-24 11:48:51
+ * @ Modified time: 2020-05-24 23:20:07
  * @ Description:
  *******************************************************************************************/
 
@@ -138,10 +138,6 @@ String getRxdata()
  */
 uint8_t sendDatatoAws(String jsonData)
 {
-  //The model we got from nucleo UART
-  // String jsonData = "{\"Id\": 4, \"PT\": 602, \"Dt\": {\"AH\": 49.00, \"Tp\": 20.00,
-  //\"Ms\": 56.00, \"Clr\": red, \"Gs\": 32.00, \"WL\": empty, \"RGB\": [0,0,0]}}";
-
   String mqttTopic; /* dynamic topic */
   
   StaticJsonDocument<MAX_JSON_LENGTH> doc;
@@ -169,20 +165,40 @@ uint8_t sendDatatoAws(String jsonData)
   //root["ts"] = time(nullptr);
   
   /* we create the data accordingly */
-  /* Atmospheric */
+  /**********************************************************/
+  /* ATMOSPHERIC */
   if (doc["cmd"] = "ATM")
   { /* atmospheric data */
     String sensortype = doc["data"]["sns"];
     float pressure = doc["data"]["Ps"];
     float temperature = doc["data"]["Tp"];
+    float humidity = doc["data"]["Hm"];
 
     root["sensor_type"] = sensortype;
     root["pressure"] = pressure;
     root["temperature"] = temperature;
     root["humidity"] = 0;
-    
+  
     mqttTopic = "AlineV/data/atmospheric";
   }
+  /**********************************************************/
+  /* NAVIGATION */ 
+  else if (doc["cmd"] = "NAV")
+  {
+    //root["bearing"] 
+    //root["speed"] //bouchon calculé
+    //root["distance_front"]
+    //root["distance_left45"]
+    //root["distance_right45"]
+    //root["distance_back"]
+    //root["distance_rear"]
+    //root["motion"] forward/idle/backward
+    //root["pitch"] 255/-255
+    //root["roll"] 
+    //root["uvstatus"] on/off 
+  }
+  
+  
 
   /*Serial.printf("Sending  [%s]: ", MQTT_PUB_TOPIC);*/
   serializeJson(root, Serial); //Json doc serialisation

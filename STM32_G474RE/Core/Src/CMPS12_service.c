@@ -7,6 +7,7 @@
  * 	Pinout:		PC4 -> 	SCL
  * 				PA8 ->	SDA
  *
+ *	datasheet http://www.robot-electronics.co.uk/files/cmps12.pdf
  ******************************************************************************
  */
 
@@ -58,10 +59,9 @@ void vCMPS12SensorTaskStart(void *vParameters)
 		_populate_values();
 
 #ifdef DEBUG_CMPS12
-		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+		MUTEX_CMPS12_TAKE
 		printf("Roll:  %0*d°", 3,CMPS12_SensorData.RollAngle);
 		printf("Pitch:  %0*ld°",  3, CMPS12_SensorData.PitchAngle);
-		osMutexRelease(mCMPS12_SensorDataMutex);
 		printf("gx:%0*ld, gy:%0*ld, gz:%0*ld, accx: %0*ld, accy:%0*ld, accz:%0*ld",
 				3,CMPS12_SensorData.GyroX,
 				3,CMPS12_SensorData.GyroY,
@@ -70,6 +70,7 @@ void vCMPS12SensorTaskStart(void *vParameters)
 				3,CMPS12_SensorData.AccelY,
 				3,CMPS12_SensorData.AccelZ);
 		printf("\n\r");
+		MUTEX_CMPS12_GIVE
 #endif
 
 		osDelay(10);
@@ -110,7 +111,7 @@ uint8_t uCmps12ServiceInit()
  */
 static uint8_t _populate_values()
 {
-	osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+	MUTEX_CMPS12_TAKE
 
 	/* sensor mcu core temperature */
 	_read_register16(CMPS12_REGISTER_SENSOR_TEMP_16, &CMPS12_SensorData.Temperature);
@@ -145,7 +146,7 @@ static uint8_t _populate_values()
 	CMPS12_SensorData.RollAngle = CMPS12_SensorData.RollAngle <= 180 ? CMPS12_SensorData.RollAngle :
 			-(255-CMPS12_SensorData.RollAngle);
 
-	osMutexRelease(mCMPS12_SensorDataMutex);
+	MUTEX_CMPS12_GIVE
 
 
 	return EXIT_SUCCESS;
@@ -242,5 +243,5 @@ static uint8_t _read_signed_register16(uint8_t addr, int16_t *value)
  */
 void vCMPS12_CalibrationStatus()
 {
-
+	//FIXME: not written yet :/
 }

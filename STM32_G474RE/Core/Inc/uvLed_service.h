@@ -21,6 +21,9 @@ typedef enum {
 /** PUBLIC 												 */
 extern osMessageQueueId_t xQueueUVLedStatus;
 
+extern UV_LedStatus_t uUVLedStatus;
+extern osMutexId_t mUvLedStatusMutex;
+
 uint8_t uUvLedServiceInit();
 
 #endif /* INC_UVLED_SERVICE_H_ */

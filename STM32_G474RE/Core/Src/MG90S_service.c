@@ -85,13 +85,13 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 			htim5.Instance->CCR1 = SERVO_DIRECTION_CENTER;  /* go to the right place */
 			if (htim5.Instance->CCR1 == SERVO_DIRECTION_CENTER) { /* we check if the servo has reached its position */
 #ifdef DEBUG_MG90S
-				osMutexAcquire(mServoPositionMutex, osWaitForever);
+				MUTEX_SERVO_TAKE
 				printf("Servo position: CENTER\n\r");
-				osMutexRelease(mServoPositionMutex);
+				MUTEX_SERVO_GIVE
 #endif
-				osMutexAcquire(mServoPositionMutex, osWaitForever);
+				MUTEX_SERVO_TAKE
 				xServoPosition = SERVO_DIRECTION_CENTER; /* we update the published position of the servo */
-				osMutexRelease(mServoPositionMutex);
+				MUTEX_SERVO_GIVE
 			}
 			direction = SERVO_DIRECTION_RIGHT45;
 			osDelay(200);
@@ -102,25 +102,25 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 				htim5.Instance->CCR1 = SERVO_DIRECTION_RIGHT45;
 				if (htim5.Instance->CCR1 == SERVO_DIRECTION_RIGHT45) { /* we check if the servo has reached its position */
 #ifdef DEBUG_MG90S
-					osMutexAcquire(mServoPositionMutex, osWaitForever);
+					MUTEX_SERVO_TAKE
 					printf("Servo position: RIGHT 45\n\r");
-					osMutexRelease(mServoPositionMutex);
+					MUTEX_SERVO_GIVE
 #endif
-					osMutexAcquire(mServoPositionMutex, osWaitForever);
+					MUTEX_SERVO_TAKE
 					xServoPosition = SERVO_DIRECTION_RIGHT45; /* we update the published position of the servo */
-					osMutexRelease(mServoPositionMutex);
+					MUTEX_SERVO_GIVE
 				}
 			} else {
 				htim5.Instance->CCR1 = SERVO_DIRECTION_LEFT45;
 				if (htim5.Instance->CCR1 == SERVO_DIRECTION_LEFT45) { /* we check if the servo has reached its position */
 #ifdef DEBUG_MG90S
-					osMutexAcquire(mServoPositionMutex, osWaitForever);
+					MUTEX_SERVO_TAKE
 					printf("Servo position: LEFT 45\n\r");
-					osMutexRelease(mServoPositionMutex);
+					MUTEX_SERVO_GIVE
 #endif
-					osMutexAcquire(mServoPositionMutex, osWaitForever);
+					MUTEX_SERVO_TAKE
 					xServoPosition = SERVO_DIRECTION_LEFT45; /* we update the published position of the servo */
-					osMutexRelease(mServoPositionMutex);
+					MUTEX_SERVO_GIVE
 				}
 			}
 			osDelay(300);
@@ -131,13 +131,13 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 			direction = SERVO_DIRECTION_LEFT45;
 			if (htim5.Instance->CCR1 == SERVO_DIRECTION_CENTER) { /* we check if the servo has reached its position */
 #ifdef DEBUG_MG90S
-				osMutexAcquire(mServoPositionMutex, osWaitForever);
+				MUTEX_SERVO_TAKE
 				printf("Servo position: CENTER\n\r");
-				osMutexRelease(mServoPositionMutex);
+				MUTEX_SERVO_GIVE
 #endif
-				osMutexAcquire(mServoPositionMutex, osWaitForever);
+				MUTEX_SERVO_TAKE
 				xServoPosition = SERVO_DIRECTION_CENTER; /* we update the published position of the servo */
-				osMutexRelease(mServoPositionMutex);
+				MUTEX_SERVO_GIVE
 			}
 			osDelay(200);
 			break;

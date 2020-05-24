@@ -22,19 +22,8 @@
 
 #define NUMBER_INIT_ATTEMPTS 2 /* how many trimes we retry before taking an action of avoidance */
 
-/**
- * Nav Status
- */
-typedef enum {
-	NAV_STATUS_IDLE ,    //!< NAV_STATUS_IDLE
-	NAV_STATUS_STARTING, //!< NAV_STATUS_STARTING
-	NAV_STATUS_EXPLORING,//!< NAV_STATUS_EXPLORING
-	NAV_STATUS_TURNING_TO_DEST_BEARING, /* bot is turning to head to the set direction */
-	NAV_STATUS_AVOIDING, //!< NAV_STATUS_AVOIDING
-	NAV_STATUS_CORRECT_HEADING,	/* heading correction mode, back to exploring every time */
-	NAV_STATUS_CANCELLING//!< NAV_STATUS_CANCELLING
-} NavigationStatus_t;
-static NavigationStatus_t xCurrentNavStatus;
+NavigationStatus_t xCurrentNavStatus; /* made extern to share with datacenter */
+osMutexId_t mCurrentNavStatusMutex;
 
 /********************************************************************
  * Extern variables from the different sensors and devices
@@ -125,9 +114,9 @@ static void vNavControlNormalMotionTask(void *vParameters)
 	for (;;)
 	{
 		/* BEARING - we need to constantly uipdate this */
-		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+		MUTEX_CMPS12_TAKE
 		xCurrentBearing = CMPS12_SensorData.CompassBearing;
-		osMutexRelease(mCMPS12_SensorDataMutex);
+		MUTEX_CMPS12_GIVE
 
 
 		/** FINITE STATE MACHINE **/
@@ -141,7 +130,10 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			motorMotion = u_is_ref_bearing_right_of_actual(&xDestinationBearing, &xCurrentBearing)
 			? MOTOR_MOTION_FORWARD_LEFT : MOTOR_MOTION_FORWARD_RIGHT;
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_EXPLORING; /* back to exploring */
+			MUTEX_NAVSTATUS_GIVE
 			break;
 
 			/*---------------------------------------------------------------------------------------------------- */
@@ -151,33 +143,39 @@ static void vNavControlNormalMotionTask(void *vParameters)
 
 			/* we try to keep the heading */
 			if (xCurrentBearing != xDestinationBearing) {
+				MUTEX_NAVSTATUS_TAKE
 				xCurrentNavStatus = NAV_STATUS_CORRECT_HEADING; /* back to exploring */
+				MUTEX_NAVSTATUS_GIVE
 			}
 
 			/* front sensor data check, if we hit an obstacle, we stop and enter avoiding mode */
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			MUTEX_HCSR04_TAKE
 			if (HR04_SensorsData.dist_front < US_FRONT_MIN_STOP_CM) {
-				osMutexRelease(mHR04_SensorsDataMutex);
+				MUTEX_HCSR04_GIVE
+
+				MUTEX_NAVSTATUS_TAKE
 				xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
+				MUTEX_NAVSTATUS_GIVE
+
 				printf("Obstacle detected front: %d cm\n\r", HR04_SensorsData.dist_front);
 				printf("Entering AVOIDING mode..\n\r");
 			} else
 
 				/* front sensor detected something at warning zone, we reduce speed */
 				if (HR04_SensorsData.dist_front < US_FRONT_MIN_DANGER_CM) {
-					osMutexRelease(mHR04_SensorsDataMutex);
+					MUTEX_HCSR04_GIVE
 					printf("Warning ahead distance: %d cm\n\r", HR04_SensorsData.dist_front);
 					motorMotion = MOTOR_SPEED_REDUCE_DANGER;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 				} else {
 					/* or we set back to front if we're ok */
-					osMutexRelease(mHR04_SensorsDataMutex);
+					MUTEX_HCSR04_GIVE
 					/* front sensor detected nada we set full speed */
 					/*if (HR04_SensorsData.dist_front >= US_FRONT_MIN_DANGER_CM) { */
 					motorMotion = MOTOR_SPEED_NORMAL;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 				}
-			osMutexRelease(mHR04_SensorsDataMutex);
+			MUTEX_HCSR04_GIVE
 
 			break;
 
@@ -187,22 +185,23 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			/*---------------------------------------------------------------------------------------------------- */
 		case NAV_STATUS_STARTING:
 			/* we wait for all data from the 3 front sensors are collected */
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			MUTEX_HCSR04_TAKE
 			_vServoLedMotionForwardRules();
 			if (HR04_SensorsData.dist_left45 > 0 && HR04_SensorsData.dist_right45 > 0 && HR04_SensorsData.dist_front > 0)
 			{
 				/* saves the current bearing */
 				xDestinationBearing = xCurrentBearing; /* we sync both */
 
-				osMutexRelease(mHR04_SensorsDataMutex);
 				/* at this condition we can change special event status to "exploring */
 				motorMotion = MOTOR_MOTION_FORWARD;
 				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 
 				/* we have initiated the start sequence, time to switch to explore mode */
+				MUTEX_NAVSTATUS_TAKE
 				xCurrentNavStatus = NAV_STATUS_EXPLORING;
+				MUTEX_NAVSTATUS_GIVE
 			}
-			osMutexRelease(mHR04_SensorsDataMutex);
+			MUTEX_HCSR04_GIVE
 			break;
 
 			/*---------------------------------------------------------------------------------------------------- */
@@ -227,7 +226,10 @@ static void vNavControlNormalMotionTask(void *vParameters)
 				_vServoLedMotionForwardRules();
 				motorMotion = MOTOR_MOTION_FORWARD;
 				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+				MUTEX_NAVSTATUS_TAKE
 				xCurrentNavStatus = NAV_STATUS_EXPLORING;
+				MUTEX_NAVSTATUS_GIVE
 			}
 
 			break;
@@ -260,7 +262,7 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			osDelay(1000); /* for a second */
 
 			/* we take a decision, right or left ? */
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			MUTEX_HCSR04_TAKE
 			if (HR04_SensorsData.dist_left45 < HR04_SensorsData.dist_right45) {
 				printf("Detected More space to the right, turning right 30°...");
 				xDestinationBearing = uGetNewBearing(30, &xCurrentBearing);
@@ -268,8 +270,12 @@ static void vNavControlNormalMotionTask(void *vParameters)
 				printf("Detected More space to the left, turning left 30°...");
 				xDestinationBearing = uGetNewBearing(-30, &xCurrentBearing);
 			}
-			osMutexRelease(mHR04_SensorsDataMutex);
+			MUTEX_HCSR04_GIVE
+
+			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_TURNING_TO_DEST_BEARING;
+			MUTEX_NAVSTATUS_GIVE
+
 			/* now everything will happen in the FINITE STATE above */
 			break;
 			/*---------------------------------------------------------------------------------------------------- */
@@ -313,7 +319,11 @@ static void vNavDecisionControlTask(void *vParameter)
 		switch (special_event) {
 		case START_EVENT:
 			printf("Initiating disinfection program....\n\r");
+
+			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_STARTING;
+			MUTEX_NAVSTATUS_GIVE
+
 			break;
 
 		case STOP_EVENT: default:
@@ -325,7 +335,9 @@ static void vNavDecisionControlTask(void *vParameter)
 			xSrvpattrn = SERVO_PATTERN_IDLE;
 			osMessageQueuePut(xQueueMg90sMotionOrder, &xSrvpattrn, 0U, osWaitForever);
 
+			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_IDLE;
+			MUTEX_NAVSTATUS_GIVE
 
 			break;
 		}
@@ -342,6 +354,12 @@ static void vNavDecisionControlTask(void *vParameter)
  */
 uint8_t uNavControlServiceInit()
 {
+	mCurrentNavStatusMutex = osMutexNew(NULL);
+
+	MUTEX_NAVSTATUS_TAKE
+	xCurrentNavStatus = NAV_STATUS_IDLE;
+	MUTEX_NAVSTATUS_GIVE
+
 	xEventFlagNavControlMainCom = osEventFlagsNew(NULL);
 	if (xEventFlagNavControlMainCom == NULL) {
 		printf("Nav Control Event Flag Initialization Failed\n\r");
@@ -422,12 +440,15 @@ static void _vServoLedMotionIdleRules()
  */
 static uint8_t _uCheckFrontDangerZone()
 {
+	MUTEX_HCSR04_TAKE
 	if ((HR04_SensorsData.dist_left45 >= US_ANGLE_MIN_WARNING_CM) &&
 			(HR04_SensorsData.dist_right45 >= US_ANGLE_MIN_WARNING_CM)	 &&
 			(HR04_SensorsData.dist_front >= US_FRONT_MIN_WARNING_CM))
 	{
+		MUTEX_HCSR04_GIVE
 		return EXIT_SUCCESS;
 	}
+	MUTEX_HCSR04_GIVE
 	return EXIT_FAILURE;
 }
 

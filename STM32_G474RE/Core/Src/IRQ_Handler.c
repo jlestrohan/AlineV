@@ -26,7 +26,6 @@
 char msg[50];
 
 uint32_t ADC_BUF[3]; /* extern */
-//uint8_t UART_DMA_BUF[4]; /* extern */
 
 osMessageQueueId_t xQueueDmaAdcInternalSensors;
 DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues; /* extern */

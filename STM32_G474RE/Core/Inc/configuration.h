@@ -81,6 +81,25 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 
 
 /**
+ * FEW HANDY MACROS
+ */
+#define MUTEX_MOTORDATA_TAKE 	osMutexAcquire(mMotorDataMutex, osWaitForever);
+#define MUTEX_MOTORDATA_GIVE	osMutexRelease(mMotorDataMutex);
+#define MUTEX_CMPS12_TAKE		osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+#define MUTEX_CMPS12_GIVE		osMutexRelease(mCMPS12_SensorDataMutex);
+#define MUTEX_HCSR04_TAKE  		osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+#define MUTEX_HCSR04_GIVE		osMutexRelease(mHR04_SensorsDataMutex);
+#define MUTEX_UVLED_TAKE		osMutexAcquire(mUvLedStatusMutex, osWaitForever);
+#define MUTEX_UVLED_GIVE		osMutexRelease(mUvLedStatusMutex);
+#define MUTEX_NAVSTATUS_TAKE	osMutexAcquire(mCurrentNavStatusMutex, osWaitForever);
+#define MUTEX_NAVSTATUS_GIVE	osMutexRelease(mCurrentNavStatusMutex);
+#define MUTEX_BME280_TAKE		osMutexAcquire(mBMP280_DataMutex, osWaitForever);
+#define MUTEX_BME280_GIVE		osMutexRelease(mBMP280_DataMutex);
+#define MUTEX_SERVO_TAKE		osMutexAcquire(mServoPositionMutex, osWaitForever);
+#define MUTEX_SERVO_GIVE		osMutexRelease(mServoPositionMutex);
+
+
+/**
  * osPriorityNone          =  0,         ///< No priority (not initialized).
   osPriorityIdle          =  1,         ///< Reserved for Idle thread.
   osPriorityLow           =  8,         ///< Priority: low

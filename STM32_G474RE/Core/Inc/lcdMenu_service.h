@@ -36,8 +36,8 @@ typedef enum {
 	uint8_t second_line_col;
 	uint8_t second_line_row;
 	void (*func)(void);                 /* Pointer to the item function */
-	const struct MENUITEMS_t *prev;           /* Pointer to the previous */
-	const struct MENUITEMS_t *next;           /* Pointer to the next */
+	struct MENUITEMS_t *prev;           /* Pointer to the previous */
+	struct MENUITEMS_t *next;           /* Pointer to the next */
 	LcdTypeScreen_t LcdTypeScreen;		/* holds a track of the current selected screen (cannot switch over pointers alas... ) */
 };
 

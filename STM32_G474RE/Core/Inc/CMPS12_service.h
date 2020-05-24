@@ -67,7 +67,7 @@ typedef struct {
 	uint16_t Temperature;		/* This is the core mcu temperature of the sensor */
 	uint16_t CompassBearing;	/* 0 - 360 ready to be read as is */
 	int16_t PitchAngle;
-	uint8_t	RollAngle;
+	int8_t	RollAngle;
 	int16_t GyroX;
 	int16_t GyroY;
 	int16_t GyroZ;

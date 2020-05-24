@@ -156,15 +156,15 @@ static void vLcdMenuLoopTask(void *vParameter)
 		case LCD_SCREEN_HCSR04:
 			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
 			lcdSetCursorPosition(0, 0);
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			MUTEX_HCSR04_TAKE
 			sprintf(line1, "F%0*d FL%0*d FR%0*d", 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_left45,3,HR04_SensorsData.dist_right45);
-			osMutexRelease(mHR04_SensorsDataMutex);
+			MUTEX_HCSR04_GIVE
 			lcdPrintStr((uint8_t *)line1, strlen(line1));
 
 			lcdSetCursorPosition(4, 1);
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			MUTEX_HCSR04_TAKE
 			sprintf(line2, "B%0*d R%0*d", 3, HR04_SensorsData.dist_bottom, 3, HR04_SensorsData.dist_rear);
-			osMutexRelease(mHR04_SensorsDataMutex);
+			MUTEX_HCSR04_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
 			osDelay(20);
 			break;
@@ -175,9 +175,9 @@ static void vLcdMenuLoopTask(void *vParameter)
 			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
 
 			lcdSetCursorPosition(3, 1);
-			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+			MUTEX_CMPS12_TAKE
 			sprintf(line2, "hdg: %0*d", 3, CMPS12_SensorData.CompassBearing);
-			osMutexRelease(mCMPS12_SensorDataMutex);
+			MUTEX_CMPS12_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
 			osDelay(50);
 			break;
@@ -188,9 +188,9 @@ static void vLcdMenuLoopTask(void *vParameter)
 			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
 
 			lcdSetCursorPosition(0, 1);
-			osMutexAcquire(mCMPS12_SensorDataMutex, osWaitForever);
+			MUTEX_CMPS12_TAKE
 			sprintf(line2, "Pitch:%d Roll:%d", CMPS12_SensorData.PitchAngle, CMPS12_SensorData.RollAngle);
-			osMutexRelease(mCMPS12_SensorDataMutex);
+			MUTEX_CMPS12_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
 			osDelay(50);
 			break;
@@ -198,7 +198,7 @@ static void vLcdMenuLoopTask(void *vParameter)
 		default: break;
 		}
 
-		osDelay(80);
+		osDelay(100);
 	}
 	osThreadTerminate(NULL);
 }

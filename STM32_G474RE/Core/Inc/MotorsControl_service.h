@@ -61,7 +61,6 @@ typedef struct {
 	MotorMotion_t motorMotion_Right;
 	uint8_t currentSpeedLeft;				/* 0 - 100 */
 	uint8_t currentSpeedRight;				/* 0 - 100 */
-
 } MotorData_t;
 
 /* extern variables */

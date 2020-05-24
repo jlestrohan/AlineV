@@ -45,7 +45,6 @@ osMutexId_t mServoPositionMutex; /* extern */
 xServoPosition_t xServoPosition; /* extern */
 
 /* flag to set any sensors active/inactive according to nav control decisions */
-//#ifdef DEBUG_HCSR04_ALL
 static osThreadId_t xHr04SensorTaskHandle;
 static osStaticThreadDef_t xHr04SensorTaControlBlock;
 static uint32_t xHr04SensorTaBuffer[256];
@@ -56,7 +55,6 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 		.cb_size = sizeof(xHr04SensorTaControlBlock),
 		.cb_mem = &xHr04SensorTaControlBlock,
 		.priority = (osPriority_t) OSTASK_PRIORITY_HCSR04, };
-//#endif
 
 /* median filter */
 #define STOPPER 0                                      /* Smaller than any datum */
@@ -66,7 +64,6 @@ static const osThreadAttr_t xHr04SensorTa_attributes = {
 static uint8_t HC_SR04_StartupTimers();
 
 
-//#ifdef DEBUG_HCSR04_ALL
 /**
  *	HR04 Sensors Task
  * @param argument
@@ -81,7 +78,6 @@ static void vHr04SensorTaskStart(void *argument)
 
 	for (;;)
 	{
-
 		/* we accept data from the IRQ to populate the HR04_SensorsData after filtering garbage out */
 		status = osMessageQueueGet(xQueueHCSR04DataSend, &sensorCapturedData, 0U, osWaitForever);
 		if (status == osOK)
@@ -89,7 +85,7 @@ static void vHr04SensorTaskStart(void *argument)
 			HR04_OldSensorsData = HR04_SensorsData;
 			sensread = sensorCapturedData.distance_data;
 
-			osMutexAcquire(mHR04_SensorsDataMutex, osWaitForever);
+			MUTEX_HCSR04_TAKE
 			/* now let's filter out and populate data from the IRQ; */
 			switch (sensorCapturedData.sensor_number) {
 			case HR04_SONAR_REAR:
@@ -99,7 +95,7 @@ static void vHr04SensorTaskStart(void *argument)
 				HR04_SensorsData.dist_bottom = sensread;
 				break;
 			case HR04_SONAR_FRONT:
-				osMutexAcquire(mServoPositionMutex, osWaitForever);
+				MUTEX_SERVO_TAKE
 				switch (xServoPosition) {
 				case SERVO_DIRECTION_LEFT45:
 					HR04_SensorsData.dist_left45 = sensread;
@@ -117,28 +113,26 @@ static void vHr04SensorTaskStart(void *argument)
 					HR04_SensorsData.dist_right90 = sensread;
 					break;
 				}
-				osMutexRelease(mServoPositionMutex);
+				MUTEX_SERVO_GIVE
 				break;
 
 				default: break;
 			}
-			osMutexRelease(mHR04_SensorsDataMutex);
+			MUTEX_HCSR04_GIVE
 		}
 
-
-
-
-		/*printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
+#ifdef DEBUG_HCSR04_ALL
+		MUTEX_HCSR04_TAKE
+		printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
 				HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45,
-				3,HR04_SensorsData.dist_bottom, 3,HR04_SensorsData.dist_rear);*/
-
-		//osMutexRelease(mHR04_SensorsDataMutex);
+				3,HR04_SensorsData.dist_bottom, 3,HR04_SensorsData.dist_rear);
+		MUTEX_HCSR04_GIVE
+#endif
 
 		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }
-//#endif
 
 /**
  * Initialization function

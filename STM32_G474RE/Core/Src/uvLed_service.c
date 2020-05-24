@@ -16,6 +16,8 @@
 #include "tim.h"
 
 osMessageQueueId_t xQueueUVLedStatus;
+UV_LedStatus_t uUVLedStatus;
+osMutexId_t mUvLedStatusMutex;
 
 static osThreadId_t xUvLedServiceTaskHandle;
 static osStaticThreadDef_t xUvLedServiceTaControlBlock;
@@ -47,6 +49,9 @@ static void vUvLedServiceTaskStart(void *vParameters)
 
 		status = osMessageQueueGet(xQueueUVLedStatus, &uUvLedStatus, 0U, osWaitForever);
 		if (status == osOK) {
+			MUTEX_UVLED_TAKE
+			uUVLedStatus = uUvLedStatus; /* saved to be used by the datacenter */
+			MUTEX_UVLED_GIVE
 
 			switch (uUvLedStatus) {
 			case UV_LED_STATUS_UNSET:
@@ -76,6 +81,8 @@ static void vUvLedServiceTaskStart(void *vParameters)
  */
 uint8_t uUvLedServiceInit()
 {
+	mUvLedStatusMutex = osMutexNew(NULL);
+
 	xQueueUVLedStatus = osMessageQueueNew(10,  sizeof(uint8_t), NULL);
 	if (xQueueUVLedStatus == NULL) {
 		printf("Error Initializing xQueueUVLedStatus UV Leds Service Queue...\n\r");

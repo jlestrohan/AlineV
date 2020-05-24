@@ -95,7 +95,7 @@ static void vBMP280SensorTaskStart(void *argument)
 
 
 #ifdef DEBUG_BMP280
-			osMutexAcquire(mBMP280_DataMutex, osWaitForever);
+			MUTEX_BME280_TAKE
 			printf("Pressure: %.2f Pa, Temperature: %.2f C",
 					BMP280_Data.pressure/100, BMP280_Data.temperature);
 
@@ -105,7 +105,7 @@ static void vBMP280SensorTaskStart(void *argument)
 			else {
 				printf("\n\r");
 			}
-			osMutexRelease(mBMP280_DataMutex);
+			MUTEX_BME280_GIVE
 #endif
 		}
 
@@ -429,12 +429,12 @@ bool bmp280_read_float(BMP280_HandleTypedef *dev, BMP280_Data_t *data) {
 	uint32_t fixed_humidity;
 	if (bmp280_read_fixed(dev, &fixed_temperature, &fixed_pressure,
 			data->humidity ? &fixed_humidity : NULL)) {
-		osMutexAcquire(mBMP280_DataMutex, osWaitForever);
+		MUTEX_BME280_TAKE
 		data->temperature = (float) fixed_temperature / 100;
 		data->pressure = (float) fixed_pressure / 256;
 		if (data->humidity)
 			data->humidity = (float) fixed_humidity / 1024;
-		osMutexRelease(mBMP280_DataMutex);
+		MUTEX_BME280_GIVE
 		return true;
 	}
 
