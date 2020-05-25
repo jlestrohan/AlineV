@@ -10,17 +10,17 @@ Protype built around:
 #### Microcontrollers:
 
 *  Nucleo STM32G474RE 172Mhz (main controller)
-*  ESP32 (Wifi + BT + Camera Module)
+*  ESP32 (Wifi)
+*  Alternate ESP8266 version
 
 #### Sensors:
 
 *  LM393 x2     Independant caterpillar speed sensors
 *  SHR-04 x3    Ultrasonic Distance Sensors
-*  IR-08h       Obstacle Avoidance Sensor
-*  Buzzer       Start up music (gadget)
-*  SD Card      local data save
-*  MPU6050      Inertial gyro/accel
-*  GY271        Magnetometer (derivation compensation, motors control)
+*  CMPS12       Telemetry ToF magnetometer sensor
+*  Buzzer       Start up music (not avail in esp8266 version))
+*  BME280       Temperature/Humidity/Pressure
+*  UV Leds simulating huge UV C lamps (200 ~ 280nm)
 
 
 #### Displays:
@@ -31,25 +31,9 @@ Protype built around:
 #### Autonomous behaviour
     The device is able to recon its environment. Once started it initializes 
     itself and starts mapping the region around him, and records any of it's 
-    movement on a SD card device. It also records many environmental parameters 
-    such as:
+    movement on a AWS Dynamodb. The datas are processed thru a graphical 
+    interface (redash) that offers some visuals.
     
-    - temperature, humidity
-    - air condition
-    - heat condition
-    - barometric pressure
-    - video monitoring
-    - movement detection
-    - light detection
-    
-and is able to send them over to either a control gateway/edge computing 
-(BLE/Wifi), either directly to a cloud platform (currently AWS) so the whole 
-data can be further processed. The mapping data (2D for now) is sent separately 
-so it makes further data processing easy (exploration android).
-
-It is able to trackback and restart from some point if anything goes wrong 
-along the way.
-
 It's integrated movement detection device makes it a perfect candidate for 
 security patrol device which is then able to patrol along a predefined path or 
 totally autonomously.
@@ -61,10 +45,10 @@ critical event that can happen:
         trajectory accordingly until it meets an obstacle.if one of the caterpillar 
         is skidding for some reason and the android is starting to lose its heading,
         it will detect the fault and try to correct its trajectory by regulating 
-        the motors power accordingly, guided by its inbuilt BMP280 mag sensor
+        the motors power accordingly, guided by its inbuilt CMPS12 mag sensor
     *  it is able to record every single movement it makes so it is easy for it to
         just turn back and come back to a previous location with a relatively good
-        accuracy
+        accuracy (not implemented yet)
     * Once an obstacle has been detected from the front or rear sensors (bound to
         where it's actually headed) it will compute the best directional decision to 
         take next according to the side sensors data.
@@ -93,8 +77,10 @@ critical event that can happen:
             7.  in the case of patrol mode, detection of some unattended event...
             etc...
             
-    To be continued, edited.. and coded....
+    To be continued, edited.. and coded.... this project is far from over but 
+    still in a very presentable way.
         
+        Beside robotics, it is a real connected thing!
     
  
         
