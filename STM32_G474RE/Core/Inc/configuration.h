@@ -177,11 +177,11 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 
 #define OSTASK_PRIORITY_LCDMENU							osPriorityAboveNormal
 #define OSTASK_PRIORITY_DATA_NAV						osPriorityAboveNormal2
-#define OSTASK_PRIORITY_NAVCONTROL_NORM_MOTION			osPriorityAboveNormal3
-#define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityAboveNormal4
+#define OSTASK_PRIORITY_HCSR04							osPriorityAboveNormal3
+#define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityAboveNormal4
 
-#define OSTASK_PRIORITY_HCSR04							osPriorityHigh1
-#define OSTASK_PRIORITY_MOTORS CONTROL					osPriorityHigh2
+#define OSTASK_PRIORITY_NAVCONTROL_NORM_MOTION			osPriorityHigh1
+#define OSTASK_PRIORITY_NAVCONTROL_AVOID_MOTION			osPriorityHigh2
 
 
 

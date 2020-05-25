@@ -312,6 +312,7 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 
 		MUTEX_HCSR04_TAKE
 		jwObj_int(&jwc, "hcFr", nav_data->hcsrData.dist_front);
+		jwObj_int(&jwc, "hcRr", nav_data->hcsrData.dist_rear);
 		jwObj_int(&jwc, "hcBt", nav_data->hcsrData.dist_bottom);
 		MUTEX_HCSR04_GIVE
 
@@ -332,8 +333,9 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 
 	size_t buffer_size = strlen(buffer);
 	memcpy(msg_pack->json, buffer, buffer_size);
-	msg_pack->msg_size = buffer_size;
 
+	//msg_pack->json[buffer_size+1] = 0x7E;
+	msg_pack->msg_size = buffer_size;
 	return EXIT_SUCCESS;
 }
 

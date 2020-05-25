@@ -2,25 +2,35 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-24 23:20:07
+ * @ Modified time: 2020-05-25 15:35:30
  * @ Description:
  *******************************************************************************************/
 
 #include <Arduino.h>
-#include <NTPClient.h>
+#include "AWS_Certificate.h"
+#include "wifi_credentials.h"
+#include "ESP8266WiFi.h"
 #include <SoftwareSerial.h>
 #include <PubSubClient.h>
-//#include <ArduinoOTA.h>
+#include "wifi_credentials.h"
 #include <ArduinoJson.h>
-#include "wifi_module.h"
-#include "ota_module.h"
 #include "ledstrip_module.h"
+
+extern "C"
+{
+#include "libb64/cdecode.h"
+}
+
+/* functions definitions */
+int b64decode(String b64Text, uint8_t *output);
+void vWifiConnect();
+static const char *motorMotion(uint8_t motionNum);
 
 // check https://raphberube.com/blog/2019/02/18/Making-the-ESP8266-work-with-AWS-IoT.html
 
-#define SOFTWBUFFCAPACITY 256
+#define SOFTWBUFFCAPACITY 512
 #define MAX_HDLC_FRAME_LENGTH 256
-#define MAX_JSON_LENGTH 256
+#define MAX_JSON_LENGTH 512
 #define STRING_LEN 128
 
 // Local wireless network
@@ -34,17 +44,20 @@ SoftwareSerial stmRxTx(4, 5); // The esp8266 RX TX used to match with the nucleo
 void callback(char *topic, byte *payload, unsigned int len); // to get message from AWS
 void connectToAws();                                         // to connect esp8266 to AWS core (mqtt protocol)
 String getRxdata();                                          //to get sensor data from Nucleo board
-String shadow;
-void setCurrentTime();               // to be informed on the certification validation...
+
+void setCurrentTime();                  // to be informed on the certification validation...
 uint8_t sendDatatoAws(String jsonData); // post data in json format to aws dynamodb
 
+WiFiClientSecure wiFiClient;
 PubSubClient pubSubClient(AWS_IOT_ENDPOINT, 8883, callback, wiFiClient); //MQTT Client
 
-bool shadow_ready = false;
-uint8_t r;
-char buffer[MAX_JSON_LENGTH];
-uint8_t pos;
+uint8_t shadowReady = false;
 bool isReady = false;
+
+ uint8_t receivedChars[MAX_JSON_LENGTH]; // an array to store the received data
+size_t numBytes;
+uint8_t inChar;
+uint16_t pos;
 
 String rxData = ""; //get rxData as response (sensor data) from nucleo board
 
@@ -58,16 +71,28 @@ void setup()
 {
   Serial.begin(115200);
   stmRxTx.begin(19200);
+  stmRxTx.setTimeout(100);
   Serial.setDebugOutput(false);
-  
-  uSetupWifi(); /* setup and connects to wifi */
-  uSetupOta();
-  
+
+  uint8_t binaryCert[AWS_CERT_CRT.length() * 3 / 4];
+  int len = b64decode(AWS_CERT_CRT, binaryCert);
+  wiFiClient.setCertificate(binaryCert, len);
+
+  uint8_t binaryPrivate[AWS_CERT_PRIVATE.length() * 3 / 4];
+  len = b64decode(AWS_CERT_PRIVATE, binaryPrivate);
+  wiFiClient.setPrivateKey(binaryPrivate, len);
+
+  uint8_t binaryCA[AWS_CERT_CA.length() * 3 / 4];
+  len = b64decode(AWS_CERT_CA, binaryCA);
+  wiFiClient.setCACert(binaryCA, len);
+
+  vWifiConnect();
+
   uLedStripSetup(true); /* lights up the ledstrip below */
-  
+
   /*BEGIN: Copied from https://github.com/HarringayMakerSpace/awsiot/blob/master/Esp8266AWSIoTExample/Esp8266AWSIoTExample.ino*/
   setCurrentTime(); //  // get current time, otherwise certificates are flagged as expired
- 
+
   isReady = true;
 }
 
@@ -80,14 +105,16 @@ void setup()
 void loop()
 {
   connectToAws();
-  uLoopOTA();
   getRxdata();
 
-  if (shadow_ready)
+  if (shadowReady)
   {
-    sendDatatoAws(shadow);
-    shadow_ready = false;
-    //Serial.print(shadow);
+    receivedChars[numBytes-1] = 0;
+    Serial.print((char *)receivedChars);
+    sendDatatoAws((const char *)receivedChars);
+    shadowReady = false;
+    receivedChars[0] = '\0';
+    
   }
 }
 
@@ -101,12 +128,12 @@ void connectToAws()
 {
   if ((isReady) && !pubSubClient.connected())
   {
-    Serial.print("PubSubClient connecting to: ");
+    Serial.print(F("PubSubClient connecting to: "));
     Serial.print(AWS_IOT_ENDPOINT);
     while (!pubSubClient.connected())
     {
       Serial.print(".");
-      pubSubClient.connect(HOST_NAME);
+      pubSubClient.connect(HOSTNAME);
     }
     Serial.println(" connected");
     pubSubClient.subscribe(MQTT_PUB_TOPIC);
@@ -117,12 +144,28 @@ void connectToAws()
 /*****==================================================================*****/
 String getRxdata()
 {
-
+ 
   //espRxTx.write(request); //write a post to TX_PIN to get data
   if (stmRxTx.available() > 0) //
   {
-    shadow = stmRxTx.readString(); //read() read from RX_PIN  character by character
-    shadow_ready = true;
+    numBytes = stmRxTx.readBytes(receivedChars, MAX_JSON_LENGTH);
+    
+    //..if (inChar == 0x7e ||pos < MAX_JSON_LENGTH) {      
+    //pos = 0;
+      shadowReady = true;
+    //} else {
+   //   receivedChars[pos] = (char)inChar;
+   //   pos++;
+   // }
+    
+
+    
+    
+    
+    
+   // shadow = stmRxTx.readString(); //read() read from RX_PIN  character by character
+    //Serial.println(shadow);
+    
   }
   //Serial.println(resp);
   //Serial.println(strlen(resp.c_str()));
@@ -139,35 +182,36 @@ String getRxdata()
 uint8_t sendDatatoAws(String jsonData)
 {
   String mqttTopic; /* dynamic topic */
-  
-  StaticJsonDocument<MAX_JSON_LENGTH> doc;
+
+  const size_t capacity = JSON_OBJECT_SIZE(5) + 1000;
+  DynamicJsonDocument doc(capacity);
   DeserializationError err = deserializeJson(doc, jsonData);
-  
-   if (err)
-    {
-        Serial.println("deserializeJson() failed with code ");
-        Serial.println(err.c_str());
-        return EXIT_FAILURE;
-    }
-  
+
+  if (err)
+  {
+    Serial.print(F("deserializeJson() failed with code: "));
+    Serial.println(err.c_str());
+    return EXIT_FAILURE;
+  }
+
   /* serialization doc */
-    StaticJsonDocument<MAX_JSON_LENGTH> newdoc;
-  
+  DynamicJsonDocument newdoc(capacity);
+
   String stm32_uuid = doc["id"];
-  //newdoc["timestamp"] = 
- 
+  //newdoc["timestamp"] =
+
   //Json document construction
   JsonObject root = newdoc.to<JsonObject>();
   //JsonObject Payload = root.createNestedObject("payload");
   //JsonObject Reported = State.createNestedObject("reported");
- 
+
   root["deviceid"] = stm32_uuid;
   //root["ts"] = time(nullptr);
-  
+
   /* we create the data accordingly */
   /**********************************************************/
   /* ATMOSPHERIC */
-  if (doc["cmd"] = "ATM")
+  if (doc["cmd"] == "ATM")
   { /* atmospheric data */
     String sensortype = doc["data"]["sns"];
     float pressure = doc["data"]["Ps"];
@@ -178,27 +222,30 @@ uint8_t sendDatatoAws(String jsonData)
     root["pressure"] = pressure;
     root["temperature"] = temperature;
     root["humidity"] = 0;
-  
+
     mqttTopic = "AlineV/data/atmospheric";
   }
   /**********************************************************/
-  /* NAVIGATION */ 
-  else if (doc["cmd"] = "NAV")
+  /* NAVIGATION */
+  else if (doc["cmd"] == "NAV")
   {
-    //root["bearing"] 
-    //root["speed"] //bouchon calculé
-    //root["distance_front"]
-    //root["distance_left45"]
-    //root["distance_right45"]
-    //root["distance_back"]
-    //root["distance_rear"]
-    //root["motion"] forward/idle/backward
-    //root["pitch"] 255/-255
-    //root["roll"] 
-    //root["uvstatus"] on/off 
+    //"data":{"mtSpL":0,"mtSpR":0,"mtMotL":0,"mtMotR":0,"cmPi":0,"cmRo":0,"cmHdg":27,"hcFr":0,"hcBt":7,"Uv":true}}
+
+    root["heading"] = doc["data"]["cmHdg"];
+    root["roll"] = doc["data"]["cmRo"];
+    root["pitch"] = doc["data"]["cmPi"];
+    root["uvstatus"] = doc["data"]["Uv"];
+    root["obst_front_cm"] = doc["data"]["hcFr"];
+    root["obst_rear_cm"] = doc["data"]["HcRr"];
+    root["obst_bottm_cm"] = doc["data"]["hcBt"];
+    root["speed_left"] = doc["data"]["mtSpL"];
+    root["speed_right"] = doc["data"]["mtSpR"];
+
+    root["motionL"] = motorMotion(doc["data"]["mtMotL"]);
+    root["motionR"] = motorMotion(doc["data"]["mtMotR"]);
+
+    mqttTopic = "AlineV/data/navigation";
   }
-  
-  
 
   /*Serial.printf("Sending  [%s]: ", MQTT_PUB_TOPIC);*/
   serializeJson(root, Serial); //Json doc serialisation
@@ -206,11 +253,13 @@ uint8_t sendDatatoAws(String jsonData)
   char shadow[MAX_JSON_LENGTH];
   serializeJson(root, shadow, sizeof(shadow));
 
-/* let's publish this */
-  if (!pubSubClient.publish(MQTT_PUB_TOPIC, shadow, false)) // send json data to dynamoDbB topic
-    Serial.println("ERROR??? :");
-  Serial.println(pubSubClient.state()); //Connected '0'*/
-  
+  /* let's publish this */
+  if (!pubSubClient.publish(mqttTopic.c_str(), shadow, false))
+  { // send json data to dynamoDbB topic
+    Serial.println(F("ERROR??? :"));
+    Serial.println(pubSubClient.state()); //Connected '0'*/
+  }
+
   return EXIT_SUCCESS;
 }
 
@@ -225,16 +274,15 @@ uint8_t sendDatatoAws(String jsonData)
  */
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  Serial.print("Message received on ");
-  Serial.print(topic);
-  Serial.print(": ");
-  for (unsigned int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
+  //Serial.print(F("Message received on "));
+  //Serial.print(topic);
+  //Serial.print(F(": "));
+  //for (unsigned int i = 0; i < length; i++)
+  //{
+  //  Serial.print((char)payload[i]);
+  //}
+  // Serial.println();
 }
-
 
 /* -------------------------------- NTP SETUP ------------------------------- */
 /**
@@ -260,5 +308,49 @@ void setCurrentTime()
   Serial.print(asctime(&timeinfo));
 
   Serial.println(now);
-  
+}
+
+/* ------------------------------ WIFI CONNECT ------------------------------ */
+/**
+ * @brief  Connection to wifi
+ * @note   
+ * @retval None
+ */
+void vWifiConnect()
+{
+  /* first we try to check in the EEPROM if we have any credentials stored */
+
+  Serial.print(F("Connecting to "));
+  Serial.print(WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.waitForConnectResult();
+  Serial.print(F(", WiFi connected, IP address: "));
+  Serial.println(WiFi.localIP());
+}
+
+int b64decode(String b64Text, uint8_t *output)
+{
+  base64_decodestate s;
+  base64_init_decodestate(&s);
+  int cnt = base64_decode_block(b64Text.c_str(), b64Text.length(), (char *)output, &s);
+  return cnt;
+}
+
+static const char *motorMotion(uint8_t motionNum)
+{
+  switch (motionNum)
+  {
+  case 0:
+    return "IDL";
+    break;
+  case 1:
+    return "FWD";
+    break;
+  case 2:
+    return "BWD";
+    break;
+  default:
+    return "IDL";
+    break;
+  }
 }
