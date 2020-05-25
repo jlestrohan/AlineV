@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-25 15:35:30
+ * @ Modified time: 2020-05-25 16:11:53
  * @ Description:
  *******************************************************************************************/
 
@@ -231,18 +231,32 @@ uint8_t sendDatatoAws(String jsonData)
   {
     //"data":{"mtSpL":0,"mtSpR":0,"mtMotL":0,"mtMotR":0,"cmPi":0,"cmRo":0,"cmHdg":27,"hcFr":0,"hcBt":7,"Uv":true}}
 
-    root["heading"] = doc["data"]["cmHdg"];
-    root["roll"] = doc["data"]["cmRo"];
-    root["pitch"] = doc["data"]["cmPi"];
-    root["uvstatus"] = doc["data"]["Uv"];
-    root["obst_front_cm"] = doc["data"]["hcFr"];
-    root["obst_rear_cm"] = doc["data"]["HcRr"];
-    root["obst_bottm_cm"] = doc["data"]["hcBt"];
-    root["speed_left"] = doc["data"]["mtSpL"];
-    root["speed_right"] = doc["data"]["mtSpR"];
+    uint16_t Bearing = doc["data"]["cmHdg"];
+    uint8_t Roll = doc["data"]["cmRo"];
+    uint8_t Pitch = doc["data"]["cmPi"];
+    uint8_t UvStatus = doc["data"]["Uv"];
+    uint16_t ObstFront = doc["data"]["hcFr"];
+    uint16_t ObstRear = doc["data"]["HcRr"];
+    uint16_t ObstBottom = doc["data"]["hcBt"];
+    uint8_t SpeedLeft = doc["data"]["mtSpL"];
+    uint8_t SpeedRight = doc["data"]["mtSpR"];
+    
+    const char *motionL = motorMotion(doc["data"]["mtMotL"]);
+    const char *motionR = motorMotion(doc["data"]["mtMotR"]);
+    
+    root["heading"] = Bearing;
+    root["roll"] = Roll;
+    root["pitch"] = Pitch;
+    root["uvstatus"] = UvStatus;
+    root["obst_front_cm"] = ObstFront;
+    root["obst_rear_cm"] = ObstRear;
+    root["obst_bottm_cm"] = ObstBottom;
+    root["speed_left"] = SpeedLeft;
+    root["speed_right"] = SpeedRight;
 
-    root["motionL"] = motorMotion(doc["data"]["mtMotL"]);
-    root["motionR"] = motorMotion(doc["data"]["mtMotR"]);
+
+    root["motionL"] = motionL;
+    root["motionR"] = motionR;
 
     mqttTopic = "AlineV/data/navigation";
   }

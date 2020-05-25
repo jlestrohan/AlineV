@@ -250,7 +250,7 @@ static void vNavControlNormalMotionTask(void *vParameters)
 				motorMotion = MOTOR_MOTION_BACKWARD;
 				osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 				_vServoLedMotionBackwardRules();
-				osDelay(1000); /* for one second */
+				osDelay(1500); /* for one second */
 			}
 
 
@@ -265,10 +265,10 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			MUTEX_HCSR04_TAKE
 			if (HR04_SensorsData.dist_left45 < HR04_SensorsData.dist_right45) {
 				printf("Detected More space to the right, turning right 30°...");
-				xDestinationBearing = uGetNewBearing(30, &xCurrentBearing);
+				xDestinationBearing = uGetNewBearing(40, &xCurrentBearing);
 			} else {
 				printf("Detected More space to the left, turning left 30°...");
-				xDestinationBearing = uGetNewBearing(-30, &xCurrentBearing);
+				xDestinationBearing = uGetNewBearing(-40, &xCurrentBearing);
 			}
 			MUTEX_HCSR04_GIVE
 

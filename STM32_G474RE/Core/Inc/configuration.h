@@ -64,7 +64,7 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define US_ANGLE_MIN_WARNING_CM						40	/* obstacle potentially near, warning */
 
 /* distance from which we stop the forward motion once an obstacle has been detected */
-#define US_FRONT_MIN_STOP_CM						20	/* obstacle stop */
+#define US_FRONT_MIN_STOP_CM						25	/* obstacle stop */
 #define US_FRONT_MIN_DANGER_CM						30	/* obstacle near danger */
 #define US_FRONT_MIN_WARNING_CM						40	/* obstacle potentially near, warning */
 

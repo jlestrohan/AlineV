@@ -31,8 +31,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#define SERVO_TOLERANCE 5
+
 /* functions definitions */
 uint16_t median_filter(uint16_t datum);
+uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance);
 
 /* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData;
@@ -87,6 +90,7 @@ static void vHr04SensorTaskStart(void *argument)
 
 			MUTEX_HCSR04_TAKE
 			/* now let's filter out and populate data from the IRQ; */
+
 			switch (sensorCapturedData.sensor_number) {
 			case HR04_SONAR_REAR:
 				HR04_SensorsData.dist_rear = sensread;
@@ -96,27 +100,19 @@ static void vHr04SensorTaskStart(void *argument)
 				break;
 			case HR04_SONAR_FRONT:
 				MUTEX_SERVO_TAKE
-				switch (xServoPosition) {
-				case SERVO_DIRECTION_LEFT45:
+
+				if (isInsideTolerance(xServoPosition, SERVO_DIRECTION_LEFT45, SERVO_TOLERANCE)) {
 					HR04_SensorsData.dist_left45 = sensread;
-					break;
-				case SERVO_DIRECTION_CENTER: default:
+				} else if (isInsideTolerance(xServoPosition, SERVO_DIRECTION_CENTER, SERVO_TOLERANCE)) {
 					HR04_SensorsData.dist_front = sensread;
-					break;
-				case SERVO_DIRECTION_RIGHT45:
+				} else if (isInsideTolerance(xServoPosition, SERVO_DIRECTION_RIGHT45, SERVO_TOLERANCE)) {
 					HR04_SensorsData.dist_right45 = sensread;
-					break;
-				case SERVO_DIRECTION_LEFT90:
-					HR04_SensorsData.dist_left90 = sensread;
-					break;
-				case SERVO_DIRECTION_RIGHT90:
-					HR04_SensorsData.dist_right90 = sensread;
-					break;
 				}
+
 				MUTEX_SERVO_GIVE
 				break;
 
-				default: break;
+						default: break;
 			}
 			MUTEX_HCSR04_GIVE
 		}
@@ -290,3 +286,15 @@ inline uint16_t median_filter(uint16_t datum)
 	}
 	return median->value;
 }
+
+/**
+ * returns true if position - toleranbce / value / position +tolerance
+ * @param position
+ * @param tolerance
+ * @return
+ */
+uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance)
+{
+	return ((value <= position + tolerance) && (value >= position - tolerance));
+}
+

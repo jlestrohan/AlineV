@@ -79,6 +79,10 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 
 	for (;;)
 	{
+		MUTEX_SERVO_TAKE
+		xServoPosition = htim5.Instance->CCR1; /* constantly publishes the real servo position */
+		MUTEX_SERVO_GIVE
+
 		switch (htim5.Instance->CCR1) {
 
 		case SERVO_DIRECTION_LEFT45:
@@ -89,9 +93,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 				printf("Servo position: CENTER\n\r");
 				MUTEX_SERVO_GIVE
 #endif
-				MUTEX_SERVO_TAKE
-				xServoPosition = SERVO_DIRECTION_CENTER; /* we update the published position of the servo */
-				MUTEX_SERVO_GIVE
+
 			}
 			direction = SERVO_DIRECTION_RIGHT45;
 			osDelay(200);
@@ -106,9 +108,6 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 					printf("Servo position: RIGHT 45\n\r");
 					MUTEX_SERVO_GIVE
 #endif
-					MUTEX_SERVO_TAKE
-					xServoPosition = SERVO_DIRECTION_RIGHT45; /* we update the published position of the servo */
-					MUTEX_SERVO_GIVE
 				}
 			} else {
 				htim5.Instance->CCR1 = SERVO_DIRECTION_LEFT45;
@@ -118,9 +117,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 					printf("Servo position: LEFT 45\n\r");
 					MUTEX_SERVO_GIVE
 #endif
-					MUTEX_SERVO_TAKE
-					xServoPosition = SERVO_DIRECTION_LEFT45; /* we update the published position of the servo */
-					MUTEX_SERVO_GIVE
+
 				}
 			}
 			osDelay(300);
@@ -135,9 +132,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 				printf("Servo position: CENTER\n\r");
 				MUTEX_SERVO_GIVE
 #endif
-				MUTEX_SERVO_TAKE
-				xServoPosition = SERVO_DIRECTION_CENTER; /* we update the published position of the servo */
-				MUTEX_SERVO_GIVE
+
 			}
 			osDelay(200);
 			break;
