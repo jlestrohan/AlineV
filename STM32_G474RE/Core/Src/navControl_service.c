@@ -318,7 +318,7 @@ static void vNavDecisionControlTask(void *vParameter)
 
 		switch (special_event) {
 		case START_EVENT:
-			printf("Initiating disinfection program....\n\r");
+			printf("\n\rInitiating disinfection program....\n\r");
 
 			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_STARTING;
@@ -328,7 +328,7 @@ static void vNavDecisionControlTask(void *vParameter)
 
 		case STOP_EVENT: default:
 			_vServoLedMotionIdleRules();
-			printf("Stopping disinfection program....\n\r");
+			printf("\n\rStopping disinfection program....\n\r");
 			motorMotion = MOTOR_MOTION_IDLE;
 			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 
