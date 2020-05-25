@@ -97,6 +97,8 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define MUTEX_BME280_GIVE		osMutexRelease(mBMP280_DataMutex);
 #define MUTEX_SERVO_TAKE		osMutexAcquire(mServoPositionMutex, osWaitForever);
 #define MUTEX_SERVO_GIVE		osMutexRelease(mServoPositionMutex);
+#define MUTEX_LCD_TAKE			osMutexAcquire(mLCDScreenMutex, osWaitForever);
+#define MUTEX_LCD_GIVE			osMutexRelease(mLCDScreenMutex);
 
 
 /**

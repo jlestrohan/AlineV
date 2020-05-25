@@ -17,10 +17,13 @@
 #include <string.h>
 #include "HCSR04_service.h"
 #include "CMPS12_service.h"
+#include "BMP280_service.h"
 
 #define LCD_I2C_ADDRESS		0x27
 #define LCD_NB_COL			16
 #define LCD_NB_ROW			2
+
+osMutexId_t mLCDScreenMutex;
 
 HR04_SensorsData_t HR04_SensorsData;	/* extern  */
 osMutexId_t mHR04_SensorsDataMutex;	/* extern */
@@ -28,16 +31,22 @@ osMutexId_t mHR04_SensorsDataMutex;	/* extern */
 CMPS12_SensorData_t CMPS12_SensorData; /* extern */
 osMutexId_t mCMPS12_SensorDataMutex;	/* extern */
 
+extern BMP280_Data_t BMP280_Data;	/* extern */
+extern osMutexId_t mBMP280_DataMutex;	/* extern */
+
 /* functions declarations */
 void fc_menu_hcsr04();
 void fc_menu_ready();
-void fc_menu_cmps();
+void fc_menu_cmps1();
+void fc_menu_cmps2();
+void fc_menu_bme280();
 
 struct MENUITEMS_t *pCurrentItem;
 
 struct MENUITEMS_t MenuItem_HCSR04;
 struct MENUITEMS_t MenuItem_CMPS2_1;
 struct MENUITEMS_t MenuItem_CMPS2_2;
+struct MENUITEMS_t MenuItem_BME280;
 
 struct MENUITEMS_t MenuItem_Ready =
 {
@@ -63,7 +72,7 @@ struct MENUITEMS_t MenuItem_CMPS2_1 =
 {
 		"CMPS12 Sensor",1,0,
 		"infos here",2,2,
-		fc_menu_cmps,
+		fc_menu_cmps1,
 		&MenuItem_Ready,
 		&MenuItem_CMPS2_2,
 		LCD_SCREEN_CMPS12_1
@@ -73,10 +82,20 @@ struct MENUITEMS_t MenuItem_CMPS2_2 =
 {
 		"CMPS12 Sensor",1,0,
 		"infos here",2,2,
-		fc_menu_cmps,
+		fc_menu_cmps2,
 		&MenuItem_CMPS2_1,
-		&MenuItem_Ready,
+		&MenuItem_BME280,
 		LCD_SCREEN_CMPS12_2
+};
+
+struct MENUITEMS_t MenuItem_BME280 =
+{
+		"BME280 Sensor",1,0,
+		"infos here",2,2,
+		fc_menu_bme280,
+		&MenuItem_CMPS2_2,
+		&MenuItem_Ready,
+		LCD_SCREEN_BME280
 };
 
 
@@ -129,13 +148,16 @@ static void vLcdMenuServiceTask(void *argument)
 		if (xEventMenuNavButton != NULL) {
 			osEventFlagsWait(xEventMenuNavButton,BEXT_PRESSED_EVT, osFlagsWaitAny, osWaitForever);
 
+			MUTEX_LCD_TAKE
 			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+
 			//TODO: implement long press= call prev function
 			if (pCurrentItem->next != NULL)
 				pCurrentItem = pCurrentItem->next;
 			(*pCurrentItem).func();
+			MUTEX_LCD_GIVE
 		}
-		osDelay(50);
+		osDelay(5);
 	}
 	osThreadTerminate(NULL);
 }
@@ -151,10 +173,11 @@ static void vLcdMenuLoopTask(void *vParameter)
 
 	for (;;)
 	{
+		MUTEX_LCD_TAKE
 		switch ((intptr_t)pCurrentItem->LcdTypeScreen)
 		{
 		case LCD_SCREEN_HCSR04:
-			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+
 			lcdSetCursorPosition(0, 0);
 			MUTEX_HCSR04_TAKE
 			sprintf(line1, "F%0*d FL%0*d FR%0*d", 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_left45,3,HR04_SensorsData.dist_right45);
@@ -166,39 +189,41 @@ static void vLcdMenuLoopTask(void *vParameter)
 			sprintf(line2, "B%0*d R%0*d", 3, HR04_SensorsData.dist_bottom, 3, HR04_SensorsData.dist_rear);
 			MUTEX_HCSR04_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
-			osDelay(20);
 			break;
 
-		case LCD_SCREEN_CMPS12_1:
-			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
-			lcdSetCursorPosition(0, 0);
-			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
+		case LCD_SCREEN_CMPS12_1: /* rov heading */
+			//lcdCommand(LCD, LCD_PARAM_SET);
 
-			lcdSetCursorPosition(3, 1);
+			lcdSetCursorPosition(2, 1);
 			MUTEX_CMPS12_TAKE
-			sprintf(line2, "hdg: %0*d", 3, CMPS12_SensorData.CompassBearing);
+			sprintf(line2, "<<  %0*d  >>", 3, CMPS12_SensorData.CompassBearing);
 			MUTEX_CMPS12_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
-			osDelay(50);
 			break;
 
-		case LCD_SCREEN_CMPS12_2:
-			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
-			lcdSetCursorPosition(0, 0);
-			lcdPrintStr((uint8_t *)"CMP12-S Mag Sens", strlen(line1));
+		case LCD_SCREEN_CMPS12_2: /* attitude */
 
 			lcdSetCursorPosition(0, 1);
 			MUTEX_CMPS12_TAKE
-			sprintf(line2, "Pitch:%d Roll:%d", CMPS12_SensorData.PitchAngle, CMPS12_SensorData.RollAngle);
+			sprintf(line2, "Pit:%0*d Rol:%0*d", 3, CMPS12_SensorData.PitchAngle, 3, CMPS12_SensorData.RollAngle);
 			MUTEX_CMPS12_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
-			osDelay(50);
+			break;
+
+		case LCD_SCREEN_BME280: /* attitude */
+
+			lcdSetCursorPosition(0, 1);
+			MUTEX_BME280_TAKE
+			sprintf(line2, "%0*dC hpa:%0.2f", 2, (int8_t)BMP280_Data.temperature, BMP280_Data.pressure/100);
+			MUTEX_BME280_GIVE
+			lcdPrintStr((uint8_t *)line2, strlen(line2));
 			break;
 
 		default: break;
 		}
+		MUTEX_LCD_GIVE
 
-		osDelay(100);
+		osDelay(5);
 	}
 	osThreadTerminate(NULL);
 }
@@ -209,6 +234,8 @@ static void vLcdMenuLoopTask(void *vParameter)
  */
 uint8_t uLcdMenuServiceInit()
 {
+	mLCDScreenMutex = osMutexNew(NULL);
+
 	/* creation of xLcdMenuServiceTaskHandle - will handle menu rotation */
 	xLcdMenuServiceTaskHandle = osThreadNew(vLcdMenuServiceTask, NULL, &xLcdMenuServiceTa_attributes);
 	if (xLcdMenuServiceTaskHandle == NULL) {
@@ -249,8 +276,26 @@ void fc_menu_ready()
 	lcdPrintStr((uint8_t*)(*pCurrentItem).second_line_text, strlen((*pCurrentItem).second_line_text));
 }
 
-void fc_menu_cmps()
+void fc_menu_cmps1()
 {
 	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	lcdSetCursorPosition(2, 0);
+	lcdPrintStr((uint8_t *)"Rov Heading", 11);
+	/* rest is done in loop task */
+}
+
+void fc_menu_cmps2()
+{
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	lcdSetCursorPosition(3, 0);
+	lcdPrintStr((uint8_t *)"Attitude", 8);
+	/* rest is done in loop task */
+}
+
+void fc_menu_bme280()
+{
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	lcdSetCursorPosition(3, 0);
+	lcdPrintStr((uint8_t *)"Telemetry", 9);
 	/* rest is done in loop task */
 }

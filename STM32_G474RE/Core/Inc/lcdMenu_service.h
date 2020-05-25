@@ -26,6 +26,7 @@ typedef enum {
 	LCD_SCREEN_HCSR04,
 	LCD_SCREEN_CMPS12_1,
 	LCD_SCREEN_CMPS12_2,
+	LCD_SCREEN_BME280
 } LcdTypeScreen_t;
 
  struct MENUITEMS_t {
