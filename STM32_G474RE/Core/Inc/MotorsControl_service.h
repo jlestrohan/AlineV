@@ -16,13 +16,8 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "configuration.h"
 
-#define MOTORS_DEFAULT_FW_SPEED			20
-#define MOTORS_DEFAULT_WARNING_SPEED	15
-#define MOTORS_DEFAULT_DANGER_SPEED		12
-#define MOTORS_DEFAULT_TURN_SPEED		15
-#define MOTORS_DEFAULT_BW_SPEED			12
-#define MOTORS_DEFAULT_CORRECT_BIAS				4
 
 #define MOTORS_IDLE		(1 << 0) /* if this flag is set the others are ignored */
 #define MOTORS_FORWARD	(1 << 1)

@@ -79,6 +79,14 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 
 #define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
+/* Motors data */
+#define MOTORS_DEFAULT_FW_SPEED			25
+#define MOTORS_DEFAULT_WARNING_SPEED	17
+#define MOTORS_DEFAULT_DANGER_SPEED		15
+#define MOTORS_DEFAULT_TURN_SPEED		17
+#define MOTORS_DEFAULT_BW_SPEED			20
+#define MOTORS_DEFAULT_CORRECT_BIAS				4
+
 
 /**
  * FEW HANDY MACROS
