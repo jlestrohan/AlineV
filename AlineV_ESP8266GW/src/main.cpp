@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-26 20:04:32
+ * @ Modified time: 2020-05-26 23:08:00
  * @ Description:
  *******************************************************************************************/
 
@@ -15,6 +15,7 @@
 #include "wifi_credentials.h"
 #include <ArduinoJson.h>
 #include "ledstrip_module.h"
+#include "IotWebConf.h"
 
 extern "C"
 {
@@ -24,7 +25,13 @@ extern "C"
 /* functions definitions */
 int b64decode(String b64Text, uint8_t *output);
 void vWifiConnect();
-static const char *motorMotion(uint8_t motionNum);
+const char *motorMotion(uint8_t motionNum);
+void wifiConnected_cb();
+void handleRoot();
+
+#define MQTT_PUB_TOPIC "AlineV/data/atmospheric"
+#define AWS_IOT_ENDPOINT "a2im1z2thfpkge-ats.iot.eu-west-3.amazonaws.com"
+
 
 // check https://raphberube.com/blog/2019/02/18/Making-the-ESP8266-work-with-AWS-IoT.html
 
@@ -33,12 +40,11 @@ static const char *motorMotion(uint8_t motionNum);
 #define MAX_JSON_LENGTH 512
 #define STRING_LEN 128
 
+#define STATUS_PIN LED_BUILTIN
+
 // Local wireless network
-#define MQTT_PUB_TOPIC "AlineV/data/atmospheric"
-#define AWS_IOT_ENDPOINT "a2im1z2thfpkge-ats.iot.eu-west-3.amazonaws.com"
 #define CONFIG_VERSION "0.35"
 
-//SoftwareSerial swSer(14, 12, false, 256);
 SoftwareSerial stmRxTx(4, 5); // The esp8266 RX TX used to match with the nucleo bord
 
 void callback(char *topic, byte *payload, unsigned int len); // to get message from AWS
@@ -51,13 +57,20 @@ uint8_t sendDatatoAws(String jsonData); // post data in json format to aws dynam
 WiFiClientSecure wiFiClient;
 PubSubClient pubSubClient(AWS_IOT_ENDPOINT, 8883, callback, wiFiClient); //MQTT Client
 
-uint8_t shadowReady = false;
-bool isReady = false;
+DNSServer dnsServer;
+WebServer server(80);
 
- uint8_t receivedChars[MAX_JSON_LENGTH]; // an array to store the received data
+IotWebConf iotWebConf(HOSTNAME, &dnsServer, &server, "73727170");
+
+uint8_t shadowReady = false;
+bool wifiReady = false;
+
+uint8_t receivedChars[MAX_JSON_LENGTH]; // an array to store the received data
 size_t numBytes;
 uint8_t inChar;
 uint16_t pos;
+
+char stringParamValue[STRING_LEN];
 
 String rxData = ""; //get rxData as response (sensor data) from nucleo board
 
@@ -69,6 +82,7 @@ String rxData = ""; //get rxData as response (sensor data) from nucleo board
  */
 void setup()
 {
+    
   Serial.begin(115200);
   stmRxTx.begin(19200);
   stmRxTx.setTimeout(100);
@@ -86,14 +100,31 @@ void setup()
   len = b64decode(AWS_CERT_CA, binaryCA);
   wiFiClient.setCACert(binaryCA, len);
 
-  vWifiConnect();
+wiFiClient.setBufferSizes(1024, 512);
+
+
+  //vWifiConnect();
+
+  // -- Initializing the configuration.
+  iotWebConf.init();
+  iotWebConf.setWifiConnectionCallback(&wifiConnected_cb);
+  iotWebConf.setStatusPin(STATUS_PIN);
+  
+
+      // -- Initializing the configuration.
+      boolean validConfig = iotWebConf.init();
+  if (!validConfig)
+  {
+    stringParamValue[0] = '\0';
+  }
+
+  // -- Set up required URL handlers on the web server.
+  server.on("/", handleRoot);
+  server.on("/config", [] { iotWebConf.handleConfig(); });
+  server.onNotFound([]() { iotWebConf.handleNotFound(); });
 
   uLedStripSetup(true); /* lights up the ledstrip below */
 
-  /*BEGIN: Copied from https://github.com/HarringayMakerSpace/awsiot/blob/master/Esp8266AWSIoTExample/Esp8266AWSIoTExample.ino*/
-  setCurrentTime(); //  // get current time, otherwise certificates are flagged as expired
-
-  isReady = true;
 }
 
 /* -------------------------------- MAIN LOOP ------------------------------- */
@@ -104,17 +135,21 @@ void setup()
  */
 void loop()
 {
-  connectToAws();
-  getRxdata();
+  iotWebConf.doLoop();
 
-  if (shadowReady)
+  if (wifiReady)
   {
-    receivedChars[numBytes-1] = 0;
-    Serial.print((char *)receivedChars);
-    sendDatatoAws((const char *)receivedChars);
-    shadowReady = false;
-    receivedChars[0] = '\0';
-    
+    connectToAws();
+    getRxdata();
+
+    if (shadowReady)
+    {
+      receivedChars[numBytes - 1] = 0;
+      Serial.print((char *)receivedChars);
+      sendDatatoAws((const char *)receivedChars);
+      shadowReady = false;
+      receivedChars[0] = '\0';
+    }
   }
 }
 
@@ -126,14 +161,16 @@ void loop()
  */
 void connectToAws()
 {
-  if ((isReady) && !pubSubClient.connected())
+  if (!pubSubClient.connected())
   {
     Serial.print(F("PubSubClient connecting to: "));
     Serial.print(AWS_IOT_ENDPOINT);
+    Serial.println();
     while (!pubSubClient.connected())
     {
       Serial.print(".");
       pubSubClient.connect(HOSTNAME);
+      delay(50);
     }
     Serial.println(" connected");
     pubSubClient.subscribe(MQTT_PUB_TOPIC);
@@ -144,15 +181,13 @@ void connectToAws()
 /*****==================================================================*****/
 String getRxdata()
 {
- 
+
   //espRxTx.write(request); //write a post to TX_PIN to get data
   if (stmRxTx.available() > 0) //
   {
     numBytes = stmRxTx.readBytes(receivedChars, MAX_JSON_LENGTH);
- 
-    shadowReady = true;
 
-    
+    shadowReady = true;
   }
 
   return "";
@@ -223,10 +258,10 @@ uint8_t sendDatatoAws(String jsonData)
     uint16_t ObstBottom = doc["data"]["hcBt"];
     uint8_t SpeedLeft = doc["data"]["mtSpL"];
     uint8_t SpeedRight = doc["data"]["mtSpR"];
-    
+
     const char *motionL = motorMotion(doc["data"]["mtMotL"]);
     const char *motionR = motorMotion(doc["data"]["mtMotR"]);
-    
+
     root["heading"] = Bearing;
     root["roll"] = Roll;
     root["pitch"] = Pitch;
@@ -236,7 +271,6 @@ uint8_t sendDatatoAws(String jsonData)
     root["obst_bottm_cm"] = ObstBottom;
     root["speed_left"] = SpeedLeft;
     root["speed_right"] = SpeedRight;
-
 
     root["motionL"] = motionL;
     root["motionR"] = motionR;
@@ -333,7 +367,7 @@ int b64decode(String b64Text, uint8_t *output)
   return cnt;
 }
 
-static const char *motorMotion(uint8_t motionNum)
+const char *motorMotion(uint8_t motionNum)
 {
   switch (motionNum)
   {
@@ -350,4 +384,35 @@ static const char *motorMotion(uint8_t motionNum)
     return "IDL";
     break;
   }
+}
+
+void wifiConnected_cb()
+{
+   /*BEGIN: Copied from https://github.com/HarringayMakerSpace/awsiot/blob/master/Esp8266AWSIoTExample/Esp8266AWSIoTExample.ino*/
+  setCurrentTime(); //  // get current time, otherwise certificates are flagged as expired
+  delay(500);
+  wifiReady = true;
+}
+
+/**
+ * Handle web requests to "/" path.
+ */
+void handleRoot()
+{
+  // -- Let IotWebConf test and handle captive portal requests.
+  if (iotWebConf.handleCaptivePortal())
+  {
+    // -- Captive portal request were already served.
+    return;
+  }
+  String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
+  s += "<title>IotWebConf 05 Callbacks</title></head><body>Hello world!";
+  s += "<ul>";
+  s += "<li>String param value: ";
+  s += stringParamValue;
+  s += "</ul>";
+  s += "Go to <a href='config'>configure page</a> to change values.";
+  s += "</body></html>\n";
+
+  server.send(200, "text/html", s);
 }
