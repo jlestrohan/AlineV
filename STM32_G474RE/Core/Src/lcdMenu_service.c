@@ -157,7 +157,7 @@ static void vLcdMenuServiceTask(void *argument)
 			(*pCurrentItem).func();
 			MUTEX_LCD_GIVE
 		}
-		osDelay(5);
+		osDelay(500); /* serves as button debounce as well */
 	}
 	osThreadTerminate(NULL);
 }

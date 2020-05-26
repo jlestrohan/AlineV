@@ -194,7 +194,7 @@ static void vNavigationDataTask_Start(void *vParameter)
 		MUTEX_NAVSTATUS_TAKE
 		if (xCurrentNavStatus != NAV_STATUS_IDLE) {
 			MUTEX_NAVSTATUS_GIVE /* releasing asap */
-			/* we compare bothe structures to see if anything has changed */
+			/* we compare both structures to see if anything has changed */
 			if (!eq(&xCurrentNavData, &xLastNavData)) {
 				/* we send JSON here!! */
 				if (uEncodeJson(CMD_TYPE_JSON_NAV, &msg_pack, &xCurrentNavData) == EXIT_SUCCESS) {
@@ -213,7 +213,7 @@ static void vNavigationDataTask_Start(void *vParameter)
 		}
 		MUTEX_NAVSTATUS_GIVE /* releasing anyway */
 
-		osDelay(500); /* twice a second if data HAS changed */
+		osDelay(300); /* twice a second if data HAS changed */
 	}
 	osThreadTerminate(NULL);
 }

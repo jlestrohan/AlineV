@@ -283,7 +283,7 @@ static void vNavControlNormalMotionTask(void *vParameters)
 
 
 		}
-		osDelay(10);
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }
@@ -343,7 +343,7 @@ static void vNavDecisionControlTask(void *vParameter)
 		}
 
 
-		osDelay(20);
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }

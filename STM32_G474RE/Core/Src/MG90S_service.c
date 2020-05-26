@@ -96,7 +96,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 
 			}
 			direction = SERVO_DIRECTION_RIGHT45;
-			osDelay(200);
+			osDelay(300);
 			break;
 		case SERVO_DIRECTION_CENTER:
 			if (direction == SERVO_DIRECTION_RIGHT45) {
@@ -120,7 +120,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 
 				}
 			}
-			osDelay(300);
+			osDelay(150);
 			break;
 
 		case SERVO_DIRECTION_RIGHT45: default:
@@ -134,7 +134,7 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 #endif
 
 			}
-			osDelay(200);
+			osDelay(150);
 			break;
 		}
 		osDelay(1);
@@ -188,7 +188,7 @@ void vFrontServo_Start(void* vParameters)
 
 		}
 
-		osDelay(10);
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }
