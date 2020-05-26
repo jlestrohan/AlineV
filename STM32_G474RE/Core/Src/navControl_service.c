@@ -280,7 +280,21 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			break;
 			/*---------------------------------------------------------------------------------------------------- */
 
+			/*---------------------------------------------------------------------------------------------------- */
+			/*  CANCELLING MODE */
+			/*---------------------------------------------------------------------------------------------------- */
+		case  NAV_STATUS_CANCELLING:
 
+			MUTEX_NAVSTATUS_TAKE
+			xCurrentNavStatus = NAV_STATUS_IDLE;
+			MUTEX_NAVSTATUS_GIVE
+
+			_vServoLedMotionIdleRules();
+
+			motorMotion = MOTOR_MOTION_IDLE;
+			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
+
+			break;
 
 		}
 		osDelay(1);
@@ -300,8 +314,6 @@ static void vNavDecisionControlTask(void *vParameter)
 	xServoPattern_t xSrvpattrn;
 	NavSpecialEvent_t special_event;
 	MotorMotion_t motorMotion;
-	char msg[30];
-	uint16_t currentBearing;
 
 	xMessageQueueDecisionControlMainCom = osMessageQueueNew(10, sizeof(uint8_t), NULL);
 	if (xMessageQueueDecisionControlMainCom == NULL) {
@@ -311,6 +323,7 @@ static void vNavDecisionControlTask(void *vParameter)
 
 	for(;;)
 	{
+		/* waits for any navigation SEQUENCE event */
 		osMessageQueueGet(xMessageQueueDecisionControlMainCom, &special_event, 0U, osWaitForever);
 
 		/*******************************************************************************************************************/
@@ -319,27 +332,22 @@ static void vNavDecisionControlTask(void *vParameter)
 		switch (special_event) {
 		case START_EVENT:
 			printf("\n\rInitiating disinfection program....\n\r");
-
 			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_STARTING;
 			MUTEX_NAVSTATUS_GIVE
 
 			break;
 
-		case STOP_EVENT: default:
-			_vServoLedMotionIdleRules();
+		case STOP_EVENT:
 			printf("\n\rStopping disinfection program....\n\r");
-			motorMotion = MOTOR_MOTION_IDLE;
-			osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
-
-			xSrvpattrn = SERVO_PATTERN_IDLE;
-			osMessageQueuePut(xQueueMg90sMotionOrder, &xSrvpattrn, 0U, osWaitForever);
-
 			MUTEX_NAVSTATUS_TAKE
-			xCurrentNavStatus = NAV_STATUS_IDLE;
+			/* we call the cancelling mode immediately */
+			xCurrentNavStatus = NAV_STATUS_CANCELLING;
 			MUTEX_NAVSTATUS_GIVE
 
 			break;
+
+		default: break;
 		}
 
 

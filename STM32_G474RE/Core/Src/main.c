@@ -229,10 +229,7 @@ void Error_Handler(void)
 	char msg[50];
 	sprintf(msg, "Error reported... File %s on line %d\n\r", file, line);
 	HAL_UART_Transmit(&hlpuart1, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
-	//while(1) {
-	//	HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
-	//	HAL_Delay(200);
-	//}
+
   /* USER CODE END Error_Handler_Debug */
 }
 
