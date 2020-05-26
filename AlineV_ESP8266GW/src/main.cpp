@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-25 16:11:53
+ * @ Modified time: 2020-05-26 20:04:32
  * @ Description:
  *******************************************************************************************/
 
@@ -149,26 +149,12 @@ String getRxdata()
   if (stmRxTx.available() > 0) //
   {
     numBytes = stmRxTx.readBytes(receivedChars, MAX_JSON_LENGTH);
-    
-    //..if (inChar == 0x7e ||pos < MAX_JSON_LENGTH) {      
-    //pos = 0;
-      shadowReady = true;
-    //} else {
-   //   receivedChars[pos] = (char)inChar;
-   //   pos++;
-   // }
-    
+ 
+    shadowReady = true;
 
     
-    
-    
-    
-   // shadow = stmRxTx.readString(); //read() read from RX_PIN  character by character
-    //Serial.println(shadow);
-    
   }
-  //Serial.println(resp);
-  //Serial.println(strlen(resp.c_str()));
+
   return "";
 }
 
@@ -202,11 +188,8 @@ uint8_t sendDatatoAws(String jsonData)
 
   //Json document construction
   JsonObject root = newdoc.to<JsonObject>();
-  //JsonObject Payload = root.createNestedObject("payload");
-  //JsonObject Reported = State.createNestedObject("reported");
 
   root["deviceid"] = stm32_uuid;
-  //root["ts"] = time(nullptr);
 
   /* we create the data accordingly */
   /**********************************************************/
@@ -262,8 +245,8 @@ uint8_t sendDatatoAws(String jsonData)
   }
 
   /*Serial.printf("Sending  [%s]: ", MQTT_PUB_TOPIC);*/
-  serializeJson(root, Serial); //Json doc serialisation
-  Serial.println();
+  //serializeJson(root, Serial); //Json doc serialisation
+  //Serial.println();
   char shadow[MAX_JSON_LENGTH];
   serializeJson(root, shadow, sizeof(shadow));
 
