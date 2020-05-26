@@ -331,10 +331,10 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 		printf("%s", err);
 	}
 
-	size_t buffer_size = strlen(buffer);
+	size_t buffer_size = strlen(buffer)+1;
 	memcpy(msg_pack->json, buffer, buffer_size);
 
-	//msg_pack->json[buffer_size+1] = 0x7E;
+	msg_pack->json[buffer_size] = 13;
 	msg_pack->msg_size = buffer_size;
 	return EXIT_SUCCESS;
 }
