@@ -40,8 +40,11 @@ void fc_menu_ready();
 void fc_menu_cmps1();
 void fc_menu_cmps2();
 void fc_menu_bme280();
+void fc_menu_status_avoiding();
+void fc_menu_status_disinfect();
+void fc_menu_status_disinfect_off();
 
-struct MENUITEMS_t *pCurrentItem;
+struct MENUITEMS_t *pCurrentItem, *pLastCurrentItem;;
 
 struct MENUITEMS_t MenuItem_HCSR04;
 struct MENUITEMS_t MenuItem_CMPS2_1;
@@ -98,8 +101,38 @@ struct MENUITEMS_t MenuItem_BME280 =
 		LCD_SCREEN_BME280
 };
 
+struct MENUITEMS_t MenuItem_Avoiding =
+{
+		"Entering:",1,0,
+		"AVOIDING MODE",2,2,
+		fc_menu_status_avoiding,
+		NULL,
+		&MenuItem_Ready,
+		LCD_STATUS_AVOIDING_MODE
+};
 
-osEventFlagsId_t xEventMenuNavButton;
+struct MENUITEMS_t MenuItem_Disinfect =
+{
+		"Entering:",1,0,
+		"Disinfect MODE",2,2,
+		fc_menu_status_disinfect,
+		NULL,
+		&MenuItem_Ready,
+		LCD_STATUS_DISINFECT_MODE
+};
+
+struct MENUITEMS_t MenuItem_Disinfect_off =
+{
+		"Entering:",1,0,
+		"Disinfect MODE",2,2,
+		fc_menu_status_disinfect_off,
+		NULL,
+		&MenuItem_Ready,
+		LCD_STATUS_DISINFECT_OFF_MODE
+};
+
+
+osEventFlagsId_t xEventLcdDisplay;
 
 static osThreadId_t xLcdMenuServiceTaskHandle;
 static osStaticThreadDef_t xLcdMenuServiceTaControlBlock;
@@ -138,24 +171,85 @@ static void vLcdMenuServiceTask(void *argument)
 	(*pCurrentItem).func();
 
 
-	xEventMenuNavButton = osEventFlagsNew(NULL);
-	if (xEventMenuNavButton == NULL) {
+	xEventLcdDisplay = osEventFlagsNew(NULL);
+	if (xEventLcdDisplay == NULL) {
 		printf("LCD Menu Service Event Flags object not created!\n\r");
 		Error_Handler();
 	}
+
+	uint32_t flags;
+
 	for (;;) {
 
-		if (xEventMenuNavButton != NULL) {
-			osEventFlagsWait(xEventMenuNavButton,BEXT_PRESSED_EVT, osFlagsWaitAny, osWaitForever);
+		if (xEventLcdDisplay != NULL) {
+			flags = osEventFlagsWait(xEventLcdDisplay,
+					EVNT_BTN_PRESSED |
+					EVNT_STATUS_AVOIDING |
+					EVNT_STATUS_DISINFECT |
+					EVNT_STATUS_DISINFECT_OFF,
+					osFlagsWaitAny, 0U);
 
-			MUTEX_LCD_TAKE
-			lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+			//TODO: this needs more refactoring!!
 
-			//TODO: implement long press= call prev function
-			if (pCurrentItem->next != NULL)
-				pCurrentItem = pCurrentItem->next;
-			(*pCurrentItem).func();
-			MUTEX_LCD_GIVE
+			switch (flags) {
+			case EVNT_BTN_PRESSED:
+				MUTEX_LCD_TAKE
+				lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+
+				//TODO: implement long press= call prev function
+				if (pCurrentItem->next != NULL)
+					pCurrentItem = pCurrentItem->next;
+				(*pCurrentItem).func();
+				MUTEX_LCD_GIVE
+				break;
+
+			case EVNT_STATUS_AVOIDING:
+				MUTEX_LCD_TAKE
+				pLastCurrentItem = pCurrentItem;
+				lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+				pCurrentItem = &MenuItem_Avoiding;
+				(*pCurrentItem).func();
+				osDelay(2000);
+				if (pCurrentItem->prev == NULL)
+					pCurrentItem = pLastCurrentItem;
+				else pCurrentItem = &MenuItem_Ready;
+				(*pCurrentItem).func();
+
+				MUTEX_LCD_GIVE
+				break;
+
+			case EVNT_STATUS_DISINFECT:
+				MUTEX_LCD_TAKE
+				pLastCurrentItem = pCurrentItem;
+				lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+				pCurrentItem = &MenuItem_Disinfect;
+				(*pCurrentItem).func();
+				osDelay(2000);
+				if (pCurrentItem->prev == NULL)
+					pCurrentItem = pLastCurrentItem;
+				else pCurrentItem = &MenuItem_Ready;
+				(*pCurrentItem).func();
+
+				MUTEX_LCD_GIVE
+				break;
+
+			case EVNT_STATUS_DISINFECT_OFF:
+				MUTEX_LCD_TAKE
+				pLastCurrentItem = pCurrentItem;
+				lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+				pCurrentItem = &MenuItem_Disinfect_off;
+				(*pCurrentItem).func();
+				osDelay(2000);
+				if (pCurrentItem->prev == NULL)
+					pCurrentItem = pLastCurrentItem;
+				else pCurrentItem = &MenuItem_Ready;
+				(*pCurrentItem).func();
+
+				MUTEX_LCD_GIVE
+				break;
+
+			default: break;
+			}
 		}
 		osDelay(500); /* serves as button debounce as well */
 	}
@@ -298,4 +392,34 @@ void fc_menu_bme280()
 	lcdSetCursorPosition(3, 0);
 	lcdPrintStr((uint8_t *)"Telemetry", 9);
 	/* rest is done in loop task */
+}
+
+void fc_menu_status_avoiding()
+{
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	lcdSetCursorPosition(1, 0);
+	lcdPrintStr((uint8_t *)"Entering:", 9);
+	lcdSetCursorPosition(0, 1);
+	lcdPrintStr((uint8_t *)"AVOIDING Mode!", 13);
+
+}
+
+void fc_menu_status_disinfect()
+{
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	lcdSetCursorPosition(0, 0);
+	lcdPrintStr((uint8_t *)"Disinfection", 12);
+	lcdSetCursorPosition(0, 1);
+	lcdPrintStr((uint8_t *)"Program ON", 10);
+
+}
+
+void fc_menu_status_disinfect_off()
+{
+	lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
+	lcdSetCursorPosition(0, 0);
+	lcdPrintStr((uint8_t *)"Disinfection", 12);
+	lcdSetCursorPosition(0, 1);
+	lcdPrintStr((uint8_t *)"Program OFF", 11);
+
 }

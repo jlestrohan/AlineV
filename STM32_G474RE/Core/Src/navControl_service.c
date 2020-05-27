@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "IRQ_Handler.h"
+#include "lcdMenu_service.h"
 
 #define NUMBER_INIT_ATTEMPTS 2 /* how many trimes we retry before taking an action of avoidance */
 
@@ -28,11 +29,12 @@ osMutexId_t mCurrentNavStatusMutex;
 /********************************************************************
  * Extern variables from the different sensors and devices
  */
+osEventFlagsId_t xEventLcdDisplay; /*extern*/
+
 MotorData_t MotorData; /* extern */
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
 osMessageQueueId_t xMessageQueueMotorMotion; /* extern */
-
 
 /* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData; /* extern */
@@ -239,6 +241,8 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			/*---------------------------------------------------------------------------------------------------- */
 		case NAV_STATUS_AVOIDING:
 
+			osEventFlagsSet(xEventLcdDisplay, EVNT_STATUS_AVOIDING);
+
 			/* first IDLE! */
 			_vServoLedMotionIdleRules(); /* idle servo + leds rules */
 			motorMotion = MOTOR_MOTION_IDLE;
@@ -331,6 +335,8 @@ static void vNavDecisionControlTask(void *vParameter)
 
 		switch (special_event) {
 		case START_EVENT:
+
+			osEventFlagsSet(xEventLcdDisplay, EVNT_STATUS_DISINFECT);
 			printf("\n\rInitiating disinfection program....\n\r");
 			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_STARTING;
@@ -339,6 +345,8 @@ static void vNavDecisionControlTask(void *vParameter)
 			break;
 
 		case STOP_EVENT:
+			osEventFlagsSet(xEventLcdDisplay, EVNT_STATUS_DISINFECT_OFF);
+
 			printf("\n\rStopping disinfection program....\n\r");
 			MUTEX_NAVSTATUS_TAKE
 			/* we call the cancelling mode immediately */

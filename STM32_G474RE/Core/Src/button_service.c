@@ -112,7 +112,7 @@ static void vOnBoardButtonServiceTask(void *argument)
 			case BTN_BUTTON_EXT_PRESSED:
 				if (uButtonDebounce(uExternalBtnLastPressedTick)) {
 					uExternalBtnLastPressedTick = HAL_GetTick();
-					osEventFlagsSet(xEventMenuNavButton, BEXT_PRESSED_EVT);
+					osEventFlagsSet(xEventLcdDisplay, EVNT_BTN_PRESSED);
 				}
 				break;
 			default: break;

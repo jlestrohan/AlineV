@@ -14,9 +14,12 @@
 #include <FreeRTOS.h>
 #include "cmsis_os2.h"
 
-#define BEXT_PRESSED_EVT	0x01U
+#define EVNT_BTN_PRESSED			(1 << 0)
+#define EVNT_STATUS_AVOIDING		(1 << 1)
+#define EVNT_STATUS_DISINFECT		(1 << 2)
+#define EVNT_STATUS_DISINFECT_OFF	(1 << 3)
 
-extern osEventFlagsId_t xEventMenuNavButton;
+extern osEventFlagsId_t xEventLcdDisplay;
 
 /**
  * Menu Related Defines
@@ -26,7 +29,10 @@ typedef enum {
 	LCD_SCREEN_HCSR04,
 	LCD_SCREEN_CMPS12_1,
 	LCD_SCREEN_CMPS12_2,
-	LCD_SCREEN_BME280
+	LCD_SCREEN_BME280,
+	LCD_STATUS_AVOIDING_MODE,
+	LCD_STATUS_DISINFECT_MODE,
+	LCD_STATUS_DISINFECT_OFF_MODE
 } LcdTypeScreen_t;
 
  struct MENUITEMS_t {
@@ -42,7 +48,9 @@ typedef enum {
 	LcdTypeScreen_t LcdTypeScreen;		/* holds a track of the current selected screen (cannot switch over pointers alas... ) */
 };
 
-
+extern struct MENUITEMS_t *pCurrentItem;
+struct MENUITEMS_t MenuItem_Ready;
+struct MENUITEMS_t MenuItem_Avoiding;
 
 uint8_t uLcdMenuServiceInit();
 void vShowLCDText();
