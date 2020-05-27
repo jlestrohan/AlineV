@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-21 23:13:00
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-26 23:08:00
+ * @ Modified time: 2020-05-27 04:39:24
  * @ Description:
  *******************************************************************************************/
 
@@ -12,10 +12,10 @@
 #include "ESP8266WiFi.h"
 #include <SoftwareSerial.h>
 #include <PubSubClient.h>
-#include "wifi_credentials.h"
 #include <ArduinoJson.h>
 #include "ledstrip_module.h"
 #include "IotWebConf.h"
+#include <ArduinoOTA.h>
 
 extern "C"
 {
@@ -31,7 +31,6 @@ void handleRoot();
 
 #define MQTT_PUB_TOPIC "AlineV/data/atmospheric"
 #define AWS_IOT_ENDPOINT "a2im1z2thfpkge-ats.iot.eu-west-3.amazonaws.com"
-
 
 // check https://raphberube.com/blog/2019/02/18/Making-the-ESP8266-work-with-AWS-IoT.html
 
@@ -82,11 +81,42 @@ String rxData = ""; //get rxData as response (sensor data) from nucleo board
  */
 void setup()
 {
-    
+
   Serial.begin(115200);
   stmRxTx.begin(19200);
   stmRxTx.setTimeout(100);
   Serial.setDebugOutput(false);
+
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR)
+      Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR)
+      Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR)
+      Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR)
+      Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR)
+      Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
 
   uint8_t binaryCert[AWS_CERT_CRT.length() * 3 / 4];
   int len = b64decode(AWS_CERT_CRT, binaryCert);
@@ -100,19 +130,15 @@ void setup()
   len = b64decode(AWS_CERT_CA, binaryCA);
   wiFiClient.setCACert(binaryCA, len);
 
-wiFiClient.setBufferSizes(1024, 512);
-
-
-  //vWifiConnect();
+  wiFiClient.setBufferSizes(1024, 512);
 
   // -- Initializing the configuration.
   iotWebConf.init();
   iotWebConf.setWifiConnectionCallback(&wifiConnected_cb);
   iotWebConf.setStatusPin(STATUS_PIN);
-  
 
-      // -- Initializing the configuration.
-      boolean validConfig = iotWebConf.init();
+  // -- Initializing the configuration.
+  boolean validConfig = iotWebConf.init();
   if (!validConfig)
   {
     stringParamValue[0] = '\0';
@@ -124,7 +150,6 @@ wiFiClient.setBufferSizes(1024, 512);
   server.onNotFound([]() { iotWebConf.handleNotFound(); });
 
   uLedStripSetup(true); /* lights up the ledstrip below */
-
 }
 
 /* -------------------------------- MAIN LOOP ------------------------------- */
@@ -136,6 +161,7 @@ wiFiClient.setBufferSizes(1024, 512);
 void loop()
 {
   iotWebConf.doLoop();
+  ArduinoOTA.handle();
 
   if (wifiReady)
   {
@@ -341,24 +367,6 @@ void setCurrentTime()
   Serial.println(now);
 }
 
-/* ------------------------------ WIFI CONNECT ------------------------------ */
-/**
- * @brief  Connection to wifi
- * @note   
- * @retval None
- */
-void vWifiConnect()
-{
-  /* first we try to check in the EEPROM if we have any credentials stored */
-
-  Serial.print(F("Connecting to "));
-  Serial.print(WIFI_SSID);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  WiFi.waitForConnectResult();
-  Serial.print(F(", WiFi connected, IP address: "));
-  Serial.println(WiFi.localIP());
-}
-
 int b64decode(String b64Text, uint8_t *output)
 {
   base64_decodestate s;
@@ -388,9 +396,11 @@ const char *motorMotion(uint8_t motionNum)
 
 void wifiConnected_cb()
 {
-   /*BEGIN: Copied from https://github.com/HarringayMakerSpace/awsiot/blob/master/Esp8266AWSIoTExample/Esp8266AWSIoTExample.ino*/
-  setCurrentTime(); //  // get current time, otherwise certificates are flagged as expired
-  delay(500);
+  /*BEGIN: Copied from https://github.com/HarringayMakerSpace/awsiot/blob/master/Esp8266AWSIoTExample/Esp8266AWSIoTExample.ino*/
+  //setCurrentTime(); //  // get current time, otherwise certificates are flagged as expired
+  //delay(500);
+
+  setCurrentTime();
   wifiReady = true;
 }
 

@@ -334,7 +334,7 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 	size_t buffer_size = strlen(buffer)+1;
 	memcpy(msg_pack->json, buffer, buffer_size);
 
-	msg_pack->json[buffer_size] = 13;
+	msg_pack->json[buffer_size] = 13; /* adds end of line */
 	msg_pack->msg_size = buffer_size;
 	return EXIT_SUCCESS;
 }
