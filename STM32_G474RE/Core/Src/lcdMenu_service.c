@@ -54,7 +54,7 @@ struct MENUITEMS_t MenuItem_BME280;
 struct MENUITEMS_t MenuItem_Ready =
 {
 		"Alinea v0.35",1,0,
-		"02/05/20 08:50",0,2,
+		"",0,2,
 		fc_menu_ready,
 		NULL,
 		&MenuItem_HCSR04,
