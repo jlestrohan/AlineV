@@ -10,6 +10,7 @@
  *******************************************************************/
 
 #include "esp32serial_service.h"
+#include "configuration.h"
 #include "printf.h"
 #include "main.h"
 #include "command_service.h"
@@ -74,7 +75,7 @@ static void hdlc_frame_handler(uint8_t *data, uint8_t length)
 {
 	jsonMessage_t msg;
 
-	//printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
+	printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
 	/* some cleanup */
 	//snprintf(msg.json, length, (uint8_t *)data);
 	//msg.msg_size = length;
@@ -105,10 +106,10 @@ void vEsp32TXSerialService_Start(void* vParameter)
 		status = osMessageQueueGet(xQueueEspSerialTX, &msg_packet, 0U, osWaitForever);
 		if (status == osOK) {
 			//printf("sending hdlc frame for %d bytes", msg_packet.msg_size);
-			//osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
-			//vSendFrame(msg_packet.json, msg_packet.msg_size);
-			//osMutexRelease(mHdlcProtocolMutex);
-			HAL_UART_Transmit(&huart3, msg_packet.json, msg_packet.msg_size, HAL_MAX_DELAY);
+			MUTEX_HDLC_TAKE
+			vSendFrame(msg_packet.json, msg_packet.msg_size);
+			MUTEX_HDLC_GIVE
+			//HAL_UART_Transmit(&huart3, msg_packet.json, msg_packet.msg_size, HAL_MAX_DELAY);
 		}
 
 		osDelay(10); /* every 5 seconds we send a test command */
