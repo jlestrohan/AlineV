@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-21 11:14:38
+ * @ Modified time: 2020-05-28 12:54:55
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -30,13 +30,19 @@
 #include "stm32Serial_service.h"
 #include "ntp_service.h"
 
+typedef enum
+{
+  CMD_IS_STM32,
+  CMD_IS_ESP32
+} CMD_Category_t;
+
 /* function definitions */
 static uint8_t _cmd_status(char **tokens, uint8_t count);
 static uint8_t _cmd_ledstrip(char **tokens, uint8_t count);
 static uint8_t _cmd_help(char **tokens, uint8_t count);
 uint8_t split(const char *txt, char delim, char ***tokens);
 static void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, size_t length);
-static uint8_t uCheckESP32Command(char **tokens, uint8_t count);
+static CMD_Category_t uCheckESP32Command(char **tokens, uint8_t count);
 
 /** 
  * @brief  ESP32 COMMANDS ARE TO BE ADDED HERE 
@@ -45,14 +51,16 @@ static uint8_t uCheckESP32Command(char **tokens, uint8_t count);
  */
 typedef struct
 {
-  char command[CMD_LINE_MAX_LENGTH];
+  const char command[CMD_LINE_MAX_LENGTH];
   uint8_t (*commands_func)(char **tokens, uint8_t count);
 } ESP32_Commands_t;
 
 ESP32_Commands_t esp32_commands_list[] = {
     {"ledstrip", _cmd_ledstrip},
     {"status", _cmd_status},
-    {"help", _cmd_help}};
+    {"help", _cmd_help},
+    {"", NULL} /* HACK! last element is empty to permit iteration thru that struct */
+};
 
 static xTaskHandle xCommandParserTask_hnd = NULL;
 QueueHandle_t xQueueCommandParse;
@@ -81,11 +89,10 @@ static void vCommandParserTaskCode(void *pvParameters)
       size_t len = strlen(command_string);
       debugI("Queue xQueueCommandParse received command: %.*s with size %d", len, command_string, len);
       count = split(command_string, ' ', &tokens);
-
-      if (uCheckESP32Command(tokens, count) == EXIT_FAILURE)
+      debugV("Detected %d words.", count);
+      if (uCheckESP32Command(tokens, count) == CMD_IS_STM32)
       {
         /* command ips for the STM32 */
-        debugD("Command is for the STM32");
         vEncodeJsonCommand(tokens, count, command_string, len);
       }
 
@@ -122,7 +129,7 @@ uint8_t uSetupCmdParser()
   xTaskCreate(
       vCommandParserTaskCode,   /* Task function. */
       "vCommandParserTaskCode", /* String with name of task. */
-      4096,                     /* Stack size in words. */
+      8192,                     /* Stack size in words. */
       NULL,                     /* Parameter passed as input of the task */
       15,                       /* Priority of the task. */
       &xCommandParserTask_hnd); /* Task handle. */
@@ -231,21 +238,21 @@ static void vEncodeJsonCommand(char **tokens, uint8_t count, char *cmd_string, s
  * @param  count: 
  * @retval 
  */
-static uint8_t uCheckESP32Command(char **tokens, uint8_t count)
+static CMD_Category_t uCheckESP32Command(char **tok, uint8_t count)
 {
+
   /* we browse thru cEsp32commands and compare it with cmd 
    if that command is an ESP32 one we will treat that here */
-  size_t espCmdAarray = sizeof(esp32_commands_list) / sizeof(esp32_commands_list[0]);
 
-  for (uint8_t i = 0; i < espCmdAarray; i++)
+  for (uint8_t i = 0; esp32_commands_list[i].commands_func != NULL; i++)
   {
-    if (strcmp(tokens[0], esp32_commands_list[i].command) == 0)
+    debugV("Comparing command with: %s", esp32_commands_list[i].command);
+    if (strcmp(tok[0], esp32_commands_list[i].command) == 0)
     {
-      esp32_commands_list[i].commands_func(tokens, count);
-      return EXIT_SUCCESS;
+      return CMD_IS_ESP32;
     }
   }
-  return EXIT_FAILURE;
+  return CMD_IS_STM32;
 }
 
 /* ------------------------------ HELP COMMAND ------------------------------ */
