@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 17:45:37
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-21 22:34:16
+ * @ Modified time: 2020-05-28 07:57:43
  * @ Description:
  *******************************************************************************************/
 
@@ -76,6 +76,7 @@ static void vStm32RXSerialServiceTaskCode(void *pvParameters)
     {
       xSemaphoreTake(xSemaphoreSerial2Mutex, portMAX_DELAY);
       inData = Serial2.read();
+      Serial.print(inData);
       xSemaphoreGive(xSemaphoreSerial2Mutex);
       vTaskDelay(1);
       hdlc.charReceiver(inData);

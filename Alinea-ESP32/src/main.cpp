@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-20 16:29:58
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-21 19:04:14
+ * @ Modified time: 2020-05-28 07:50:51
  * @ Description:
  *******************************************************************************************/
 
@@ -61,16 +61,16 @@ void setup()
 
   vBootCounterUpdate();
 
-  //uLedStripServiceInit(); /* check */
-  uSetupBuzzer(); /* check */
-  //uSetupCmdParser();
+  uLedStripServiceInit(); /* check */
+  uSetupBuzzer();         /* check */
+  uSetupCmdParser();
   uSetupAutoConnect(); /* check */
   uSetupRemoteDebug(); /* check */
-  //uSetupNTPService();  /* check */
-  //uSetupDataServiceInit();
+  uSetupNTPService();  /* check */
+  uSetupDataServiceInit();
   uSetupSTM32SerialService(); /* check */
-  //uSetupSpeedService();
-  //uSetupOTA();
+  uSetupSpeedService();
+  uSetupOTA();
 
   lit_status_t ledstatus;
   ledstatus.is_lit = true;

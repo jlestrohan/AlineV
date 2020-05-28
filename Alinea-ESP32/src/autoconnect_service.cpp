@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-22 22:13:15
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-21 20:40:46
+ * @ Modified time: 2020-05-28 07:47:30
  * @ Description: 
  
  *******************************************************************************************/
@@ -14,8 +14,8 @@
 #include "stm32Serial_service.h"
 #include <WiFi.h>
 #include <WebServer.h>
-#include "AWS_Certificate.h"
-#include <PubSubClient.h>
+//#include "AWS_Certificate.h"
+//#include <PubSubClient.h>
 #include <AutoConnect.h>
 
 #define MQTT_MAX_PACKET_SIZE 256
@@ -28,8 +28,8 @@ static xTaskHandle xAWS_Send_Task_hnd = NULL;
 WebServer Server;
 AutoConnect Portal(Server);
 AutoConnectConfig acConfig;
-WiFiClientSecure wifiClient;
-PubSubClient pubSubClient(AWS_IOT_ENDPOINT, 8883, NULL, wifiClient);
+//WiFiClientSecure wifiClient;
+//PubSubClient pubSubClient(AWS_IOT_ENDPOINT, 8883, NULL, wifiClient);
 
 static xTaskHandle xAutoConnectServiceTaskHandle = NULL;
 void vAutoConnectServiceTask(void *parameter);
@@ -56,14 +56,14 @@ static void vAWSSendTaskCode(void *vParameter)
   for (;;)
   {
     xQueueReceive(xQueueAWS_Send, &aws_ReceiveBuf, portMAX_DELAY);
-    if (pubSubClient.connected())
+    /* if (pubSubClient.connected())
     {
       debugI("%s", (char *)aws_ReceiveBuf.json);
       if (!pubSubClient.publish(AWS_IOT_TOPIC, (const char *)aws_ReceiveBuf.json))
       {
         debugE("Error publishing MQTT topic");
       }
-    }
+    }*/
 
     vTaskDelay(20);
   }
@@ -104,9 +104,9 @@ uint8_t uSetupAutoConnect()
 
   /* Configure WiFiClientSecure to use the AWS certificates we generated */
 
-  wifiClient.setCACert(AWS_CERT_CA);
-  wifiClient.setCertificate(AWS_CERT_CRT);
-  wifiClient.setPrivateKey(AWS_CERT_PRIVATE);
+  //wifiClient.setCACert(AWS_CERT_CA);
+  //wifiClient.setCertificate(AWS_CERT_CRT);
+  //wifiClient.setPrivateKey(AWS_CERT_PRIVATE);
 
   if (Portal.begin())
   {
@@ -148,7 +148,7 @@ void vAutoConnectServiceTask(void *parameter)
   {
     Portal.handleClient();
 
-    if (!pubSubClient.connected())
+    /*if (!pubSubClient.connected())
     {
 
       if (pubSubClient.connect(DEVICE_NAME))
@@ -157,8 +157,8 @@ void vAutoConnectServiceTask(void *parameter)
         // Seria("MQTT Connected to %s", AWS_IOT_ENDPOINT);
         vPlayMelody(MelodyType_CommandReady);
       }
-    }
-    pubSubClient.loop();
+    }*/
+    //pubSubClient.loop();
     //debugI("Free HEAP: %lu on HEAP TOTAL: %lu", ESP.getFreeHeap(), ESP.getHeapSize());
     vTaskDelay(5);
   }

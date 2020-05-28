@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-23 12:01:08
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-21 01:40:06
+ * @ Modified time: 2020-05-28 08:07:28
  * @ Description:
  *******************************************************************************************/
 
@@ -87,6 +87,7 @@ static void remoteDebug_task(void *parameter)
 static void vProcessCmdRemoteDebug()
 {
     /* will send the whole command to the command center to be interpreted */
+    //FIXME: crash on single command here
     String lastCmd = Debug.getLastCommand();
     if (xQueueCommandParse != NULL)
     {
