@@ -74,6 +74,10 @@ void vFrontServoThreeProbes_Start(void *vParameter)
 		Error_Handler();
 	}
 
+	/* if servo != center we put it in place */
+	if (xServoPosition != SERVO_DIRECTION_CENTER)
+		htim5.Instance->CCR1 = SERVO_DIRECTION_CENTER;
+
 	/* suspends self for now */
 	osThreadSuspend(xThreeProbesMotionServoTaskHnd);
 
