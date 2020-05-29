@@ -49,7 +49,7 @@ osMutexId_t mCMPS12_SensorDataMutex; /* extern */
 static void _vServoLedMotionForwardRules();
 static void _vServoLedMotionBackwardRules();
 static void _vServoLedMotionIdleRules();
-static uint8_t _uCheckFrontDangerZone();
+static uint8_t _uCheckFrontDangerZone(HR04_SensorsData_t *sensorData);
 static uint8_t uGetNewBearing(int16_t deviationDegrees,  uint16_t *bearing);
 uint8_t u_is_ref_bearing_right_of_actual(uint16_t *ref_bearing, uint16_t *actual_bearing);
 //static uint8_t _vMotionSeekEscapePath();
@@ -112,13 +112,20 @@ static void vNavControlNormalMotionTask(void *vParameters)
 	uint16_t xCurrentBearing, xDestinationBearing;
 	//NavigationStatus_t lastNavigationStatus; /* used to keep track of the last known state, ie: turning motion */
 	MotorMotion_t motorMotion;
+	HR04_SensorsData_t HCSR04_struct;
 
 	for (;;)
 	{
-		/* BEARING - we need to constantly uipdate this */
+
+		/** Lets's get a copy of some data structs and update them constantly  */
 		MUTEX_CMPS12_TAKE
 		xCurrentBearing = CMPS12_SensorData.CompassBearing;
 		MUTEX_CMPS12_GIVE
+
+		MUTEX_HCSR04_TAKE
+		HCSR04_struct = HR04_SensorsData; /* copy this to avoid too frequent access to mutexed data */
+		MUTEX_HCSR04_GIVE
+
 
 
 		/** FINITE STATE MACHINE **/
@@ -151,34 +158,30 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			}
 
 			/* front sensor data check, if we hit an obstacle, we stop and enter avoiding mode */
-			MUTEX_HCSR04_TAKE
-			if (HR04_SensorsData.dist_front < US_FRONT_MIN_STOP_CM) {
-				MUTEX_HCSR04_GIVE
+
+			if (HCSR04_struct.dist_front < US_FRONT_MIN_STOP_CM) {
 
 				MUTEX_NAVSTATUS_TAKE
 				xCurrentNavStatus = NAV_STATUS_AVOIDING; /* we set that flag to be able to try to avoid the obstacle */
 				MUTEX_NAVSTATUS_GIVE
 
-				printf("Obstacle detected front: %d cm\n\r", HR04_SensorsData.dist_front);
+				printf("Obstacle detected front: %d cm\n\r", HCSR04_struct.dist_front);
 				printf("Entering AVOIDING mode..\n\r");
 			} else
 
 				/* front sensor detected something at warning zone, we reduce speed */
-				if (HR04_SensorsData.dist_front < US_FRONT_MIN_DANGER_CM) {
-					MUTEX_HCSR04_GIVE
-					printf("Warning ahead distance: %d cm\n\r", HR04_SensorsData.dist_front);
+				if (HCSR04_struct.dist_front < US_FRONT_MIN_DANGER_CM) {
+					printf("Warning ahead distance: %d cm\n\r", HCSR04_struct.dist_front);
 					motorMotion = MOTOR_SPEED_REDUCE_DANGER;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 				} else {
 					/* or we set back to front if we're ok */
-					MUTEX_HCSR04_GIVE
+
 					/* front sensor detected nada we set full speed */
 					/*if (HR04_SensorsData.dist_front >= US_FRONT_MIN_DANGER_CM) { */
 					motorMotion = MOTOR_SPEED_NORMAL;
 					osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 				}
-			MUTEX_HCSR04_GIVE
-
 			break;
 
 
@@ -187,9 +190,9 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			/*---------------------------------------------------------------------------------------------------- */
 		case NAV_STATUS_STARTING:
 			/* we wait for all data from the 3 front sensors are collected */
-			MUTEX_HCSR04_TAKE
+
 			_vServoLedMotionForwardRules();
-			if (HR04_SensorsData.dist_left45 > 0 && HR04_SensorsData.dist_right45 > 0 && HR04_SensorsData.dist_front > 0)
+			if (HCSR04_struct.dist_left45 > 0 && HCSR04_struct.dist_right45 > 0 && HCSR04_struct.dist_front > 0)
 			{
 				/* saves the current bearing */
 				xDestinationBearing = xCurrentBearing; /* we sync both */
@@ -203,7 +206,6 @@ static void vNavControlNormalMotionTask(void *vParameters)
 				xCurrentNavStatus = NAV_STATUS_EXPLORING;
 				MUTEX_NAVSTATUS_GIVE
 			}
-			MUTEX_HCSR04_GIVE
 			break;
 
 			/*---------------------------------------------------------------------------------------------------- */
@@ -266,15 +268,13 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			osDelay(1000); /* for a second */
 
 			/* we take a decision, right or left ? */
-			MUTEX_HCSR04_TAKE
-			if (HR04_SensorsData.dist_left45 < HR04_SensorsData.dist_right45) {
+			if (HCSR04_struct.dist_left45 < HCSR04_struct.dist_right45) {
 				printf("Detected More space to the right, turning right 30°...");
 				xDestinationBearing = uGetNewBearing(40, &xCurrentBearing);
 			} else {
 				printf("Detected More space to the left, turning left 30°...");
 				xDestinationBearing = uGetNewBearing(-40, &xCurrentBearing);
 			}
-			MUTEX_HCSR04_GIVE
 
 			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_TURNING_TO_DEST_BEARING;
@@ -300,6 +300,10 @@ static void vNavControlNormalMotionTask(void *vParameters)
 
 			break;
 
+		case NAV_STATUS_IDLE:
+
+			break;
+
 		}
 		osDelay(1);
 	}
@@ -315,9 +319,7 @@ static void vNavDecisionControlTask(void *vParameter)
 {
 	printf("Starting Navigation Decision Control Task...\n\r");
 
-	xServoPattern_t xSrvpattrn;
 	NavSpecialEvent_t special_event;
-	MotorMotion_t motorMotion;
 
 	xMessageQueueDecisionControlMainCom = osMessageQueueNew(10, sizeof(uint8_t), NULL);
 	if (xMessageQueueDecisionControlMainCom == NULL) {
@@ -454,17 +456,15 @@ static void _vServoLedMotionIdleRules()
  * Returns true if we still have danger front and angles
  * @return
  */
-static uint8_t _uCheckFrontDangerZone()
+static uint8_t _uCheckFrontDangerZone(HR04_SensorsData_t *sensorData)
 {
-	MUTEX_HCSR04_TAKE
-	if ((HR04_SensorsData.dist_left45 >= US_ANGLE_MIN_WARNING_CM) &&
-			(HR04_SensorsData.dist_right45 >= US_ANGLE_MIN_WARNING_CM)	 &&
-			(HR04_SensorsData.dist_front >= US_FRONT_MIN_WARNING_CM))
+
+	if ((sensorData->dist_left45 >= US_ANGLE_MIN_WARNING_CM) &&
+			(sensorData->dist_right45 >= US_ANGLE_MIN_WARNING_CM)	 &&
+			(sensorData->dist_front >= US_FRONT_MIN_WARNING_CM))
 	{
-		MUTEX_HCSR04_GIVE
 		return EXIT_SUCCESS;
 	}
-	MUTEX_HCSR04_GIVE
 	return EXIT_FAILURE;
 }
 

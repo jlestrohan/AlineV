@@ -160,6 +160,7 @@ uint8_t uHcsr04ServiceInit()
 	if (HC_SR04_StartupTimers() != EXIT_SUCCESS) {
 		printf("HC_SR04 Timers Initialization Failed\n\r");
 		Error_Handler();
+		return EXIT_FAILURE;
 	}
 
 	return (EXIT_SUCCESS);

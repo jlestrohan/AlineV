@@ -189,14 +189,14 @@ static void vLcdMenuServiceTask(void *argument)
 					EVNT_STATUS_DISINFECT_OFF,
 					osFlagsWaitAny, 0U);
 
-			//TODO: this needs more refactoring!!
+			/* TODO: this needs more refactoring!! */
 
 			switch (flags) {
 			case EVNT_BTN_PRESSED:
 				MUTEX_LCD_TAKE
 				lcdCommand(LCD_CLEAR, LCD_PARAM_SET);
 
-				//TODO: implement long press= call prev function
+				/* TODO: implement long press= call prev function */
 				if (pCurrentItem->next != NULL)
 					pCurrentItem = pCurrentItem->next;
 				(*pCurrentItem).func();
@@ -286,7 +286,6 @@ static void vLcdMenuLoopTask(void *vParameter)
 			break;
 
 		case LCD_SCREEN_CMPS12_1: /* rov heading */
-			//lcdCommand(LCD, LCD_PARAM_SET);
 
 			lcdSetCursorPosition(2, 1);
 			MUTEX_CMPS12_TAKE

@@ -30,7 +30,6 @@
 #include "MG90S_service.h"
 #include "HCSR04_service.h"
 
-//temp
 #include "MotorsControl_service.h"
 
 char msg[50];
@@ -41,7 +40,6 @@ osMessageQueueId_t xQueueEspSerialTX; /*extern */
 osEventFlagsId_t xEventFlagNavControlMainCom; /* extern */
 osMessageQueueId_t xQueuePWMControlHnd; /* extern */
 
-static MotorMotion_t motorMotion;
 typedef StaticTask_t osStaticThreadDef_t;
 osMessageQueueId_t xMessageQueueDecisionControlMainCom; /* extern */
 
@@ -95,10 +93,10 @@ static void vOnBoardButtonServiceTask(void *argument)
 			case BTN_BUTTON_ONBOARD_PRESSED:
 				if (uButtonDebounce(uOnboardBtnLastPressedTick)) {
 					uOnboardBtnLastPressedTick = HAL_GetTick();
-					//printf("Onboard button was pressed ...\n\r");
+					/* printf("Onboard button was pressed ...\n\r"); */
 					HAL_GPIO_TogglePin(GPIOA, LD2_Pin);
 
-					//FIXME:
+					/* FIXME: */
 					if (HAL_GPIO_ReadPin(GPIOA, LD2_Pin)) {
 						NavSpecialEvent_t event = START_EVENT;
 						osMessageQueuePut(xMessageQueueDecisionControlMainCom, &event, 0U, 0U);
@@ -138,10 +136,10 @@ uint8_t uButtonServiceInit()
 	if (xOnboardButtonServiceTaskHandle == NULL) {
 		printf("Button Service Task not created\n\r");
 		Error_Handler();
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	printf("Initializing Button Service... Success!\n\r");
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
