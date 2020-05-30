@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-05-05 17:12:31
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-21 20:25:09
+ * @ Modified time: 2020-05-30 11:37:26
  * @ Description:
  *******************************************************************************************/
 
@@ -102,6 +102,16 @@ HDLC_Prot::HDLC_Prot(sendchar_type put_char, frame_handler_type hdlc_command_rou
     this->receive_frame_buffer = (uint8_t *)malloc(max_frame_length + 1); // char *ab = (char*)malloc(12);
     this->frame_checksum = CRC16_CCITT_INIT_VAL;
     this->escape_character = false;
+}
+
+/**
+ * @brief  Destructor
+ * @note   
+ * @retval None
+ */
+HDLC_Prot::~HDLC_Prot()
+{
+    free(this->receive_frame_buffer);
 }
 
 /* Function to send a byte throug USART, I2C, SPI etc.*/
