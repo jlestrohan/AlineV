@@ -2,7 +2,7 @@
  * @ Author: Jack Lestrohan
  * @ Create Time: 2020-04-27 05:41:21
  * @ Modified by: Jack Lestrohan
- * @ Modified time: 2020-05-28 12:54:55
+ * @ Modified time: 2020-05-30 11:25:01
  * @ Description: Parse any command received from  a consumer and take the appropriate action
  
  If you're willing to use this code, no problem at all please feel free to do it... but please...
@@ -87,13 +87,18 @@ static void vCommandParserTaskCode(void *pvParameters)
       xQueueReceive(xQueueCommandParse, &command_string, portMAX_DELAY);
 
       size_t len = strlen(command_string);
-      debugI("Queue xQueueCommandParse received command: %.*s with size %d", len, command_string, len);
+      debugD("Queue xQueueCommandParse received command: %.*s with size %d", len, command_string, len);
       count = split(command_string, ' ', &tokens);
       debugV("Detected %d words.", count);
       if (uCheckESP32Command(tokens, count) == CMD_IS_STM32)
       {
         /* command ips for the STM32 */
+        debugD("Not an ESP32 command, sending over to the next MCU...");
         vEncodeJsonCommand(tokens, count, command_string, len);
+      }
+      else
+      {
+        debugD("This is an ESP32 command, processing...");
       }
 
       /* freeing tokens */
@@ -249,6 +254,7 @@ static CMD_Category_t uCheckESP32Command(char **tok, uint8_t count)
     debugV("Comparing command with: %s", esp32_commands_list[i].command);
     if (strcmp(tok[0], esp32_commands_list[i].command) == 0)
     {
+      esp32_commands_list[i].commands_func(tok, count);
       return CMD_IS_ESP32;
     }
   }
@@ -265,11 +271,11 @@ static CMD_Category_t uCheckESP32Command(char **tok, uint8_t count)
  */
 static uint8_t _cmd_help(char **tokens, uint8_t count)
 {
-  debugI("---------------- HELP -----------------------------------------\n\r");
-  debugD("Commands available: \n\n\r");
-  debugD("ESP32 Commands -----------------\n\r");
-  debugD("\t\tledstrip on/off: lights up/off the front leds\n\r");
-  debugD("\t\tstatus: wifi(wifi status)\n\n");
+  debugD("---------------- HELP -----------------------------------------\n\r");
+  debugD("Commands available: ");
+  debugD("ESP32 Commands -----------------");
+  debugD("ledstrip on/off: lights up/off the front leds");
+  debugD("\tstatus: wifi(wifi status)");
   debugD("----------------------------------------------------------------\n\r");
 
   return EXIT_SUCCESS;
@@ -285,7 +291,13 @@ static uint8_t _cmd_help(char **tokens, uint8_t count)
  */
 static uint8_t _cmd_status(char **tokens, uint8_t count)
 {
-  if (tokens[1])
+  if (count <= 1)
+  {
+    debugE("missing command argument!");
+    return EXIT_FAILURE;
+  }
+
+  if (tokens[1] != NULL)
   {
     if (strcmp(tokens[1], "wifi") == 0)
     {
@@ -300,7 +312,8 @@ static uint8_t _cmd_status(char **tokens, uint8_t count)
     }
     else
     {
-      debugE("Command argument not valid... \n\r");
+      debugE("Command argument not valid\n\r");
+      vPlayMelody(MelodyType_WrongArgument); /* command received tune */
     }
   }
   return EXIT_SUCCESS;
@@ -317,7 +330,10 @@ static uint8_t _cmd_status(char **tokens, uint8_t count)
 static uint8_t _cmd_ledstrip(char **tokens, uint8_t count)
 {
   if (count <= 1)
+  {
+    debugE("missing command argument!");
     return EXIT_FAILURE;
+  }
 
   debugD("Executing ledstrip %s ESP32 commmand... ", tokens[1]);
 
