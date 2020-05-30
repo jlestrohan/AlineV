@@ -242,9 +242,9 @@ static void vNavControlNormalMotionTask(void *vParameters)
 			/*  AVOIDANCE MODE */
 			/*---------------------------------------------------------------------------------------------------- */
 		case NAV_STATUS_AVOIDING:
-
+#ifdef LCD_SHOW_EVENTS
 			osEventFlagsSet(xEventLcdDisplay, EVNT_STATUS_AVOIDING);
-
+#endif
 			/* first IDLE! */
 			_vServoLedMotionIdleRules(); /* idle servo + leds rules */
 			motorMotion = MOTOR_MOTION_IDLE;
@@ -338,7 +338,9 @@ static void vNavDecisionControlTask(void *vParameter)
 		switch (special_event) {
 		case START_EVENT:
 
+#ifdef LCD_SHOW_EVENTS
 			osEventFlagsSet(xEventLcdDisplay, EVNT_STATUS_DISINFECT);
+#endif
 			printf("\n\rInitiating disinfection program....\n\r");
 			MUTEX_NAVSTATUS_TAKE
 			xCurrentNavStatus = NAV_STATUS_STARTING;
@@ -347,7 +349,9 @@ static void vNavDecisionControlTask(void *vParameter)
 			break;
 
 		case STOP_EVENT:
+#ifdef LCD_SHOW_EVENTS
 			osEventFlagsSet(xEventLcdDisplay, EVNT_STATUS_DISINFECT_OFF);
+#endif
 
 			printf("\n\rStopping disinfection program....\n\r");
 			MUTEX_NAVSTATUS_TAKE

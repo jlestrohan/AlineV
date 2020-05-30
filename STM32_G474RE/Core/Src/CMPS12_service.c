@@ -102,7 +102,7 @@ uint8_t uCmps12ServiceInit()
 		printf("** Found CMPS12 device!\n\r");
 	}
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -149,7 +149,7 @@ static uint8_t _populate_values()
 	MUTEX_CMPS12_GIVE
 
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -165,9 +165,9 @@ static uint8_t _read_register8(uint8_t addr, uint8_t *value)
 	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 1, 5000)
 			== HAL_OK) {
 		*value = (uint8_t) (rx_buff[0]);
-		return EXIT_SUCCESS;
+		return (EXIT_SUCCESS);
 	}
-	return EXIT_FAILURE;
+	return (EXIT_FAILURE);
 }
 
 /**
@@ -183,9 +183,9 @@ static uint8_t _read_register16(uint8_t addr, uint16_t *value)
 	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 2, 5000)
 			== HAL_OK) {
 		*value = (uint16_t) ((rx_buff[0] << 8) | rx_buff[1]);
-		return EXIT_SUCCESS;
+		return (EXIT_SUCCESS);
 	}
-	return EXIT_FAILURE;
+	return (EXIT_FAILURE);
 }
 
 /**
@@ -201,9 +201,9 @@ static uint8_t _read_signed_register16(uint8_t addr, int16_t *value)
 	if (HAL_I2C_Mem_Read(&hi2c2, CMPS12_DEVICE_I2C_ADDRESS << 1, addr, 1, rx_buff, 2, 5000)
 			== HAL_OK) {
 		*value = (int16_t) ((rx_buff[0] << 8) | rx_buff[1]);
-		return EXIT_SUCCESS;
+		return (EXIT_SUCCESS);
 	}
-	return EXIT_FAILURE;
+	return (EXIT_FAILURE);
 }
 
 /**

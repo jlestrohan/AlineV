@@ -91,7 +91,7 @@ void vCommandParserServiceTask(void *vParameter)
 #ifdef DEBUG_ESP32_COMMAND_CHAIN
 			printf("Command Center received: %.*s\n\r", msgType.msg_size, msgType.json);
 #endif
-			uJsonDecode(msgType.json, msgType.msg_size);
+			//uJsonDecode(msgType.json, msgType.msg_size);
 
 		}
 
@@ -115,7 +115,7 @@ uint8_t uCmdParseServiceInit()
 	}
 
 	printf("Initializing Command Parser Service... Success!\n\r");
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 
@@ -130,12 +130,12 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 
 	json_t pool[128];
 	json_t const* parent = json_create( (char *)json, pool, 128 );
-	if ( parent == NULL ) return EXIT_FAILURE;
+	if ( parent == NULL ) return (EXIT_FAILURE);
 
 	/** UUID **/
 	json_t const* uuid_topic = json_getProperty( parent, "uuid" );
-	if ( uuid_topic == NULL ) return EXIT_FAILURE;
-	if ( json_getType( uuid_topic ) != JSON_INTEGER ) return EXIT_FAILURE;
+	if ( uuid_topic == NULL ) return (EXIT_FAILURE);
+	if ( json_getType( uuid_topic ) != JSON_INTEGER ) return (EXIT_FAILURE);
 
 	int64_t uuid_value = json_getInteger( uuid_topic );
 	printf( "uuid: %lld\n\r", uuid_value);
@@ -143,8 +143,8 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 
 	/** TIMESTAMP **/
 	json_t const* timestamp_topic = json_getProperty( parent, "timestamp" );
-	if ( timestamp_topic == NULL ) return EXIT_FAILURE;
-	if ( json_getType( timestamp_topic ) != JSON_INTEGER ) return EXIT_FAILURE;
+	if ( timestamp_topic == NULL ) return (EXIT_FAILURE);
+	if ( json_getType( timestamp_topic ) != JSON_INTEGER ) return (EXIT_FAILURE);
 
 	int64_t timestamp_value = json_getInteger( timestamp_topic );
 	printf( "timestamp: %lld\n\r", timestamp_value);
@@ -152,8 +152,8 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 
 	/** TYPE **/
 	json_t const* type_topic = json_getProperty( parent, "type" );
-	if ( type_topic == NULL ) return EXIT_FAILURE;
-	if ( json_getType( type_topic ) != JSON_TEXT ) return EXIT_FAILURE;
+	if ( type_topic == NULL ) return (EXIT_FAILURE);
+	if ( json_getType( type_topic ) != JSON_TEXT ) return (EXIT_FAILURE);
 
 	char const *type_value = json_getValue( type_topic );
 	printf( "type: %s\n\r", type_value);
@@ -161,8 +161,8 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 
 	/** NESTED DATA **/
 	json_t const* data_topic = json_getProperty( parent, "data" );
-	if ( data_topic == NULL ) return EXIT_FAILURE;
-	if ( json_getType( data_topic ) != JSON_OBJ ) return EXIT_FAILURE;
+	if ( data_topic == NULL ) return (EXIT_FAILURE);
+	if ( json_getType( data_topic ) != JSON_OBJ ) return (EXIT_FAILURE);
 
 	//FIXME STUB
 	//char **tokens = (char *[]) {"motors", "forward"};
@@ -184,7 +184,7 @@ uint8_t uJsonDecode(uint8_t *json, uint16_t length)
 
 	//return EXIT_FAILURE;
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 /**************************************************** COMMANDS **************************************
@@ -194,7 +194,7 @@ uint8_t _cmd_motors(char **tokens, uint8_t count)
 {
 	MotorMotion_t motorMotion;
 
-	if (count <=1) return EXIT_FAILURE;
+	if (count <=1) return (EXIT_FAILURE);
 
 #ifdef DEBUG_ESP32_COMMAND_CHAIN
 	printf("Executing motors %s STM32 commmand ", tokens[1]);
@@ -218,5 +218,5 @@ uint8_t _cmd_motors(char **tokens, uint8_t count)
 			//osMessageQueuePut(xQueueMotorMotionOrder, &motorMotion, 0U, osWaitForever);
 		}
 	}
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }

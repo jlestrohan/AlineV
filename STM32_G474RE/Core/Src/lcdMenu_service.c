@@ -18,6 +18,7 @@
 #include "HCSR04_service.h"
 #include "CMPS12_service.h"
 #include "BMP280_service.h"
+#include "math.h"
 
 #define LCD_I2C_ADDRESS		0x27
 #define LCD_NB_COL			16
@@ -53,7 +54,7 @@ struct MENUITEMS_t MenuItem_BME280;
 
 struct MENUITEMS_t MenuItem_Ready =
 {
-		"Alinea v0.35",1,0,
+		FIRMWARE_VERSION,(uint8_t)((16-strlen(FIRMWARE_VERSION))/2),0,
 		"",0,2,
 		fc_menu_ready,
 		NULL,

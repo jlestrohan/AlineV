@@ -143,7 +143,7 @@ uint8_t uHcsr04ServiceInit()
 	if (xQueueHCSR04DataSend == NULL) {
 		printf("Error Initializing xQueueHCSR04DataSend HCSR04 Queue...\n\r");
 		Error_Handler();
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 
@@ -160,7 +160,7 @@ uint8_t uHcsr04ServiceInit()
 	if (HC_SR04_StartupTimers() != EXIT_SUCCESS) {
 		printf("HC_SR04 Timers Initialization Failed\n\r");
 		Error_Handler();
-		return EXIT_FAILURE;
+		return (EXIT_FAILURE);
 	}
 
 	return (EXIT_SUCCESS);
@@ -177,14 +177,17 @@ static uint8_t HC_SR04_StartupTimers()
 	for ( int i=0; i< HC_SR04_SONARS_CNT; i++) {
 		/* starst up the different channels for Sensor 1 */
 		if (HAL_TIM_PWM_Start(&*(timHandlers+i), TIM_CHANNEL_3) != HAL_OK) {
+			printf("Unable to start HVSR-04 PWM timer\n\r");
 			return (EXIT_FAILURE);
 		}
 
 		if (HAL_TIM_IC_Start(&*(timHandlers+i), TIM_CHANNEL_1) != HAL_OK) {
+			printf("Unable to start HVSR-04 Rising Edge timer\n\r");
 			return (EXIT_FAILURE);
 		}
 
 		if (HAL_TIM_IC_Start_IT(&*(timHandlers+i), TIM_CHANNEL_2) != HAL_OK) {
+			printf("Unable to start HVSR-04 Falling Edge timer\n\r");
 			return (EXIT_FAILURE);
 		}
 	}
@@ -285,7 +288,7 @@ inline uint16_t median_filter(uint16_t datum)
 		scanold = scan;
 		scan = scan->point;
 	}
-	return median->value;
+	return (median->value);
 }
 
 /**

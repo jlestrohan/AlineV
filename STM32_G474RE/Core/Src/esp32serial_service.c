@@ -22,6 +22,7 @@
 #include "cmsis_os2.h"
 #include "UartRingbuffer.h"
 #include "hdlc_protocol.h"
+#include "tiny-json.h"
 
 osMessageQueueId_t xQueueEspSerialTX;
 osMutexId_t mUartRingBufferMutex; /*extern */
@@ -75,13 +76,15 @@ static void hdlc_frame_handler(uint8_t *data, uint8_t length)
 {
 	jsonMessage_t msg;
 
-	printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, data, length);
+	printf("hdlc_frame_handler, from ESP32: %.*s with length: %d\n\r", length, (char *)data, length);
 	/* some cleanup */
-	//snprintf(msg.json, length, (uint8_t *)data);
-	//msg.msg_size = length;
+	memcpy(msg.json, data, length);
+	msg.msg_size = length;
 
 	/* straight to command service to be interpreted */
-	//osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
+	if (xQueueCommandParse != NULL) {
+		osMessageQueuePut(xQueueCommandParse, &msg, 0U, osWaitForever);
+	}
 }
 
 /**
@@ -133,22 +136,22 @@ void vEsp32RXSerialService_Start(void* vParameter)
 
 	for (;;)
 	{
-		//if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
-		//{
-		//	HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
+		MUTEX_RING_BUFF_TAKE
+		if (IsDataAvailable()) /* ask our little library if there's any data available for reading */
+		{
+			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_SET);
 
-		//	osMutexAcquire(mUartRingBufferMutex, osWaitForever);
-			//char inChar = (char)Uart_read(); /* read one byte of data */
-		//	osMutexRelease(mUartRingBufferMutex);
+			char inChar = (char)Uart_read(); /* read one byte of data */
 
-			// Pass all incoming data to hdlc char receiver
-		//	osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
-			//vCharReceiver(inChar);
-		//	osMutexRelease(mHdlcProtocolMutex);
+			/* Pass all incoming data to hdlc char receiver */
+			MUTEX_HDLC_TAKE
+			vCharReceiver(inChar);
+			MUTEX_HDLC_GIVE
 
-		//	HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
-		//}
-		osDelay(10);
+			HAL_GPIO_WritePin(GPIOA, LD3_Pin, GPIO_PIN_RESET);
+		}
+		MUTEX_RING_BUFF_GIVE
+		osDelay(1);
 	}
 	osThreadTerminate(NULL);
 }
@@ -162,7 +165,7 @@ uint8_t uEsp32SerialServiceInit()
 	/* creation of TX Serial Task */
 	xEsp32TXSerialServiceTaskHandle = osThreadNew(vEsp32TXSerialService_Start, NULL, &xEsp32TXSerialServiceTa_attributes);
 	if (xEsp32TXSerialServiceTaskHandle == NULL) {
-		printf("Front Servo Task TX Initialization Failed\n\r");
+		printf("Serial Task TX Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -170,7 +173,7 @@ uint8_t uEsp32SerialServiceInit()
 	/* creation of RX Serial Task */
 	xEsp32RXSerialServiceTaskHandle = osThreadNew(vEsp32RXSerialService_Start, NULL, &xEsp32RXSerialServiceTa_attributes);
 	if (xEsp32RXSerialServiceTaskHandle == NULL) {
-		printf("Front Servo Task RX Initialization Failed\n\r");
+		printf("Serial Task RX Initialization Failed\n\r");
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
@@ -182,7 +185,7 @@ uint8_t uEsp32SerialServiceInit()
 	uHdlcProtInit(&send_character, &hdlc_frame_handler, MAX_HDLC_FRAME_LENGTH);
 
 	printf("Initializing ESP32 Serial Service... Success!\n\r");
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 

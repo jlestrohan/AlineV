@@ -14,9 +14,14 @@
 
 #include "cmsis_os2.h"
 #include <FreeRTOS.h>
+#include <stdbool.h>
 
 /* generic usage structs */
 typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the code elsewhere */
+
+#define FIRMWARE_VERSION	"AlineV 0.36"
+//#define LCD_SHOW_EVENTS						/* uncomment = finite state information are displayed */
+#define ESP32_VALID_UUID	"110976270102308"	/* ESP32 uuid, all commands coming from another uuid will be ignored */
 
 /**
  * DEBUG CONFIGURATION
@@ -75,7 +80,7 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define UART_DMA_BUFFER_SIZE 1024
 #define PARSER_MESSAGE_LIST_SIZE 8
 #define PARSER_MESSAGE_SIZE 1024
-#define MAX_JSON_MSG_SIZE 256
+#define MAX_JSON_MSG_SIZE 512
 
 #define MAX_HDLC_FRAME_LENGTH 512 /* this is the main frame length available */
 
@@ -109,6 +114,8 @@ typedef StaticTask_t osStaticThreadDef_t; /* defined once here to lighten the co
 #define MUTEX_LCD_GIVE			osMutexRelease(mLCDScreenMutex);
 #define MUTEX_HDLC_GIVE			osMutexRelease(mHdlcProtocolMutex);
 #define MUTEX_HDLC_TAKE			osMutexAcquire(mHdlcProtocolMutex, osWaitForever);
+#define MUTEX_RING_BUFF_TAKE	osMutexAcquire(mUartRingBufferMutex, osWaitForever);
+#define MUTEX_RING_BUFF_GIVE	osMutexRelease(mUartRingBufferMutex);
 
 
 /**
