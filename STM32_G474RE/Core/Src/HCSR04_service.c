@@ -34,8 +34,8 @@
 #define SERVO_TOLERANCE 5
 
 /* functions definitions */
-uint16_t median_filter(uint16_t datum);
-uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance);
+static uint16_t median_filter(uint16_t datum);
+static uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance);
 
 /* mutexed variables */
 HR04_SensorsData_t HR04_SensorsData;
@@ -204,7 +204,7 @@ static uint8_t HC_SR04_StartupTimers()
  * @param datum
  * @return
  */
-inline uint16_t median_filter(uint16_t datum)
+static inline uint16_t median_filter(uint16_t datum)
 {
 	struct pair
 	{
@@ -301,7 +301,7 @@ inline uint16_t median_filter(uint16_t datum)
  * @param tolerance
  * @return
  */
-uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance)
+static uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance)
 {
 	return ((value <= position + tolerance) && (value >= position - tolerance));
 }
