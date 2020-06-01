@@ -32,14 +32,12 @@ DMAInternalSensorsAdcValues_t DMAInternalSensorsAdcValues; /* extern */
 uint8_t UartRXDmaBuffer[10]; /* extern */
 osMessageQueueId_t xQueueEspSerialRX; /* extern */
 
-xServoPosition_t xServoPosition; /* extern */
 osMutexId_t mServoPositionMutex;
 osMessageQueueId_t xQueueHCSR04DataSend; /* extern */
 osMessageQueueId_t xQueueButtonEvent; /* extern */
 
 /* internal use */
 HR04_SensorRaw sensorRaw;
-
 
 /**
  *

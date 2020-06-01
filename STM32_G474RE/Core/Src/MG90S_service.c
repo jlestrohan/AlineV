@@ -23,9 +23,9 @@
 typedef StaticTask_t osStaticThreadDef_t;
 
 osMessageQueueId_t xQueueMg90sMotionOrder;
+static xServoPosition_t xServoPosition;
 
-/* mutexed externs */
-xServoPosition_t xServoPosition;
+/* mutex externs */
 osMutexId_t mServoPositionMutex;
 
 osMessageQueueId_t xMessageQueueSensorMotionStatus; /* used to tell the three probes task to run its code or not */
@@ -229,4 +229,9 @@ uint8_t uMg90sServiceInit()
 
 	printf("Initializing Front Servo... Success!\n\r");
 	return (EXIT_SUCCESS);
+}
+
+xServoPosition_t xGetServoPosition()
+{
+	return (xServoPosition);
 }

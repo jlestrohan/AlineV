@@ -45,7 +45,6 @@ osMessageQueueId_t xQueueHCSR04DataSend;
 
 osMessageQueueId_t xQueueMg90sMotionOrder; /* extern */
 osMutexId_t mServoPositionMutex; /* extern */
-xServoPosition_t xServoPosition; /* extern */
 
 /* flag to set any sensors active/inactive according to nav control decisions */
 static osThreadId_t xHr04SensorTaskHandle;
@@ -79,6 +78,10 @@ static void vHr04SensorTaskStart(void *argument)
 	osStatus_t status;
 	register uint16_t sensread;
 
+	MUTEX_SERVO_TAKE
+	xServoPosition_t xServoPos;
+	MUTEX_SERVO_GIVE
+
 	for (;;)
 	{
 		/* we accept data from the IRQ to populate the HR04_SensorsData after filtering garbage out */
@@ -87,6 +90,7 @@ static void vHr04SensorTaskStart(void *argument)
 		{
 			HR04_OldSensorsData = HR04_SensorsData;
 			sensread = sensorCapturedData.distance_data;
+			xServoPos = xGetServoPosition();
 
 			MUTEX_HCSR04_TAKE
 			/* now let's filter out and populate data from the IRQ; */
@@ -101,11 +105,11 @@ static void vHr04SensorTaskStart(void *argument)
 			case HR04_SONAR_FRONT:
 				MUTEX_SERVO_TAKE
 
-				if (isInsideTolerance(xServoPosition, SERVO_DIRECTION_LEFT45, SERVO_TOLERANCE)) {
+				if (isInsideTolerance(xServoPos, SERVO_DIRECTION_LEFT45, SERVO_TOLERANCE)) {
 					HR04_SensorsData.dist_left45 = sensread;
-				} else if (isInsideTolerance(xServoPosition, SERVO_DIRECTION_CENTER, SERVO_TOLERANCE)) {
+				} else if (isInsideTolerance(xServoPos, SERVO_DIRECTION_CENTER, SERVO_TOLERANCE)) {
 					HR04_SensorsData.dist_front = sensread;
-				} else if (isInsideTolerance(xServoPosition, SERVO_DIRECTION_RIGHT45, SERVO_TOLERANCE)) {
+				} else if (isInsideTolerance(xServoPos, SERVO_DIRECTION_RIGHT45, SERVO_TOLERANCE)) {
 					HR04_SensorsData.dist_right45 = sensread;
 				}
 
