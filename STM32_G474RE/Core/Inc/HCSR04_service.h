@@ -27,16 +27,19 @@
 
 extern osMessageQueueId_t xQueueHCSR04DataSend; /* used by IRQ handler to send out the data */
 
-typedef struct {
-	uint16_t		dist_front;
-	uint16_t		dist_left45;
-	uint16_t		dist_left90;
-	uint16_t		dist_right45;
-	uint16_t		dist_right90;
-	uint16_t 		dist_bottom;
-	uint16_t		dist_rear;
-	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */
-} HR04_SensorsData_t;
+/* opaque type (encapsulation) */
+struct HCSR04_Data_s;
+typedef struct HCSR04_Data_s HCSR04_Data;
+
+/**
+ * Public accessors
+ * @return
+ */
+uint16_t HCSR04_get_dist_bottom();
+uint16_t HCSR04_get_dist_rear();
+uint16_t HCSR04_get_dist_front();
+uint16_t HCSR04_get_dist_left45();
+uint16_t HCSR04_get_dist_right45();
 
 typedef struct {
 	uint8_t sensor_number;
@@ -45,10 +48,9 @@ typedef struct {
 
 /********************************************************/
 /** PUBLIC Structure with general service updated infos */
-extern HR04_SensorsData_t HR04_SensorsData;		/* always hold the current values on every field */
 extern osMutexId_t mHR04_SensorsDataMutex;
 
-extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous values on every field */
+//FIXME: extern HR04_SensorsData_t HR04_OldSensorsData; /* always hold the previous values on every field */
 /********************************************************/
 
 extern osEventFlagsId_t xHcrSr04ControlFlag;

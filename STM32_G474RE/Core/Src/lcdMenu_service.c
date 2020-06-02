@@ -26,7 +26,6 @@
 
 osMutexId_t mLCDScreenMutex;
 
-HR04_SensorsData_t HR04_SensorsData;	/* extern  */
 osMutexId_t mHR04_SensorsDataMutex;	/* extern */
 
 CMPS12_SensorData_t CMPS12_SensorData; /* extern */
@@ -275,13 +274,13 @@ static void vLcdMenuLoopTask(void *vParameter)
 
 			lcdSetCursorPosition(0, 0);
 			MUTEX_HCSR04_TAKE
-			sprintf(line1, "F%0*d FL%0*d FR%0*d", 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_left45,3,HR04_SensorsData.dist_right45);
+			sprintf(line1, "F%0*d FL%0*d FR%0*d", 3, HCSR04_get_dist_front(), 3, HCSR04_get_dist_left45(),3,HCSR04_get_dist_right45());
 			MUTEX_HCSR04_GIVE
 			lcdPrintStr((uint8_t *)line1, strlen(line1));
 
 			lcdSetCursorPosition(4, 1);
 			MUTEX_HCSR04_TAKE
-			sprintf(line2, "B%0*d R%0*d", 3, HR04_SensorsData.dist_bottom, 3, HR04_SensorsData.dist_rear);
+			sprintf(line2, "B%0*d R%0*d", 3, HCSR04_get_dist_bottom(), 3, HCSR04_get_dist_rear());
 			MUTEX_HCSR04_GIVE
 			lcdPrintStr((uint8_t *)line2, strlen(line2));
 			break;

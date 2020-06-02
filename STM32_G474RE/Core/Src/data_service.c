@@ -46,7 +46,6 @@ osMutexId_t mBMP280_DataMutex;	/* extern */
 CMPS12_SensorData_t CMPS12_SensorData;
 osMutexId_t mCMPS12_SensorDataMutex;
 
-extern HR04_SensorsData_t HR04_SensorsData;		/* always hold the current values on every field */
 extern osMutexId_t mHR04_SensorsDataMutex;
 
 MotorData_t MotorData;
@@ -55,14 +54,15 @@ osMutexId_t mMotorDataMutex;
 extern UV_LedStatus_t uUVLedStatus;
 extern osMutexId_t mUvLedStatusMutex;
 
-extern NavigationStatus_t xCurrentNavStatus;
-extern osMutexId_t mCurrentNavStatusMutex;
-
 /**
  * Used in NavData data service
  */
 typedef struct {
-	HR04_SensorsData_t hcsrData;
+	uint16_t hcsr_dist_bottom;
+	uint16_t hcsr_dist_front;
+	uint16_t hcsr_dist_rear;
+	uint16_t hcsr_dist_left45;
+	uint16_t hcsr_dist_right45;
 	MotorData_t Motordata;
 	CMPS12_SensorData_t cmps12Data;
 	UV_LedStatus_t uvLedStatus;
@@ -166,12 +166,14 @@ static void vAtmosphericDataService_Start(void *vParameter)
  */
 static void vNavigationDataTask_Start(void *vParameter)
 {
-
+	NavigationStatus_t xNavStatus;
 	NAV_Data_t xCurrentNavData, xLastNavData;
 	jsonMessage_t msg_pack; /* packet to be sent out */
 
 	for (;;)
 	{
+		xNavStatus = xGetNavigationStatus();
+
 		/* we constantly update this structure NAV_Data_t containing all the infos we need for the JSON, we send it 2 times a second
 		 * unless nothing has changed vs the previous record. It is easier and faster to compare them structs then */
 		MUTEX_MOTORDATA_TAKE
@@ -183,7 +185,11 @@ static void vNavigationDataTask_Start(void *vParameter)
 		MUTEX_CMPS12_GIVE
 
 		MUTEX_HCSR04_TAKE
-		xCurrentNavData.hcsrData = HR04_SensorsData;
+		xCurrentNavData.hcsr_dist_bottom = HCSR04_get_dist_bottom();
+		xCurrentNavData.hcsr_dist_front = HCSR04_get_dist_front();
+		xCurrentNavData.hcsr_dist_left45 = HCSR04_get_dist_left45();
+		xCurrentNavData.hcsr_dist_right45 = HCSR04_get_dist_right45();
+		xCurrentNavData.hcsr_dist_rear = HCSR04_get_dist_rear();
 		MUTEX_HCSR04_GIVE
 
 		MUTEX_UVLED_TAKE
@@ -191,9 +197,7 @@ static void vNavigationDataTask_Start(void *vParameter)
 		MUTEX_UVLED_GIVE
 
 		/* only if we are not in certain idle modes */
-		MUTEX_NAVSTATUS_TAKE
-		if (xCurrentNavStatus != NAV_STATUS_IDLE) {
-			MUTEX_NAVSTATUS_GIVE /* releasing asap */
+		if (xNavStatus != NAV_STATUS_IDLE) {
 			/* we compare both structures to see if anything has changed */
 			if (!eq(&xCurrentNavData, &xLastNavData)) {
 				/* we send JSON here!! */
@@ -211,7 +215,6 @@ static void vNavigationDataTask_Start(void *vParameter)
 				xLastNavData = xCurrentNavData;
 			}
 		}
-		MUTEX_NAVSTATUS_GIVE /* releasing anyway */
 
 		osDelay(300); /* twice a second if data HAS changed */
 	}
@@ -224,6 +227,7 @@ static void vNavigationDataTask_Start(void *vParameter)
  */
 uint8_t uDataServiceinit()
 {
+
 	/*atmospheric data service task creation */
 	xAtmosphericDataTaskHandle = osThreadNew(vAtmosphericDataService_Start, NULL, &xAtmosphericDataTa_attributes);
 	if (xAtmosphericDataTaskHandle == NULL) {
@@ -249,7 +253,7 @@ uint8_t uDataServiceinit()
 		return (EXIT_FAILURE);
 	}
 
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -285,7 +289,7 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 			jwObj_double(&jwc, "Ps", (double)BMP280_Data.pressure/100);
 			jwObj_double(&jwc, "Tp", (double)BMP280_Data.temperature);
 			jwObj_double(&jwc, "Hm", (double)BMP280_Data.humidity);
-		} else return EXIT_FAILURE;
+		} else return (EXIT_FAILURE);
 		MUTEX_BME280_GIVE
 
 		jwEnd(&jwc);
@@ -311,9 +315,9 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 		MUTEX_CMPS12_GIVE
 
 		MUTEX_HCSR04_TAKE
-		jwObj_int(&jwc, "hcFr", nav_data->hcsrData.dist_front);
-		jwObj_int(&jwc, "hcRr", nav_data->hcsrData.dist_rear);
-		jwObj_int(&jwc, "hcBt", nav_data->hcsrData.dist_bottom);
+		jwObj_int(&jwc, "hcFr", nav_data->hcsr_dist_front);
+		jwObj_int(&jwc, "hcRr", nav_data->hcsr_dist_rear);
+		jwObj_int(&jwc, "hcBt", nav_data->hcsr_dist_bottom);
 		MUTEX_HCSR04_GIVE
 
 		MUTEX_UVLED_TAKE
@@ -336,7 +340,7 @@ static uint8_t uEncodeJson(command_type_t cmd_type, jsonMessage_t *msg_pack, NAV
 
 	msg_pack->json[buffer_size] = 13; /* adds end of line */
 	msg_pack->msg_size = buffer_size;
-	return EXIT_SUCCESS;
+	return (EXIT_SUCCESS);
 }
 
 /**
@@ -359,8 +363,8 @@ uint8_t eq(NAV_Data_t *one, NAV_Data_t *two)
 					(one->Motordata.motorMotion_Left == two->Motordata.motorMotion_Left) &&
 					(one->Motordata.motorMotion_Right == two->Motordata.motorMotion_Right) &&
 
-					(one->hcsrData.dist_bottom == two->hcsrData.dist_bottom) &&
-					(one->hcsrData.dist_front == two->hcsrData.dist_front) &&
+					(one->hcsr_dist_bottom == two->hcsr_dist_bottom) &&
+					(one->hcsr_dist_front == two->hcsr_dist_front) &&
 
 					(one->uvLedStatus == two->uvLedStatus));
 }

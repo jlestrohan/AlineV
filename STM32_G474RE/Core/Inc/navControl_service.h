@@ -53,9 +53,12 @@ typedef enum {
 extern osEventFlagsId_t xEventFlagNavControlMainCom; /* used to communicate with the nav control (buttons ?..) */
 extern osMessageQueueId_t xMessageQueueDecisionControlMainCom;
 
-extern NavigationStatus_t xCurrentNavStatus;
-extern osMutexId_t mCurrentNavStatusMutex;
-
 uint8_t uNavControlServiceInit();
+
+/**
+ * Returns the current naviagtion status
+ * @return
+ */
+NavigationStatus_t xGetNavigationStatus();
 
 #endif /* INC_NAVCONTROL_SERVICE_H_ */

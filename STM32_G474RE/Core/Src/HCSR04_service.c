@@ -37,9 +37,22 @@
 static uint16_t median_filter(uint16_t datum);
 static uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolerance);
 
-/* mutexed variables */
-HR04_SensorsData_t HR04_SensorsData;
-HR04_SensorsData_t HR04_OldSensorsData;
+struct HCSR04_Data_s {
+	uint16_t		dist_front;
+	uint16_t		dist_left45;
+	uint16_t		dist_left90;
+	uint16_t		dist_right45;
+	uint16_t		dist_right90;
+	uint16_t 		dist_bottom;
+	uint16_t		dist_rear;
+	//const struct HR04_SensorsData_t	*prev;	/* pointer toward the previous data */
+};
+
+
+static HCSR04_Data *pMemHcData;
+
+//FIXME: HR04_SensorsData_t HR04_OldSensorsData;
+
 osMutexId_t mHR04_SensorsDataMutex;
 osMessageQueueId_t xQueueHCSR04DataSend;
 
@@ -88,7 +101,7 @@ static void vHr04SensorTaskStart(void *argument)
 		status = osMessageQueueGet(xQueueHCSR04DataSend, &sensorCapturedData, 0U, osWaitForever);
 		if (status == osOK)
 		{
-			HR04_OldSensorsData = HR04_SensorsData;
+			//FIXME: HR04_OldSensorsData = HR04_SensorsData;
 			sensread = sensorCapturedData.distance_data;
 			xServoPos = xGetServoPosition();
 
@@ -97,20 +110,20 @@ static void vHr04SensorTaskStart(void *argument)
 
 			switch (sensorCapturedData.sensor_number) {
 			case HR04_SONAR_REAR:
-				HR04_SensorsData.dist_rear = sensread;
+				pMemHcData->dist_rear = sensread;
 				break;
 			case HR04_SONAR_BOTTOM:
-				HR04_SensorsData.dist_bottom = sensread;
+				pMemHcData->dist_bottom = sensread;
 				break;
 			case HR04_SONAR_FRONT:
 				MUTEX_SERVO_TAKE
 
 				if (isInsideTolerance(xServoPos, SERVO_DIRECTION_LEFT45, SERVO_TOLERANCE)) {
-					HR04_SensorsData.dist_left45 = sensread;
+					pMemHcData->dist_left45 = sensread;
 				} else if (isInsideTolerance(xServoPos, SERVO_DIRECTION_CENTER, SERVO_TOLERANCE)) {
-					HR04_SensorsData.dist_front = sensread;
+					pMemHcData->dist_front = sensread;
 				} else if (isInsideTolerance(xServoPos, SERVO_DIRECTION_RIGHT45, SERVO_TOLERANCE)) {
-					HR04_SensorsData.dist_right45 = sensread;
+					pMemHcData->dist_right45 = sensread;
 				}
 
 				MUTEX_SERVO_GIVE
@@ -124,13 +137,15 @@ static void vHr04SensorTaskStart(void *argument)
 #ifdef DEBUG_HCSR04_ALL
 		MUTEX_HCSR04_TAKE
 		printf("left45: %0*d - center: %0*d - right45: %0*d - bot: %0*d - rear: %0*d\n\r", 3,
-				HR04_SensorsData.dist_left45, 3, HR04_SensorsData.dist_front, 3, HR04_SensorsData.dist_right45,
-				3,HR04_SensorsData.dist_bottom, 3,HR04_SensorsData.dist_rear);
+				pMemHcData->dist_left45, 3, pMemHcData->dist_front, 3, pMemHcData->dist_right45,
+				3,pMemHcData->dist_bottom, 3,pMemHcData->dist_rear);
 		MUTEX_HCSR04_GIVE
 #endif
 
 		osDelay(1);
 	}
+
+	vPortFree(pMemHcData);
 	osThreadTerminate(NULL);
 }
 
@@ -140,8 +155,15 @@ static void vHr04SensorTaskStart(void *argument)
  */
 uint8_t uHcsr04ServiceInit()
 {
+
 	/* create mutex for struct protection */
 	mHR04_SensorsDataMutex = osMutexNew(NULL);
+
+	pMemHcData = pvPortMalloc(sizeof(HCSR04_Data));
+	if (pMemHcData == NULL) {
+			printf("Unable to allocate pMemHcData memory, exiting!");
+			Error_Handler();
+		}
 
 	xQueueHCSR04DataSend = osMessageQueueNew(10,  sizeof(HR04_SensorRaw), NULL);
 	if (xQueueHCSR04DataSend == NULL) {
@@ -149,7 +171,6 @@ uint8_t uHcsr04ServiceInit()
 		Error_Handler();
 		return (EXIT_FAILURE);
 	}
-
 
 	/* creation of HR04Sensor1_task */
 	xHr04SensorTaskHandle = osThreadNew(vHr04SensorTaskStart, NULL, &xHr04SensorTa_attributes);
@@ -306,3 +327,28 @@ static uint8_t isInsideTolerance(uint8_t value, uint8_t position, uint8_t tolera
 	return ((value <= position + tolerance) && (value >= position - tolerance));
 }
 
+/**
+ * Encapsulation accessors
+ * @param this
+ * @return
+ */
+uint16_t HCSR04_get_dist_bottom()
+{
+	return (pMemHcData->dist_bottom);
+}
+uint16_t HCSR04_get_dist_front()
+{
+	return (pMemHcData->dist_front);
+}
+uint16_t HCSR04_get_dist_left45()
+{
+	return (pMemHcData->dist_left45);
+}
+uint16_t HCSR04_get_dist_right45()
+{
+	return (pMemHcData->dist_right45);
+}
+uint16_t HCSR04_get_dist_rear()
+{
+	return (pMemHcData->dist_rear);
+}
